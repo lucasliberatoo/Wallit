@@ -15,9 +15,9 @@ export interface ProgressBarProps {
 export function ProgressBar({ progress, color = colors.success, track = colors.surfaceMuted, height = 8 }: ProgressBarProps) {
   const value = useSharedValue(0);
   useEffect(() => {
-    value.value = withTiming(Math.min(Math.max(progress, 0), 1), { duration: durations.slow });
+    value.set(withTiming(Math.min(Math.max(progress, 0), 1), { duration: durations.slow }));
   }, [progress, value]);
-  const fill = useAnimatedStyle(() => ({ width: `${value.value * 100}%` }));
+  const fill = useAnimatedStyle(() => ({ width: `${value.get() * 100}%` }));
 
   return (
     <View

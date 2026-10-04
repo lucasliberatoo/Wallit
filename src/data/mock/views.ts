@@ -1,5 +1,6 @@
 import {
   allocateSharesToInstallments,
+  type AuditLog,
   can,
   type Card,
   compareRefs,
@@ -15,6 +16,7 @@ import {
   type PurchaseInstallment,
 } from '@/domain';
 import type {
+  AuditLogView,
   CardSummary,
   InvoiceDetails,
   InvoiceLine,
@@ -168,6 +170,11 @@ export function canEditPurchase(store: MockStore, purchase: Purchase): boolean {
   return can(me.role, 'purchase.edit', { isCardHolder });
 }
 
+export function withActor(store: MockStore, log: AuditLog): AuditLogView {
+  const user = store.db.users.find((u) => u.id === log.actorUserId);
+  return { ...log, actorName: user?.name ?? 'Alguém' };
+}
+
 export function purchaseDetails(store: MockStore, purchase: Purchase): PurchaseDetails {
   store.requireMembership(purchase.familyId);
   return {
@@ -182,7 +189,8 @@ export function purchaseDetails(store: MockStore, purchase: Purchase): PurchaseD
     })),
     history: store.db.auditLogs
       .filter((log) => log.entity === 'purchase' && log.entityId === purchase.id)
-      .sort((a, b) => b.at.localeCompare(a.at)),
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .map((log) => withActor(store, log)),
     canEdit: canEditPurchase(store, purchase),
   };
 }

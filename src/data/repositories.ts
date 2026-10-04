@@ -1,6 +1,7 @@
-import type { AuditLog, Category, FamilyMember, ID, Invoice, InvoiceRef, InvoiceStatus, Payment, Role, User, Wallet, Card, Family } from '@/domain';
+import type { Category, FamilyMember, ID, Invoice, InvoiceRef, InvoiceStatus, Payment, Role, User, Wallet, Card, Family } from '@/domain';
 import type {
   AddMemberInput,
+  AuditLogView,
   CardSummary,
   CategoryInput,
   CreateCardInput,
@@ -88,7 +89,7 @@ export interface PaymentRepository {
 
 export interface DashboardRepository {
   home(familyId: ID): Promise<HomeSummary>;
-  activity(familyId: ID): Promise<AuditLog[]>;
+  activity(familyId: ID): Promise<AuditLogView[]>;
 }
 
 export interface Repositories {

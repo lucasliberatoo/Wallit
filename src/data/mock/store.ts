@@ -25,7 +25,7 @@ export function nowISO(): string {
 }
 
 /** Simulated network latency so loading states are exercised in development. */
-const LATENCY_MS = 120;
+const DEFAULT_LATENCY_MS = 120;
 
 /**
  * In-memory database with persistence, plus the helpers every mock
@@ -35,7 +35,10 @@ export class MockStore {
   db: MockDatabase = emptyDatabase();
   private ready: Promise<void> | null = null;
 
-  constructor(private readonly seed: (store: MockStore) => void) {}
+  constructor(
+    private readonly seed: (store: MockStore) => void,
+    private readonly latencyMs = DEFAULT_LATENCY_MS,
+  ) {}
 
   init(): Promise<void> {
     this.ready ??= (async () => {
@@ -53,7 +56,7 @@ export class MockStore {
   /** Runs a repository operation: waits for init, simulates latency, persists writes. */
   async run<T>(operation: () => T, options: { write?: boolean } = {}): Promise<T> {
     await this.init();
-    await new Promise((resolve) => setTimeout(resolve, LATENCY_MS));
+    if (this.latencyMs > 0) await new Promise((resolve) => setTimeout(resolve, this.latencyMs));
     const result = operation();
     if (options.write) await saveDatabase(this.db);
     return structuredCloneSafe(result);

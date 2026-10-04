@@ -14,8 +14,8 @@ import { MockStore } from './store';
 
 export { DEMO_ACCOUNT } from './seed';
 
-export function createMockRepositories(): Repositories & { reset: () => Promise<void> } {
-  const store = new MockStore(seedMockDatabase);
+export function createMockRepositories(options: { latencyMs?: number } = {}): Repositories & { reset: () => Promise<void> } {
+  const store = new MockStore(seedMockDatabase, options.latencyMs);
   return {
     auth: createMockAuthRepository(store),
     families: createMockFamilyRepository(store),

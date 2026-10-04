@@ -193,9 +193,11 @@ export function seedMockDatabase(store: MockStore): void {
   if (previousInvoice) {
     const balances = invoiceDetails(store, previousInvoice).balances;
     const owed = (m: FamilyMember) => balances.find((b) => b.memberId === m.id)?.owedCents ?? 0;
-    pay(previousInvoice, lucas.id, owed(lucas));
+    // Lucas (the demo user) still owes part of it, so the Home shows a real "Você deve".
+    pay(previousInvoice, lucas.id, Math.round(owed(lucas) * 0.4));
     pay(previousInvoice, maria.id, Math.round(owed(maria) / 2));
     pay(previousInvoice, ana.id, owed(ana));
+    pay(previousInvoice, joao.id, owed(joao));
     previousInvoice.status = 'collecting';
   }
 

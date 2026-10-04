@@ -22,6 +22,11 @@ import type {
   Wallet,
 } from '@/domain';
 
+/** Audit entry with the author's name resolved for display. */
+export interface AuditLogView extends AuditLog {
+  actorName: string;
+}
+
 export interface Session {
   user: User;
 }
@@ -99,7 +104,7 @@ export interface PurchaseDetails {
   card: Card;
   shares: ShareView[];
   installments: { installment: PurchaseInstallment; invoice: Invoice }[];
-  history: AuditLog[];
+  history: AuditLogView[];
   canEdit: boolean;
 }
 

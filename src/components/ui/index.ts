@@ -13,3 +13,4 @@ export * from './SectionHeader';
 export * from './States';
 export * from './Surface';
 export * from './TextField';
+export * from './SegmentedControl';

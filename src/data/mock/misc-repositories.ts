@@ -11,7 +11,7 @@ import {
 import { AppError } from '../errors';
 import type { CategoryRepository, DashboardRepository, PaymentRepository } from '../repositories';
 import { newId, nowISO, type MockStore } from './store';
-import { currentInvoiceFor, invoiceDetails, purchaseListItem, todayISO } from './views';
+import { currentInvoiceFor, invoiceDetails, purchaseListItem, todayISO, withActor } from './views';
 
 export function createMockCategoryRepository(store: MockStore): CategoryRepository {
   const requireManager = (familyId: string) => {
@@ -205,7 +205,7 @@ export function createMockDashboardRepository(store: MockStore): DashboardReposi
     activity: (familyId) =>
       store.run(() => {
         store.requireMembership(familyId);
-        return store.db.auditLogs.filter((log) => log.familyId === familyId).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 100);
+        return store.db.auditLogs.filter((log) => log.familyId === familyId).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 100).map((log) => withActor(store, log));
       }),
   };
 }

@@ -14,8 +14,11 @@ export interface MoneyInputProps extends Omit<TextInputProps, 'value' | 'onChang
 /** Bank-style money input: digits fill from the right (R$ 0,01 -> R$ 0,12 -> R$ 1,20). */
 export function MoneyInput({ value, onChangeValue, size = 'inline', label = 'Valor', style, ...rest }: MoneyInputProps) {
   const hero = size === 'hero';
+  const text = formatBRL(value, { symbol: false });
+  // The hero input grows with its content so "R$" stays next to the digits.
+  const heroWidth = Math.max(96, text.length * 27);
   return (
-    <View style={[styles.row, !hero && styles.inline]}>
+    <View style={[styles.row, hero ? styles.heroRow : styles.inline]}>
       <AppText variant={hero ? 'h2' : 'caption'} color={hero ? 'textSecondary' : 'textMuted'}>
         R$
       </AppText>
@@ -23,10 +26,10 @@ export function MoneyInput({ value, onChangeValue, size = 'inline', label = 'Val
         accessibilityLabel={label}
         keyboardType="number-pad"
         inputMode="numeric"
-        value={formatBRL(value, { symbol: false })}
+        value={text}
         onChangeText={(text) => onChangeValue(parseMoneyInput(text))}
         selectionColor={colors.primary}
-        style={[hero ? styles.hero : styles.inlineInput, style]}
+        style={[hero ? [styles.hero, { width: heroWidth }] : styles.inlineInput, style]}
         {...rest}
       />
     </View>
@@ -35,20 +38,21 @@ export function MoneyInput({ value, onChangeValue, size = 'inline', label = 'Val
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  heroRow: { justifyContent: 'center', alignSelf: 'stretch' },
   inline: {
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     backgroundColor: colors.surface,
-    minWidth: 110,
+    flexShrink: 0,
   },
   hero: {
     fontFamily: fontFamily.extrabold,
     fontSize: 44,
     letterSpacing: -1,
     color: colors.brand,
-    minWidth: 120,
+    textAlign: 'left',
     paddingVertical: 0,
     fontVariant: ['tabular-nums'],
   },
@@ -57,7 +61,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     paddingVertical: spacing.sm,
-    minWidth: 70,
+    width: 84,
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
