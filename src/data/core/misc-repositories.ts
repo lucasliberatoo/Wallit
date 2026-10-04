@@ -1,10 +1,10 @@
-import { can, type Card, type Category, formatBRL, type Invoice, isInvoiceLocked, type Payment, validatePayment } from '@/domain';
+import { can, type Card, type Category, formatBRL, type Invoice, isInvoiceLocked, type Payment, validatePayment } from '../../domain';
 import { AppError } from '../errors';
 import type { CategoryRepository, DashboardRepository, PaymentRepository } from '../repositories';
-import { newId, nowISO, type MockStore } from './store';
+import { newId, nowISO, type Store } from './store';
 import { currentInvoiceFor, invoiceDetails, purchaseListItem, todayISO, withActor } from './views';
 
-export function createMockCategoryRepository(store: MockStore): CategoryRepository {
+export function createCategoryRepository(store: Store): CategoryRepository {
   const requireManager = (familyId: string) => {
     const me = store.requireMembership(familyId);
     if (!can(me.role, 'category.manage')) throw new AppError('forbidden', 'Você não pode alterar categorias.');
@@ -66,7 +66,7 @@ export function createMockCategoryRepository(store: MockStore): CategoryReposito
   };
 }
 
-export function createMockPaymentRepository(store: MockStore): PaymentRepository {
+export function createPaymentRepository(store: Store): PaymentRepository {
   return {
     register: (input) =>
       store.run(
@@ -121,7 +121,7 @@ export function createMockPaymentRepository(store: MockStore): PaymentRepository
   };
 }
 
-export function createMockDashboardRepository(store: MockStore): DashboardRepository {
+export function createDashboardRepository(store: Store): DashboardRepository {
   return {
     home: (familyId) =>
       store.run(() => {

@@ -12,12 +12,12 @@ import {
   type Purchase,
   validateSplit,
   describeSplit,
-} from '@/domain';
+} from '../../domain';
 import { AppError } from '../errors';
 import type { CreatePurchaseInput } from '../models';
-import { newId, nowISO, type MockStore } from './store';
+import { newId, nowISO, type Store } from './store';
 
-function validate(store: MockStore, input: CreatePurchaseInput): Card {
+function validate(store: Store, input: CreatePurchaseInput): Card {
   const card = store.require('cards', input.cardId, 'Cartão') as Card;
   if (card.familyId !== input.familyId) throw new AppError('validation', 'Cartão não pertence a esta família.');
   if (!input.merchant.trim()) throw new AppError('validation', 'Informe o estabelecimento.');
@@ -41,7 +41,7 @@ function validate(store: MockStore, input: CreatePurchaseInput): Card {
 }
 
 /** Rule 4/5/6: links each installment to its invoice; one installment per invoice. */
-function writeInstallments(store: MockStore, purchase: Purchase, card: Card, actorMemberCanEditLocked: boolean): void {
+function writeInstallments(store: Store, purchase: Purchase, card: Card, actorMemberCanEditLocked: boolean): void {
   const plan = planInstallments({
     totalCents: purchase.totalCents,
     count: purchase.installmentCount,
@@ -64,13 +64,13 @@ function writeInstallments(store: MockStore, purchase: Purchase, card: Card, act
   }
 }
 
-function canEditLocked(store: MockStore, card: Card, actorUserId: ID): boolean {
+function canEditLocked(store: Store, card: Card, actorUserId: ID): boolean {
   const member = store.db.members.find((m) => m.familyId === card.familyId && m.userId === actorUserId && m.status === 'active');
   if (!member) return false;
   return can(member.role, 'invoice.editLocked', { isCardHolder: card.holderMemberId === member.id });
 }
 
-export function insertPurchase(store: MockStore, input: CreatePurchaseInput, actorUserId: ID, createdAt = nowISO()): Purchase {
+export function insertPurchase(store: Store, input: CreatePurchaseInput, actorUserId: ID, createdAt = nowISO()): Purchase {
   const card = validate(store, input);
   const purchase: Purchase = {
     id: newId('pur'),
@@ -118,7 +118,7 @@ export function insertPurchase(store: MockStore, input: CreatePurchaseInput, act
   return purchase;
 }
 
-function sharesLabel(store: MockStore, purchaseId: ID): string {
+function sharesLabel(store: Store, purchaseId: ID): string {
   return store.db.shares
     .filter((share) => share.purchaseId === purchaseId)
     .map((share) => `${store.member(share.memberId).displayName} ${formatBRL(share.amountCents)}`)
@@ -129,7 +129,7 @@ function sharesLabel(store: MockStore, purchaseId: ID): string {
  * Section 18: edits never silently erase data; every relevant change is
  * recorded with before/after values.
  */
-export function updatePurchaseRecord(store: MockStore, purchase: Purchase, next: CreatePurchaseInput, actorUserId: ID): Purchase {
+export function updatePurchaseRecord(store: Store, purchase: Purchase, next: CreatePurchaseInput, actorUserId: ID): Purchase {
   const card = validate(store, next);
   const changes: FieldChange[] = [];
   const track = (field: string, from: string | undefined, to: string | undefined) => {
@@ -190,11 +190,11 @@ export function updatePurchaseRecord(store: MockStore, purchase: Purchase, next:
   return purchase;
 }
 
-function categoryName(store: MockStore, categoryId: ID): string | undefined {
+function categoryName(store: Store, categoryId: ID): string | undefined {
   return (store.find('categories', categoryId) as Category | undefined)?.name;
 }
 
-export function purchaseInvoices(store: MockStore, purchaseId: ID): Invoice[] {
+export function purchaseInvoices(store: Store, purchaseId: ID): Invoice[] {
   return store.db.installments
     .filter((i) => i.purchaseId === purchaseId)
     .map((i) => store.require('invoices', i.invoiceId, 'Fatura') as Invoice);

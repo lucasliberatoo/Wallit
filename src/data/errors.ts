@@ -5,7 +5,10 @@ export type AppErrorCode =
   | 'email_taken'
   | 'validation'
   | 'invoice_locked'
-  | 'invalid_invite';
+  | 'invalid_invite'
+  | 'unauthorized'
+  | 'network'
+  | 'internal';
 
 /** Error with a user-facing Portuguese message. */
 export class AppError extends Error {

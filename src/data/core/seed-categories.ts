@@ -1,5 +1,5 @@
-import type { ID } from '@/domain';
-import { newId, type MockStore } from './store';
+import type { ID } from '../../domain';
+import { newId, type Store } from './store';
 
 export const DEFAULT_CATEGORIES = [
   { name: 'Mercado', icon: 'shopping-cart', color: '#155EEF' },
@@ -17,7 +17,7 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Outros', icon: 'shapes', color: '#6B7487' },
 ] as const;
 
-export function seedDefaultCategories(store: MockStore, familyId: ID): void {
+export function seedDefaultCategories(store: Store, familyId: ID): void {
   DEFAULT_CATEGORIES.forEach((category, order) => {
     store.db.categories.push({ id: newId('cat'), familyId, order, ...category });
   });

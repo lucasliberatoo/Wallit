@@ -105,7 +105,9 @@ export default function ProfileScreen() {
       </Surface>
 
       <View style={styles.actions}>
-        <Button label="Restaurar dados de exemplo" icon={RefreshCcw} variant="ghost" onPress={resetDemo} />
+        {repositories.reset ? (
+          <Button label="Restaurar dados de exemplo" icon={RefreshCcw} variant="ghost" onPress={resetDemo} />
+        ) : null}
         <Button
           label="Sair da conta"
           icon={LogOut}

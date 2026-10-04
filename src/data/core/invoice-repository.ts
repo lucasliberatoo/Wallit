@@ -1,10 +1,10 @@
-import { can, canTransition, type Card, type Invoice, INVOICE_STATUS_LABEL, invoiceRefForDate, compareRefs } from '@/domain';
+import { can, canTransition, type Card, type Invoice, INVOICE_STATUS_LABEL, invoiceRefForDate, compareRefs } from '../../domain';
 import { AppError } from '../errors';
 import type { InvoiceRepository } from '../repositories';
-import type { MockStore } from './store';
+import type { Store } from './store';
 import { invoiceDetails, invoiceListItem, sortInvoicesDesc, todayISO } from './views';
 
-export function createMockInvoiceRepository(store: MockStore): InvoiceRepository {
+export function createInvoiceRepository(store: Store): InvoiceRepository {
   const requireHolderPower = (card: Card) => {
     const me = store.requireMembership(card.familyId);
     if (!can(me.role, 'invoice.changeStatus', { isCardHolder: card.holderMemberId === me.id })) {

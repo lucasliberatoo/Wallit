@@ -1,4 +1,4 @@
-import type { Category, FamilyMember, ID, Invoice, InvoiceRef, InvoiceStatus, Payment, Role, User, Wallet, Card, Family } from '@/domain';
+import type { Category, FamilyMember, ID, Invoice, InvoiceRef, InvoiceStatus, Payment, Role, User, Wallet, Card, Family } from '../domain';
 import type {
   AddMemberInput,
   AuditLogView,

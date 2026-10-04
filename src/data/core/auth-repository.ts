@@ -1,15 +1,15 @@
-import { identityColors } from '@/theme/colors';
+import { identityColors } from '../../theme/colors';
 import { AppError } from '../errors';
 import type { AuthRepository } from '../repositories';
-import type { MockUser } from './database';
-import { newId, type MockStore } from './store';
+import type { StoredUser } from './database';
+import { newId, type Store } from './store';
 
-function publicUser({ password: _password, ...user }: MockUser) {
+function publicUser({ password: _password, ...user }: StoredUser) {
   return user;
 }
 
-export function createMockAuthRepository(store: MockStore): AuthRepository {
-  const sessionFor = (user: MockUser) => ({ user: publicUser(user) });
+export function createAuthRepository(store: Store): AuthRepository {
+  const sessionFor = (user: StoredUser) => ({ user: publicUser(user) });
 
   return {
     getSession: () =>
@@ -38,7 +38,7 @@ export function createMockAuthRepository(store: MockStore): AuthRepository {
           if (store.db.users.some((u) => u.email.toLowerCase() === normalized)) {
             throw new AppError('email_taken', 'Já existe uma conta com este email.');
           }
-          const user: MockUser = {
+          const user: StoredUser = {
             id: newId('usr'),
             name: name.trim(),
             email: normalized,
@@ -67,7 +67,7 @@ export function createMockAuthRepository(store: MockStore): AuthRepository {
     updateProfile: (changes) =>
       store.run(
         () => {
-          const user = store.require('users', store.currentUserId(), 'Usuário') as MockUser;
+          const user = store.require('users', store.currentUserId(), 'Usuário') as StoredUser;
           Object.assign(user, changes);
           if (changes.name) {
             store.db.members

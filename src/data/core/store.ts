@@ -8,46 +8,56 @@ import {
   type InvoiceRef,
   refKey,
   type AuditLog,
-} from '@/domain';
+} from '../../domain';
 import { AppError } from '../errors';
-import { emptyDatabase, loadDatabase, type MockDatabase, saveDatabase } from './database';
-
-type Collection = Exclude<keyof MockDatabase, 'version' | 'sessionUserId'>;
+import { type Collection, type Database, emptyDatabase } from './database';
 
 let counter = 0;
 export function newId(prefix: string): ID {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return `${prefix}_${uuid.replace(/-/g, '').slice(0, 20)}`;
   counter += 1;
-  return `${prefix}_${Date.now().toString(36)}${counter.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return `${prefix}_${Date.now().toString(36)}${counter.toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function nowISO(): string {
   return new Date().toISOString();
 }
 
-/** Simulated network latency so loading states are exercised in development. */
-const DEFAULT_LATENCY_MS = 120;
+/** Where a store's database comes from and goes to (device storage, Postgres, ...). */
+export interface Persistence {
+  load(): Promise<Database | null>;
+  save(db: Database): Promise<void>;
+}
+
+export interface StoreOptions {
+  persistence: Persistence;
+  /** Fills an empty database (demo data). */
+  seed?: (store: Store) => void;
+  /** Simulated network latency so loading states are exercised in development. */
+  latencyMs?: number;
+}
 
 /**
- * In-memory database with persistence, plus the helpers every mock
- * repository needs (current user, membership checks, audit trail).
+ * In-memory database plus the helpers every repository needs (current user,
+ * membership checks, audit trail). The same repositories run on the device
+ * (offline mock) and on the server (one store per request, loaded from and
+ * written back to Postgres).
  */
-export class MockStore {
-  db: MockDatabase = emptyDatabase();
+export class Store {
+  db: Database = emptyDatabase();
   private ready: Promise<void> | null = null;
 
-  constructor(
-    private readonly seed: (store: MockStore) => void,
-    private readonly latencyMs = DEFAULT_LATENCY_MS,
-  ) {}
+  constructor(private readonly options: StoreOptions) {}
 
   init(): Promise<void> {
     this.ready ??= (async () => {
-      const saved = await loadDatabase();
+      const saved = await this.options.persistence.load();
       if (saved) {
         this.db = saved;
       } else {
-        this.seed(this);
-        await saveDatabase(this.db);
+        this.options.seed?.(this);
+        await this.options.persistence.save(this.db);
       }
     })();
     return this.ready;
@@ -56,23 +66,24 @@ export class MockStore {
   /** Runs a repository operation: waits for init, simulates latency, persists writes. */
   async run<T>(operation: () => T, options: { write?: boolean } = {}): Promise<T> {
     await this.init();
-    if (this.latencyMs > 0) await new Promise((resolve) => setTimeout(resolve, this.latencyMs));
+    const latency = this.options.latencyMs ?? 0;
+    if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
     const result = operation();
-    if (options.write) await saveDatabase(this.db);
+    if (options.write) await this.options.persistence.save(this.db);
     return structuredCloneSafe(result);
   }
 
   async reset(): Promise<void> {
     this.db = emptyDatabase();
-    this.seed(this);
-    await saveDatabase(this.db);
+    this.options.seed?.(this);
+    await this.options.persistence.save(this.db);
   }
 
-  find<K extends Collection>(collection: K, id: ID): MockDatabase[K][number] | undefined {
-    return (this.db[collection] as { id?: ID }[]).find((item) => item.id === id) as MockDatabase[K][number] | undefined;
+  find<K extends Collection>(collection: K, id: ID): Database[K][number] | undefined {
+    return (this.db[collection] as { id?: ID }[]).find((item) => item.id === id) as Database[K][number] | undefined;
   }
 
-  require<K extends Collection>(collection: K, id: ID, label = 'Registro'): MockDatabase[K][number] {
+  require<K extends Collection>(collection: K, id: ID, label = 'Registro'): Database[K][number] {
     const item = this.find(collection, id);
     if (!item) throw new AppError('not_found', `${label} não encontrado.`);
     return item;
