@@ -56,3 +56,18 @@ export function useRegisterPayment() {
   const invalidate = useInvalidateData();
   return useMutation({ mutationFn: (input: RegisterPaymentInput) => payments.register(input), onSuccess: invalidate });
 }
+
+export function useConfirmPayment() {
+  const { payments } = useRepositories();
+  const invalidate = useInvalidateData();
+  return useMutation({ mutationFn: (paymentId: string) => payments.confirm(paymentId), onSuccess: invalidate });
+}
+
+export function useRejectPayment() {
+  const { payments } = useRepositories();
+  const invalidate = useInvalidateData();
+  return useMutation({
+    mutationFn: ({ paymentId, note }: { paymentId: string; note?: string }) => payments.reject(paymentId, note),
+    onSuccess: invalidate,
+  });
+}

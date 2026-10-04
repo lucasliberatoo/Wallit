@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CircleCheck, History, Pencil, ShoppingBag, Trash2, UserRound } from 'lucide-react-native';
-import { Alert, Platform, View } from 'react-native';
+import { CircleCheck, History, Pencil, ShoppingBag, ThumbsUp, Trash2, UserRound, X } from 'lucide-react-native';
+import { View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { CategoryIcon, InvoiceStatusBadge } from '@/components/finance';
@@ -20,7 +20,12 @@ import {
 } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { formatBRL, formatRef, installmentAmounts, installmentProgress } from '@/domain';
+import { AttachmentsSection } from '@/features/attachments/components/AttachmentsSection';
 import { useCancelPurchase, usePurchase } from '@/features/purchases/hooks';
+import { DisputeList } from '@/features/reviews/components/DisputeList';
+import { ReviewBadge } from '@/features/reviews/components/ReviewBadge';
+import { useConfirmPurchase } from '@/features/reviews/hooks';
+import { confirmAction, showError } from '@/utils/confirm';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDate, formatDateTime, formatShortDate, todayISO } from '@/utils/dates';
 
@@ -30,6 +35,7 @@ export default function PurchaseScreen() {
   const { purchaseId, created } = useLocalSearchParams<{ purchaseId: string; created?: string }>();
   const purchase = usePurchase(purchaseId);
   const cancel = useCancelPurchase();
+  const confirmPurchase = useConfirmPurchase();
 
   if (purchase.isLoading) return <LoadingState />;
   if (purchase.error || !purchase.data) return <ErrorState message={errorMessage(purchase.error)} onRetry={() => purchase.refetch()} />;
@@ -43,21 +49,21 @@ export default function PurchaseScreen() {
     p.installmentCount > 1 ? installmentProgress(amounts, currentIndex === -1 ? p.installmentCount : currentIndex + 1) : null;
   const cancelled = p.status === 'cancelled';
 
-  const confirmCancel = () => {
-    const run = () =>
-      cancel.mutate(purchaseId, {
-        onSuccess: () => router.back(),
-        onError: (error) => Alert.alert('Não foi possível cancelar', errorMessage(error)),
-      });
-    if (Platform.OS === 'web') {
-      if (window.confirm('Cancelar esta compra? Ela sai das faturas, mas continua no histórico.')) run();
-    } else {
-      Alert.alert('Cancelar compra?', 'Ela sai das faturas, mas continua no histórico.', [
-        { text: 'Voltar', style: 'cancel' },
-        { text: 'Cancelar compra', style: 'destructive', onPress: run },
-      ]);
-    }
+  const confirmCancel = async () => {
+    const ok = await confirmAction({
+      title: 'Cancelar compra?',
+      message: 'Ela sai das faturas, mas continua no histórico.',
+      confirmLabel: 'Cancelar compra',
+      destructive: true,
+    });
+    if (!ok) return;
+    cancel.mutate(purchaseId, {
+      onSuccess: () => router.back(),
+      onError: (error) => showError('Não foi possível cancelar', errorMessage(error)),
+    });
   };
+
+  const review = data.review;
 
   return (
     <>
@@ -106,6 +112,64 @@ export default function PurchaseScreen() {
             ) : null}
           </Surface>
         </Animated.View>
+
+        {review && !cancelled ? (
+          <Surface style={styles.review}>
+            <View style={styles.reviewHeader}>
+              <AppText variant="bodyStrong" style={styles.flex}>
+                Conferência
+              </AppText>
+              <ReviewBadge review={review} />
+            </View>
+            {review.awaitingMe ? (
+              <>
+                <AppText variant="caption" color="textSecondary">
+                  Você reconhece esta compra e a sua parte nela?
+                </AppText>
+                <View style={styles.reviewActions}>
+                  <Button
+                    label="Contestar"
+                    icon={X}
+                    variant="secondary"
+                    fullWidth={false}
+                    style={styles.flexButton}
+                    onPress={() => router.push(`/review/dispute?invoiceId=${review.invoiceId}&purchaseId=${purchaseId}`)}
+                  />
+                  <Button
+                    label="Reconheço"
+                    icon={ThumbsUp}
+                    fullWidth={false}
+                    style={styles.flexButton}
+                    loading={confirmPurchase.isPending}
+                    onPress={() =>
+                      confirmPurchase.mutate(
+                        { invoiceId: review.invoiceId, purchaseId },
+                        { onError: (error) => showError('Não foi possível confirmar', errorMessage(error)) },
+                      )
+                    }
+                  />
+                </View>
+              </>
+            ) : review.myReview?.status === 'confirmed' ? (
+              <Button
+                label="Mudei de ideia, contestar"
+                variant="ghost"
+                onPress={() => router.push(`/review/dispute?invoiceId=${review.invoiceId}&purchaseId=${purchaseId}`)}
+              />
+            ) : null}
+          </Surface>
+        ) : null}
+
+        {data.disputes.length > 0 ? (
+          <View>
+            <SectionHeader title="Contestações" />
+            <DisputeList
+              disputes={data.disputes}
+              canResolve={data.canManage}
+              onResolve={(dispute) => router.push(`/review/resolve?purchaseId=${purchaseId}&reviewId=${dispute.review.id}`)}
+            />
+          </View>
+        ) : null}
 
         <View>
           <SectionHeader title="Quem comprou e quem paga" />
@@ -171,6 +235,13 @@ export default function PurchaseScreen() {
           </Surface>
         ) : null}
 
+        <AttachmentsSection
+          purchaseId={purchaseId}
+          attachments={data.attachments}
+          canAdd={!cancelled}
+          canRemove={(attachment) => data.canManage || attachment.createdBy === data.me.userId}
+        />
+
         <View>
           <SectionHeader title="Histórico de alterações" />
           <Surface style={styles.history}>
@@ -222,6 +293,10 @@ const useStyles = makeStyles((colors) => ({
   installments: { gap: spacing.sm },
   invoiceLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1, gap: 2 },
+  review: { gap: spacing.md },
+  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  reviewActions: { flexDirection: 'row', gap: spacing.sm },
+  flexButton: { flex: 1 },
   history: { gap: spacing.lg },
   log: { flexDirection: 'row', gap: spacing.md },
   logIcon: {

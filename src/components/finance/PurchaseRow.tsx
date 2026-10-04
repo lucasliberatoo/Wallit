@@ -1,9 +1,11 @@
+import { Paperclip } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
 import type { Category, Cents, FamilyMember } from '@/domain';
 import { formatBRL } from '@/domain';
-import { makeStyles, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { CategoryIcon } from './CategoryIcon';
 
 export interface PurchaseRowProps {
@@ -15,6 +17,10 @@ export interface PurchaseRowProps {
   payers: Pick<FamilyMember, 'displayName'>[];
   installment?: { number: number; count: number };
   dateLabel?: string;
+  /** Receipts attached to the purchase (shows a paperclip). */
+  attachmentCount?: number;
+  /** Extra content under the row (review status, actions). */
+  footer?: ReactNode;
   onPress?: () => void;
 }
 
@@ -30,8 +36,11 @@ export function PurchaseRow({
   payers,
   installment,
   dateLabel,
+  attachmentCount = 0,
+  footer,
   onPress,
 }: PurchaseRowProps) {
+  const { colors } = useTheme();
   const styles = useStyles();
   const payersLabel = payers.map((p) => p.displayName).join(' + ');
   const showPayers = payersLabel && payersLabel !== buyer.displayName;
@@ -42,9 +51,14 @@ export function PurchaseRow({
       <View style={styles.row}>
         <CategoryIcon icon={category?.icon} color={category?.color} />
         <View style={styles.text}>
-          <AppText variant="bodyStrong" numberOfLines={1}>
-            {merchant}
-          </AppText>
+          <View style={styles.titleRow}>
+            <AppText variant="bodyStrong" numberOfLines={1} style={styles.shrink}>
+              {merchant}
+            </AppText>
+            {attachmentCount > 0 ? (
+              <Paperclip size={13} color={colors.textMuted} accessibilityLabel={`${attachmentCount} anexo(s)`} />
+            ) : null}
+          </View>
           {statementName && statementName !== merchant ? (
             <AppText variant="small" color="textMuted" numberOfLines={1}>
               {statementName}
@@ -69,6 +83,7 @@ export function PurchaseRow({
           ) : null}
         </View>
       </View>
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
     </PressableScale>
   );
 }
@@ -76,6 +91,9 @@ export function PurchaseRow({
 const useStyles = makeStyles((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   text: { flex: 1, gap: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  shrink: { flexShrink: 1 },
+  footer: { paddingLeft: 44 + spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
   right: { alignItems: 'flex-end', gap: 4 },
   installment: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 2 },
 }));

@@ -17,6 +17,8 @@ export interface User {
   pixKey?: string;
   /** Profile photo as a small JPEG data URL (see PROFILE_PHOTO_MAX_LENGTH). */
   photo?: string;
+  /** Kinds of notification the user turned off; everything else is on. */
+  notificationPrefs?: NotificationPrefs;
 }
 
 /** A 256×256 JPEG fits comfortably; anything bigger is rejected. */
@@ -139,6 +141,12 @@ export interface PurchaseInstallment {
   amountCents: Cents;
 }
 
+/**
+ * A member marks a transfer as `pending`; it only counts as received once the
+ * card holder confirms it. Payments the holder registers are confirmed at once.
+ */
+export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
+
 export interface Payment {
   id: ID;
   invoiceId: ID;
@@ -147,6 +155,87 @@ export interface Payment {
   paidAt: ISODateTime;
   registeredBy: ID;
   note?: string;
+  status: PaymentStatus;
+  /** User who confirmed or rejected it. */
+  reviewedBy?: ID;
+  reviewedAt?: ISODateTime;
+}
+
+/** A member's answer during an invoice review ("conferência") for one purchase. */
+export type ReviewStatus = 'confirmed' | 'disputed' | 'resolved';
+
+export type DisputeReason = 'not_recognized' | 'not_mine' | 'wrong_amount' | 'wrong_split' | 'other';
+
+export interface PurchaseReview {
+  id: ID;
+  familyId: ID;
+  invoiceId: ID;
+  purchaseId: ID;
+  memberId: ID;
+  status: ReviewStatus;
+  reason?: DisputeReason;
+  note?: string;
+  /** The holder's answer when closing a dispute. */
+  resolutionNote?: string;
+  resolvedBy?: ID;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+/** "JANUARIO DA SILVEIRA" on the statement is "Mercado Três Amigos" for the family. */
+export interface MerchantAlias {
+  id: ID;
+  familyId: ID;
+  /** Normalized statement name (see normalizeStatementName). */
+  statementName: string;
+  merchant: string;
+  createdBy: ID;
+  createdAt: ISODateTime;
+}
+
+/** A file attached to a purchase (receipt, screenshot) or to a dispute. */
+export interface Attachment {
+  id: ID;
+  familyId: ID;
+  purchaseId: ID;
+  reviewId?: ID;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdBy: ID;
+  createdAt: ISODateTime;
+  deletedAt?: ISODateTime;
+}
+
+export type NotificationType =
+  | 'review_started'
+  | 'dispute_opened'
+  | 'dispute_resolved'
+  | 'amount_defined'
+  | 'payment_registered'
+  | 'payment_confirmed'
+  | 'payment_rejected'
+  | 'purchase_added'
+  | 'due_reminder';
+
+/** Groups the user can turn on or off in the settings. */
+export type NotificationCategory = 'review' | 'amounts' | 'payments' | 'purchases' | 'reminders';
+
+export type NotificationPrefs = Partial<Record<NotificationCategory, boolean>>;
+
+export interface AppNotification {
+  id: ID;
+  familyId: ID;
+  recipientMemberId: ID;
+  type: NotificationType;
+  title: string;
+  body: string;
+  /** App route opened when the notification is tapped. */
+  link?: string;
+  /** Prevents the same reminder from being sent twice. */
+  dedupeKey?: string;
+  createdAt: ISODateTime;
+  readAt?: ISODateTime;
 }
 
 export interface FieldChange {
@@ -155,12 +244,23 @@ export interface FieldChange {
   to: string | null;
 }
 
-export type AuditAction = 'created' | 'updated' | 'cancelled' | 'status_changed' | 'payment_registered';
+export type AuditAction =
+  | 'created'
+  | 'updated'
+  | 'cancelled'
+  | 'removed'
+  | 'status_changed'
+  | 'payment_registered'
+  | 'payment_confirmed'
+  | 'payment_rejected'
+  | 'review_confirmed'
+  | 'review_disputed'
+  | 'dispute_resolved';
 
 export interface AuditLog {
   id: ID;
   familyId: ID;
-  entity: 'purchase' | 'invoice' | 'payment' | 'card' | 'wallet' | 'member' | 'family' | 'category';
+  entity: 'purchase' | 'invoice' | 'payment' | 'card' | 'wallet' | 'member' | 'family' | 'category' | 'alias' | 'attachment';
   entityId: ID;
   action: AuditAction;
   summary: string;

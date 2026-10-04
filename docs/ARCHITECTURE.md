@@ -14,6 +14,28 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 - Fluxo: aberta → em conferência → fechada → recebendo → paga → arquivada. A partir de "fechada", só titular/owner alteram compras.
 - A parte do próprio titular do cartão tem status "titular" (nunca fica pendente).
 - Pagamento parcial é permitido; pagamento acima do devido é rejeitado.
+- Pagamento marcado por um membro fica **aguardando a titular** e só conta como recebido depois de confirmado (a titular também pode recusar). O que a titular registra já entra confirmado. Quem tem pagamento aguardando não consegue marcar de novo além do que falta.
+- O primeiro pagamento de uma fatura fechada a coloca em "recebendo"; quando tudo foi confirmado, ela vira "paga" sozinha.
+- Quando a titular não usa o app (ex.: a Avó), quem responde pelos pagamentos e contestações do cartão é o dono da família.
+
+## Conferência e contestação
+- "Iniciar conferência" (aberta → em conferência) avisa quem participa das compras da fatura.
+- Cada compra é conferida por quem comprou e por quem paga (só quem tem conta). Cada pessoa confirma ou contesta (motivo + observação + anexo opcional). Responder de novo substitui a resposta anterior.
+- A fatura não fecha com contestação em aberto: a titular responde cada uma. Ao fechar, cada pessoa recebe o valor da sua parte.
+- Se a compra muda de valor, divisão ou comprador, as confirmações dela voltam a ficar pendentes.
+
+## Notificações
+- Criadas pelas mesmas regras do `core` (`src/data/core/notify.ts`), nunca para quem causou o evento, e respeitando as preferências da pessoa (grupos: conferência, sua parte, pagamentos, novas compras, lembretes).
+- No app: sino no início, com contador. Na web instalada (PWA), também chegam como push (Web Push com chaves VAPID derivadas do segredo do servidor, então não precisa configurar nada; `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` substituem). No iPhone, push só funciona com o app adicionado à tela de início. Push no APK Android precisa de Firebase e fica para depois.
+- Lembrete de vencimento: tarefa diária (Vercel Cron, 9h de Brasília, `GET /api/cron/daily`) avisa 2 dias antes quem ainda deve. Não repete o mesmo lembrete. Com `CRON_SECRET` definido, só a Vercel consegue chamar.
+
+## Apelidos de estabelecimento
+- Por família: "JANUARIO DA SILVEIRA" → "Mercado Três Amigos". O nome da fatura é comparado sem acento, caixa ou espaços extras.
+- São aprendidos ao salvar uma compra com nome na fatura diferente do estabelecimento; também dá para criar e apagar à mão. Uma compra com só o nome da fatura recebe o apelido, e criar um apelido renomeia compras que ainda mostravam o nome cru.
+
+## Anexos
+- Foto, print ou PDF ligado à compra (ou à contestação). Fotos viram JPEG de até 1600 px; limite de 2 MB por arquivo e 10 por compra.
+- O conteúdo fica numa tabela separada (`attachment_blobs`) e só é carregado quando alguém abre o anexo, para a fatura continuar leve. Remover esconde o anexo (soft delete).
 
 ## Camada de dados
 A UI chama hooks → repositórios (`src/data/repositories.ts`). As regras de negócio dos repositórios ficam em `src/data/core` e operam sobre um `Store` (um retrato em memória dos dados). Existem dois backends:
@@ -31,6 +53,7 @@ A UI chama hooks → repositórios (`src/data/repositories.ts`). As regras de ne
 - Quando o volume crescer, as operações mais usadas podem virar consultas diretas sem mudar o app, porque o contrato continua sendo o dos repositórios.
 
 ## Ainda falta
+- Push no app Android (APK): precisa de uma conta Firebase.
 - Envio de email (recuperação de senha): o pedido é aceito, mas o email ainda não é enviado.
 - Token guardado com AsyncStorage; no app nativo, trocar por armazenamento seguro.
 

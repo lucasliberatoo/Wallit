@@ -1,4 +1,4 @@
-import type { HistoryFilters } from '@/data';
+import type { HistoryFilters, StatisticsFilters } from '@/data';
 
 /** Centralized query keys so invalidation stays consistent. */
 export const queryKeys = {
@@ -18,4 +18,10 @@ export const queryKeys = {
   categories: (familyId: string) => ['families', familyId, 'categories'] as const,
   purchase: (purchaseId: string) => ['purchases', purchaseId] as const,
   purchases: (familyId: string, filters: HistoryFilters) => ['families', familyId, 'purchases', filters] as const,
+  aliases: (familyId: string) => ['families', familyId, 'aliases'] as const,
+  statistics: (familyId: string, filters: StatisticsFilters) => ['families', familyId, 'statistics', filters] as const,
+  notifications: ['notifications'] as const,
+  unreadNotifications: ['notifications', 'unread'] as const,
+  attachment: (attachmentId: string) => ['attachments', attachmentId] as const,
+  pushKey: ['push', 'key'] as const,
 };

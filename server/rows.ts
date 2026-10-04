@@ -2,15 +2,20 @@ import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
 
 import type { Collection, Database, Invite, StoredUser } from '../src/data/core';
 import type {
+  AppNotification,
+  Attachment,
   AuditLog,
   Card,
   Category,
   Family,
   FamilyMember,
   Invoice,
+  MerchantAlias,
+  NotificationPrefs,
   Payment,
   Purchase,
   PurchaseInstallment,
+  PurchaseReview,
   PurchaseShare,
   Wallet,
 } from '../src/domain';
@@ -277,6 +282,9 @@ const payments: Mapper<Payment, typeof t.payments.$inferInsert> = {
     paidAt: iso(r.paidAt as Date),
     registeredBy: r.registeredBy,
     note: optional(r.note),
+    status: r.status as Payment['status'],
+    reviewedBy: optional(r.reviewedBy),
+    reviewedAt: r.reviewedAt ? iso(r.reviewedAt) : undefined,
   }),
   toRow: (p, db) => ({
     id: p.id,
@@ -287,6 +295,118 @@ const payments: Mapper<Payment, typeof t.payments.$inferInsert> = {
     paidAt: new Date(p.paidAt),
     registeredBy: p.registeredBy,
     note: p.note ?? null,
+    status: p.status,
+    reviewedBy: p.reviewedBy ?? null,
+    reviewedAt: date(p.reviewedAt),
+  }),
+};
+
+const reviews: Mapper<PurchaseReview, typeof t.purchaseReviews.$inferInsert> = {
+  table: t.purchaseReviews,
+  key: t.purchaseReviews.id,
+  keyOf: (r) => r.id,
+  fromRow: (r) => ({
+    id: r.id,
+    familyId: r.familyId,
+    invoiceId: r.invoiceId,
+    purchaseId: r.purchaseId,
+    memberId: r.memberId,
+    status: r.status as PurchaseReview['status'],
+    reason: optional(r.reason) as PurchaseReview['reason'],
+    note: optional(r.note),
+    resolutionNote: optional(r.resolutionNote),
+    resolvedBy: optional(r.resolvedBy),
+    createdAt: iso(r.createdAt as Date),
+    updatedAt: iso(r.updatedAt as Date),
+  }),
+  toRow: (r) => ({
+    id: r.id,
+    familyId: r.familyId,
+    invoiceId: r.invoiceId,
+    purchaseId: r.purchaseId,
+    memberId: r.memberId,
+    status: r.status,
+    reason: r.reason ?? null,
+    note: r.note ?? null,
+    resolutionNote: r.resolutionNote ?? null,
+    resolvedBy: r.resolvedBy ?? null,
+    createdAt: new Date(r.createdAt),
+    updatedAt: new Date(r.updatedAt),
+  }),
+};
+
+const aliases: Mapper<MerchantAlias, typeof t.merchantAliases.$inferInsert> = {
+  table: t.merchantAliases,
+  key: t.merchantAliases.id,
+  keyOf: (a) => a.id,
+  fromRow: (r) => ({
+    id: r.id,
+    familyId: r.familyId,
+    statementName: r.statementName,
+    merchant: r.merchant,
+    createdBy: r.createdBy,
+    createdAt: iso(r.createdAt as Date),
+  }),
+  toRow: (a) => ({ ...a, createdAt: new Date(a.createdAt) }),
+};
+
+const attachments: Mapper<Attachment, typeof t.attachments.$inferInsert> = {
+  table: t.attachments,
+  key: t.attachments.id,
+  keyOf: (a) => a.id,
+  fromRow: (r) => ({
+    id: r.id,
+    familyId: r.familyId,
+    purchaseId: r.purchaseId,
+    reviewId: optional(r.reviewId),
+    name: r.name,
+    mimeType: r.mimeType,
+    sizeBytes: r.sizeBytes,
+    createdBy: r.createdBy,
+    createdAt: iso(r.createdAt as Date),
+    deletedAt: r.deletedAt ? iso(r.deletedAt) : undefined,
+  }),
+  toRow: (a) => ({
+    id: a.id,
+    familyId: a.familyId,
+    purchaseId: a.purchaseId,
+    reviewId: a.reviewId ?? null,
+    name: a.name,
+    mimeType: a.mimeType,
+    sizeBytes: a.sizeBytes,
+    createdBy: a.createdBy,
+    createdAt: new Date(a.createdAt),
+    deletedAt: date(a.deletedAt),
+  }),
+};
+
+const notifications: Mapper<AppNotification, typeof t.notifications.$inferInsert> = {
+  table: t.notifications,
+  key: t.notifications.id,
+  keyOf: (n) => n.id,
+  fromRow: (r) => ({
+    id: r.id,
+    familyId: r.familyId,
+    recipientMemberId: r.recipientMemberId,
+    type: r.type as AppNotification['type'],
+    title: r.title,
+    body: r.body,
+    link: optional(r.link),
+    dedupeKey: optional(r.dedupeKey),
+    createdAt: iso(r.createdAt as Date),
+    readAt: r.readAt ? iso(r.readAt) : undefined,
+  }),
+  toRow: (n) => ({
+    id: n.id,
+    familyId: n.familyId,
+    recipientMemberId: n.recipientMemberId,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    link: n.link ?? null,
+    dedupeKey: n.dedupeKey ?? null,
+    createdAt: new Date(n.createdAt),
+    readAt: date(n.readAt),
   }),
 };
 
@@ -318,8 +438,29 @@ const auditLogs: Mapper<AuditLog, typeof t.auditLogs.$inferInsert> = {
   }),
 };
 
+/** Better Auth may hand JSON fields back as text. */
+export function parsePrefs(value: unknown): NotificationPrefs | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as NotificationPrefs;
+    } catch {
+      return undefined;
+    }
+  }
+  return value as NotificationPrefs;
+}
+
 export function userFromRow(r: typeof t.user.$inferSelect): StoredUser {
-  return { id: r.id, name: r.name, email: r.email, avatarColor: r.avatarColor, pixKey: optional(r.pixKey), photo: optional(r.image) };
+  return {
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    avatarColor: r.avatarColor,
+    pixKey: optional(r.pixKey),
+    photo: optional(r.image),
+    notificationPrefs: parsePrefs(r.notificationPrefs),
+  };
 }
 
 type FamilyCollection = Exclude<Collection, 'users'>;
@@ -341,6 +482,10 @@ export const MAPPERS: { collection: FamilyCollection; mapper: Mapper<never, Reco
     ['shares', shares],
     ['installments', installments],
     ['payments', payments],
+    ['reviews', reviews],
+    ['aliases', aliases],
+    ['attachments', attachments],
+    ['notifications', notifications],
     ['auditLogs', auditLogs],
   ] as const
 ).map(([collection, mapper]) => ({ collection, mapper: mapper as unknown as Mapper<never, Record<string, unknown>> }));

@@ -24,27 +24,41 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
   const register = useRegisterPayment();
   const invoiceId = invoice.invoice.id;
   const memberId = balance.memberId;
-  const [amount, setAmount] = useState(balance.pendingCents);
+  const open = balance.pendingCents - balance.awaitingCents;
+  const [amount, setAmount] = useState(open);
   const [note, setNote] = useState('');
+  // The holder (or an owner) records money already received; a member only tells the holder they paid.
+  const confirmsNow = invoice.canManage;
+  const isMe = memberId === invoice.me.id;
 
-  const error = validatePayment({ owedCents: balance.owedCents, alreadyPaidCents: balance.paidCents, amountCents: amount });
-  const remaining = balance.pendingCents - amount;
+  const error = validatePayment({
+    owedCents: balance.owedCents,
+    alreadyPaidCents: balance.paidCents,
+    awaitingCents: balance.awaitingCents,
+    amountCents: amount,
+  });
+  const remaining = open - amount;
   const hint =
-    error === 'exceeds_pending'
-      ? `O valor passa do que falta (${formatBRL(balance.pendingCents)}).`
-      : error
-        ? 'Informe um valor.'
-        : remaining > 0
-          ? `Pagamento parcial: ainda faltará ${formatBRL(remaining)}.`
-          : 'Quita a parte desta fatura.';
+    error === 'nothing_owed'
+      ? 'Não há nada em aberto: os pagamentos já informados aguardam confirmação.'
+      : error === 'exceeds_pending'
+        ? `O valor passa do que falta (${formatBRL(open)}).`
+        : error
+          ? 'Informe um valor.'
+          : remaining > 0
+            ? `Pagamento parcial: ainda faltará ${formatBRL(remaining)}.`
+            : 'Quita a parte desta fatura.';
 
   return (
     <>
-      <PageHeader title="Registrar pagamento" subtitle={`Fatura ${formatRef(invoice.invoice.ref, { capitalize: true })}`} />
+      <PageHeader
+        title={confirmsNow ? 'Registrar pagamento' : 'Avisar pagamento'}
+        subtitle={`Fatura ${formatRef(invoice.invoice.ref, { capitalize: true })}`}
+      />
       <Screen
         footer={
           <Button
-            label="Confirmar pagamento"
+            label={confirmsNow ? 'Confirmar pagamento' : `Avisar ${invoice.holder.displayName}`}
             icon={CircleCheck}
             size="lg"
             disabled={Boolean(error)}
@@ -61,12 +75,17 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
             <AppText variant="caption" color="textSecondary">
               Deve {formatBRL(balance.owedCents)} · já pagou {formatBRL(balance.paidCents)}
             </AppText>
+            {balance.awaitingCents > 0 ? (
+              <AppText variant="small" color="warning">
+                {formatBRL(balance.awaitingCents)} aguardando confirmação
+              </AppText>
+            ) : null}
           </View>
         </Surface>
 
         <View style={styles.amount}>
           <AppText variant="caption" color="textSecondary">
-            Valor recebido por PIX
+            {confirmsNow ? 'Valor recebido por PIX' : isMe ? 'Quanto você enviou por PIX' : 'Valor enviado por PIX'}
           </AppText>
           <MoneyInput value={amount} onChangeValue={setAmount} size="hero" label="Valor do pagamento" autoFocus />
           <AppText variant="caption" color={error ? 'danger' : remaining > 0 ? 'warning' : 'success'} accessibilityLiveRegion="polite">
@@ -75,12 +94,8 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
         </View>
 
         <View style={styles.quick}>
-          <Chip label="Valor total" selected={amount === balance.pendingCents} onPress={() => setAmount(balance.pendingCents)} />
-          <Chip
-            label="Metade"
-            selected={amount === Math.round(balance.pendingCents / 2)}
-            onPress={() => setAmount(Math.round(balance.pendingCents / 2))}
-          />
+          <Chip label="Valor total" selected={amount === open} onPress={() => setAmount(open)} />
+          <Chip label="Metade" selected={amount === Math.round(open / 2)} onPress={() => setAmount(Math.round(open / 2))} />
         </View>
 
         <TextField
@@ -92,7 +107,9 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
         />
         <FormError message={register.error ? errorMessage(register.error) : null} />
         <AppText variant="small" color="textMuted">
-          O Wallit não movimenta dinheiro. Ele apenas registra o PIX feito para a titular.
+          {confirmsNow
+            ? 'O Wallit não movimenta dinheiro. Ele apenas registra o PIX recebido.'
+            : `O Wallit não movimenta dinheiro. ${invoice.holder.displayName} recebe um aviso e confirma quando o PIX cair.`}
         </AppText>
       </Screen>
     </>

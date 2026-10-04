@@ -6,3 +6,7 @@ export * from './money';
 export * from './permissions';
 export * from './split';
 export * from './types';
+export * from './aliases';
+export * from './review';
+export * from './statistics';
+export * from './attachments';

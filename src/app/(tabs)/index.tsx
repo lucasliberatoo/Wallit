@@ -1,5 +1,16 @@
 import { router } from 'expo-router';
-import { ArrowRight, Bell, CalendarClock, ChevronDown, HandCoins, Layers, UsersRound } from 'lucide-react-native';
+import {
+  ArrowRight,
+  Bell,
+  CalendarClock,
+  ChartColumn,
+  ChevronDown,
+  HandCoins,
+  Layers,
+  SearchCheck,
+  UsersRound,
+  Wallet,
+} from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { MoneyText, PurchaseRow } from '@/components/finance';
@@ -21,6 +32,7 @@ import { formatBRL } from '@/domain';
 import { useCurrentUser } from '@/features/auth/hooks';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { useHomeSummary } from '@/features/home/hooks';
+import { useUnreadCount } from '@/features/notifications/hooks';
 import { fontFamily, makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDayMonth, formatLongDate } from '@/utils/dates';
 
@@ -30,6 +42,8 @@ export default function HomeScreen() {
   const user = useCurrentUser();
   const { current, isLoading: loadingFamilies } = useCurrentFamily();
   const home = useHomeSummary(current?.family.id);
+  const unread = useUnreadCount();
+  const unreadCount = unread.data ?? 0;
   const firstName = user?.name.split(' ')[0] ?? '';
 
   const header = (
@@ -58,12 +72,21 @@ export default function HomeScreen() {
             </PressableScale>
           ) : null}
         </View>
-        <IconButton
-          icon={Bell}
-          tone="glass"
-          accessibilityLabel="Atividades recentes"
-          onPress={() => router.push('/history?tab=activity')}
-        />
+        <View>
+          <IconButton
+            icon={Bell}
+            tone="glass"
+            accessibilityLabel={unreadCount > 0 ? `Notificações, ${unreadCount} novas` : 'Notificações'}
+            onPress={() => router.push('/notifications')}
+          />
+          {unreadCount > 0 ? (
+            <View style={styles.bellBadge} pointerEvents="none">
+              <AppText variant="small" color="textOnDark" style={styles.bold}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
       </View>
     </GradientHeader>
   );
@@ -111,6 +134,32 @@ export default function HomeScreen() {
             />
           </View>
 
+          {home.data.toReview.count > 0 && home.data.toReview.invoiceId ? (
+            <ActionCard
+              icon={SearchCheck}
+              tint={colors.warning}
+              background={colors.warningSoft}
+              title={home.data.toReview.count === 1 ? '1 compra para conferir' : `${home.data.toReview.count} compras para conferir`}
+              caption="Confirme se reconhece suas compras da fatura"
+              onPress={() => router.push(`/invoice/${home.data!.toReview.invoiceId}`)}
+            />
+          ) : null}
+
+          {home.data.paymentsToConfirm.count > 0 && home.data.paymentsToConfirm.invoiceId ? (
+            <ActionCard
+              icon={Wallet}
+              tint={colors.success}
+              background={colors.successSoft}
+              title={
+                home.data.paymentsToConfirm.count === 1
+                  ? '1 pagamento para confirmar'
+                  : `${home.data.paymentsToConfirm.count} pagamentos para confirmar`
+              }
+              caption="Veja se o PIX caiu e confirme"
+              onPress={() => router.push(`/invoice/${home.data!.paymentsToConfirm.invoiceId}`)}
+            />
+          ) : null}
+
           {home.data.toReceiveCents > 0 ? (
             <Surface onPress={() => router.navigate('/invoices')} style={styles.receive} accessibilityLabel="Valores a receber">
               <View style={[styles.tileIcon, { backgroundColor: colors.successSoft }]}>
@@ -125,6 +174,15 @@ export default function HomeScreen() {
               <ArrowRight size={18} color={colors.textMuted} />
             </Surface>
           ) : null}
+
+          <ActionCard
+            icon={ChartColumn}
+            tint={colors.primary}
+            background={colors.primarySoft}
+            title="Estatísticas"
+            caption="Para onde vai o dinheiro da família"
+            onPress={() => router.push('/statistics')}
+          />
 
           <View>
             <SectionHeader title="Últimas compras" actionLabel="Ver histórico" onAction={() => router.push('/history')} />
@@ -182,6 +240,34 @@ function OwedCard({ summary }: { summary: NonNullable<ReturnType<typeof useHomeS
   );
 }
 
+interface ActionCardProps {
+  icon: typeof CalendarClock;
+  tint: string;
+  background: string;
+  title: string;
+  caption: string;
+  onPress: () => void;
+}
+
+function ActionCard({ icon: Icon, tint, background, title, caption, onPress }: ActionCardProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  return (
+    <Surface onPress={onPress} style={styles.receive} accessibilityLabel={title}>
+      <View style={[styles.tileIcon, styles.noMargin, { backgroundColor: background }]}>
+        <Icon size={20} color={tint} />
+      </View>
+      <View style={styles.flex}>
+        <AppText variant="bodyStrong">{title}</AppText>
+        <AppText variant="caption" color="textSecondary">
+          {caption}
+        </AppText>
+      </View>
+      <ArrowRight size={18} color={colors.textMuted} />
+    </Surface>
+  );
+}
+
 interface TileProps {
   icon: typeof CalendarClock;
   tint: string;
@@ -233,6 +319,21 @@ const useStyles = makeStyles((colors) => ({
   tile: { flex: 1, gap: 4 },
   tileIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
   receive: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  noMargin: { marginBottom: 0 },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.headerText,
+  },
   flex: { flex: 1 },
   list: { paddingVertical: spacing.xs },
   rowPad: { paddingHorizontal: spacing.lg },

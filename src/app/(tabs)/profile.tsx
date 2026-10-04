@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Download, History, KeyRound, LogOut, RefreshCcw, Shapes, ShieldCheck } from 'lucide-react-native';
+import { Bell, ChartColumn, Download, History, KeyRound, LogOut, RefreshCcw, Shapes, ShieldCheck, Tags } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 
@@ -93,6 +93,27 @@ export default function ProfileScreen() {
         />
         <Divider inset={spacing.lg + 32} />
         <ListRow title="Categorias" leading={<Shapes size={20} color={colors.primary} />} onPress={() => router.push('/categories')} />
+        <Divider inset={spacing.lg + 32} />
+        <ListRow
+          title="Notificações"
+          subtitle="Escolha o que quer receber"
+          leading={<Bell size={20} color={colors.primary} />}
+          onPress={() => router.push('/settings/notifications')}
+        />
+        <Divider inset={spacing.lg + 32} />
+        <ListRow
+          title="Estatísticas"
+          subtitle="Gastos por mês, categoria e pessoa"
+          leading={<ChartColumn size={20} color={colors.primary} />}
+          onPress={() => router.push('/statistics')}
+        />
+        <Divider inset={spacing.lg + 32} />
+        <ListRow
+          title="Apelidos de estabelecimentos"
+          subtitle="Nomes da fatura que o Wallit já reconhece"
+          leading={<Tags size={20} color={colors.primary} />}
+          onPress={() => router.push('/aliases')}
+        />
         <Divider inset={spacing.lg + 32} />
         <ListRow
           title="Entrar em uma família"

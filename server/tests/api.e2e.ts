@@ -16,7 +16,9 @@ import { createHttpRepositories } from '../../src/data/http/repositories';
 import type { Repositories } from '../../src/data/repositories';
 import { refKey } from '../../src/domain';
 import { app } from '../app';
+import { runDailyReminders } from '../cron';
 import { closeDb, getDb } from '../db/client';
+import * as t from '../db/schema';
 import { seedDemo } from '../seed';
 import { restoreRewrittenUrl } from '../vercel';
 
@@ -62,7 +64,8 @@ before(async () => {
 
 beforeEach(async () => {
   await getDb().execute(sql`
-    truncate table audit_logs, payments, purchase_installments, purchase_shares, purchases, categories, invoices,
+    truncate table push_subscriptions, notifications, attachment_blobs, attachments, merchant_aliases, purchase_reviews,
+      audit_logs, payments, purchase_installments, purchase_shares, purchases, categories, invoices,
       cards, wallets, family_invites, family_members, families, verification, session, account, "user" cascade`);
   await seedDemo(getDb());
 });
@@ -166,12 +169,12 @@ describe('API', () => {
     const invoices = await repos.invoices.listByCard(principal.card.id);
     const collecting = invoices.find((i) => i.invoice.status === 'collecting')!;
     const details = await repos.invoices.getDetails(collecting.invoice.id);
-    const maria = details.balances.find((b) => b.member.displayName === 'Maria')!;
-    assert.equal(maria.status, 'partial');
-    await rejects(repos.payments.register({ invoiceId: collecting.invoice.id, memberId: maria.memberId, amountCents: maria.pendingCents + 1 }));
-    await repos.payments.register({ invoiceId: collecting.invoice.id, memberId: maria.memberId, amountCents: maria.pendingCents });
+    const lucas = details.balances.find((b) => b.member.displayName === 'Lucas')!;
+    assert.equal(lucas.status, 'partial');
+    await rejects(repos.payments.register({ invoiceId: collecting.invoice.id, memberId: lucas.memberId, amountCents: lucas.pendingCents + 1 }));
+    await repos.payments.register({ invoiceId: collecting.invoice.id, memberId: lucas.memberId, amountCents: lucas.pendingCents });
     const updated = await repos.invoices.getDetails(collecting.invoice.id);
-    assert.equal(updated.balances.find((b) => b.memberId === maria.memberId)!.status, 'paid');
+    assert.equal(updated.balances.find((b) => b.memberId === lucas.memberId)!.status, 'paid');
   });
 
   it('edits a purchase, regenerates its installments and records the change', async () => {
@@ -299,5 +302,119 @@ describe('API', () => {
       getDb().execute(sql`update purchase_shares set amount_cents = amount_cents + 1 where purchase_id = ${item.purchase.id}`),
       (error: Error) => /shares add up/.test(String((error.cause as Error | undefined)?.message)),
     );
+  });
+
+  it('counts a member transfer only after the holder confirms it, and notifies both sides', async () => {
+    const maria = await signedIn('maria@wallit.app');
+    const invoiceId = maria.principal.currentInvoice!.id;
+    const lucas = await signedIn();
+    await lucas.repos.invoices.changeStatus(invoiceId, 'reviewing');
+    await lucas.repos.invoices.changeStatus(invoiceId, 'closed');
+
+    const before = await maria.repos.invoices.getDetails(invoiceId);
+    const payment = await maria.repos.payments.register({ invoiceId, memberId: before.me.id, amountCents: 1000, note: 'PIX' });
+    assert.equal(payment.status, 'pending');
+    const waiting = await maria.repos.invoices.getDetails(invoiceId);
+    assert.equal(waiting.invoice.status, 'collecting');
+    assert.equal(waiting.totals.receivedCents, before.totals.receivedCents);
+    assert.equal(waiting.totals.awaitingCents, 1000);
+
+    // The holder (Avó) has no account: the owner gets the notice and confirms.
+    const [notice] = await lucas.repos.notifications.list();
+    assert.equal(notice.type, 'payment_registered');
+    await rejects(maria.repos.payments.confirm(payment.id), 'forbidden');
+    await lucas.repos.payments.confirm(payment.id);
+    const confirmed = await maria.repos.invoices.getDetails(invoiceId);
+    assert.equal(confirmed.totals.receivedCents, before.totals.receivedCents + 1000);
+    assert.equal((await maria.repos.notifications.list())[0].type, 'payment_confirmed');
+  });
+
+  it('runs an invoice review with a dispute that blocks closing until answered', async () => {
+    const lucas = await signedIn();
+    const maria = await signedIn('maria@wallit.app');
+    const invoiceId = lucas.principal.currentInvoice!.id;
+    await lucas.repos.invoices.changeStatus(invoiceId, 'reviewing');
+    assert.equal((await maria.repos.notifications.list())[0].type, 'review_started');
+
+    const details = await maria.repos.invoices.getDetails(invoiceId);
+    const mine = details.lines.filter((line) => line.review.awaitingMe);
+    assert.ok(mine.length >= 2);
+    await maria.repos.reviews.confirm(invoiceId, mine[0].purchase.id);
+    const dispute = await maria.repos.reviews.dispute(invoiceId, mine[1].purchase.id, { reason: 'wrong_amount', note: 'Cobrado duas vezes' });
+    await rejects(lucas.repos.invoices.changeStatus(invoiceId, 'closed'), 'validation');
+    await rejects(maria.repos.reviews.resolve(dispute.id, 'ok'), 'forbidden');
+    await lucas.repos.reviews.resolve(dispute.id, 'Estorno pedido ao banco');
+    await lucas.repos.invoices.changeStatus(invoiceId, 'closed');
+
+    const reloaded = await lucas.repos.purchases.get(mine[1].purchase.id);
+    assert.equal(reloaded.disputes[0].review.resolutionNote, 'Estorno pedido ao banco');
+    const types = (await maria.repos.notifications.list()).map((n) => n.type);
+    assert.ok(types.includes('dispute_resolved') && types.includes('amount_defined'));
+    await maria.repos.notifications.markRead();
+    assert.equal(await maria.repos.notifications.unreadCount(), 0);
+  });
+
+  it('stores attachments apart from the purchase and opens them only for the family', async () => {
+    const lucas = await signedIn();
+    const [item] = await lucas.repos.purchases.search(lucas.familyId, { search: 'Amazon' });
+    const dataUrl = 'data:image/jpeg;base64,' + 'B'.repeat(4000);
+    const attachment = await lucas.repos.attachments.add({ purchaseId: item.purchase.id, name: 'cupom.jpg', mimeType: 'image/jpeg', dataUrl });
+    assert.equal((await lucas.repos.purchases.get(item.purchase.id)).attachments[0].id, attachment.id);
+    assert.equal((await lucas.repos.attachments.getData(attachment.id)).dataUrl, dataUrl);
+
+    const pedro = client();
+    await pedro.auth.signUp({ name: 'Pedro', email: 'pedro2@example.com', password: '123456' });
+    await rejects(pedro.attachments.getData(attachment.id));
+
+    await rejects(
+      lucas.repos.attachments.add({ purchaseId: item.purchase.id, name: 'x', mimeType: 'image/jpeg', dataUrl: 'data:image/jpeg;base64,' + 'A'.repeat(3_000_001) }),
+      'validation',
+    );
+  });
+
+  it('learns aliases and keeps notification settings in the session', async () => {
+    const lucas = await signedIn();
+    const aliases = await lucas.repos.aliases.list(lucas.familyId);
+    assert.ok(aliases.some((a) => a.statementName === 'JANUARIO DA SILVEIRA' && a.merchant === 'Mercado Três Amigos'));
+    await lucas.repos.aliases.save(lucas.familyId, 'uber *trip', 'Uber');
+    assert.equal((await lucas.repos.aliases.list(lucas.familyId)).filter((a) => a.statementName === 'UBER *TRIP').length, 1);
+
+    await lucas.repos.auth.updateProfile({ notificationPrefs: { purchases: false, reminders: true } });
+    const session = await lucas.repos.auth.getSession();
+    assert.deepEqual(session?.user.notificationPrefs, { purchases: false, reminders: true });
+  });
+
+  it('computes statistics on the server like on the device', async () => {
+    const lucas = await signedIn();
+    const ref = lucas.principal.currentInvoice!.ref;
+    const stats = await lucas.repos.statistics.get(lucas.familyId, { from: ref, to: ref, cardId: lucas.principal.card.id });
+    const details = await lucas.repos.invoices.getDetails(lucas.principal.currentInvoice!.id);
+    assert.equal(stats.totalCents, details.totals.totalCents);
+  });
+
+  it('sends due date reminders once, from the daily job', async () => {
+    const lucas = await signedIn();
+    const invoices = await lucas.repos.invoices.listByCard(lucas.principal.card.id);
+    const collecting = invoices.find((i) => i.invoice.status === 'collecting')!.invoice;
+    const [year, month, day] = collecting.dueDate.split('-').map(Number);
+    const twoDaysBefore = new Date(Date.UTC(year, month - 1, day - 2)).toISOString().slice(0, 10);
+
+    const first = await runDailyReminders(getDb(), twoDaysBefore);
+    assert.equal(first.families, 1);
+    const again = await runDailyReminders(getDb(), twoDaysBefore);
+    assert.equal(again.sent, 0);
+    const reminders = (await lucas.repos.notifications.list()).filter((n) => n.type === 'due_reminder');
+    assert.equal(reminders.length, 1);
+  });
+
+  it('accepts Web Push subscriptions from signed-in users', async () => {
+    const lucas = await signedIn();
+    const key = await lucas.repos.push.publicKey();
+    assert.ok(key && Buffer.from(key, 'base64url').length === 65);
+    await lucas.repos.push.subscribe({ endpoint: 'https://push.example.com/abc', keys: { p256dh: 'x', auth: 'y' } });
+    assert.equal((await getDb().select().from(t.pushSubscriptions)).length, 1);
+    await rejects(client().push.subscribe({ endpoint: 'https://push.example.com/abc', keys: { p256dh: 'x', auth: 'y' } }));
+    await lucas.repos.push.unsubscribe('https://push.example.com/abc');
+    assert.equal((await getDb().select().from(t.pushSubscriptions)).length, 0);
   });
 });

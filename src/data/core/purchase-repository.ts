@@ -1,7 +1,9 @@
-import type { Purchase } from '../../domain';
+import { formatBRL, type Purchase } from '../../domain';
 import { AppError } from '../errors';
 import type { CreatePurchaseInput } from '../models';
 import type { PurchaseRepository } from '../repositories';
+import { purchaseLink } from './labels';
+import { notify } from './notify';
 import { insertPurchase, updatePurchaseRecord } from './purchase-core';
 import type { Store } from './store';
 import { canEditPurchase, purchaseDetails, purchaseListItem, purchaseShares } from './views';
@@ -24,7 +26,18 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
       store.run(
         () => {
           store.requireMembership(input.familyId);
-          return purchaseDetails(store, insertPurchase(store, input, store.currentUserId()));
+          const purchase = insertPurchase(store, input, store.currentUserId());
+          for (const share of purchaseShares(store, purchase.id)) {
+            notify(store, {
+              familyId: purchase.familyId,
+              memberIds: [share.member.id],
+              type: 'purchase_added',
+              title: 'Nova compra para você',
+              body: `${purchase.merchant}: ${formatBRL(purchase.totalCents)}. Sua parte: ${formatBRL(share.amountCents)}.`,
+              link: purchaseLink(purchase.id),
+            });
+          }
+          return purchaseDetails(store, purchase);
         },
         { write: true },
       ),

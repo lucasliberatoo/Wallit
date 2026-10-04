@@ -25,8 +25,11 @@ export async function lockFamilies(tx: Tx, familyIds: string[]): Promise<void> {
   await tx.select({ id: t.families.id }).from(t.families).where(inArray(t.families.id, familyIds)).orderBy(t.families.id).for('update');
 }
 
-/** Loads everything the shared repositories may need for these families. */
-export async function loadSnapshot(tx: Tx, userId: string, familyIds: string[]): Promise<Database> {
+/**
+ * Loads everything the shared repositories may need for these families.
+ * Without a user (scheduled jobs) nothing is done on anyone's behalf.
+ */
+export async function loadSnapshot(tx: Tx, userId: string | null, familyIds: string[]): Promise<Database> {
   const db = emptyDatabase();
   db.sessionUserId = userId;
 
@@ -39,17 +42,19 @@ export async function loadSnapshot(tx: Tx, userId: string, familyIds: string[]):
     }
   }
 
-  const userIds = new Set<string>([userId]);
+  const userIds = new Set<string>(userId ? [userId] : []);
   db.members.forEach((m) => m.userId && userIds.add(m.userId));
   db.families.forEach((f) => userIds.add(f.createdBy));
   db.purchases.forEach((p) => userIds.add(p.createdBy));
   db.payments.forEach((p) => userIds.add(p.registeredBy));
   db.auditLogs.forEach((a) => userIds.add(a.actorUserId));
-  const users = await tx
-    .select()
-    .from(t.user)
-    .where(inArray(t.user.id, [...userIds]));
-  db.users = users.map(userFromRow);
+  if (userIds.size > 0) {
+    const users = await tx
+      .select()
+      .from(t.user)
+      .where(inArray(t.user.id, [...userIds]));
+    db.users = users.map(userFromRow);
+  }
   return db;
 }
 
@@ -79,7 +84,18 @@ export async function persistChanges(tx: Tx, before: Database, after: Database):
     for (const { key, row } of updates) await tx.update(mapper.table).set(row).where(eq(mapper.key, key));
   }
 
+  // Attachment contents are written once, never changed.
+  const newBlobs = Object.entries(after.blobs).filter(([id]) => !(id in before.blobs));
+  for (const [attachmentId, dataUrl] of newBlobs) await tx.insert(t.attachmentBlobs).values({ attachmentId, dataUrl });
+
   await persistProfile(tx, before, after);
+}
+
+/** Puts one attachment's contents in the snapshot (the repositories still check access). */
+export async function loadBlob(tx: Tx, db: Database, attachmentId: string): Promise<void> {
+  if (!db.attachments.some((a) => a.id === attachmentId)) return;
+  const [row] = await tx.select().from(t.attachmentBlobs).where(eq(t.attachmentBlobs.attachmentId, attachmentId));
+  if (row) db.blobs[attachmentId] = row.dataUrl;
 }
 
 /** Only the signed-in user's own profile can change through the repositories. */
@@ -92,7 +108,14 @@ async function persistProfile(tx: Tx, before: Database, after: Database): Promis
   if (!old || !next || stableStringify(old) === stableStringify(next)) return;
   await tx
     .update(t.user)
-    .set({ name: next.name, avatarColor: next.avatarColor, pixKey: next.pixKey ?? null, image: next.photo ?? null, updatedAt: new Date() })
+    .set({
+      name: next.name,
+      avatarColor: next.avatarColor,
+      pixKey: next.pixKey ?? null,
+      image: next.photo ?? null,
+      notificationPrefs: next.notificationPrefs ?? null,
+      updatedAt: new Date(),
+    })
     .where(eq(t.user.id, userId));
 }
 

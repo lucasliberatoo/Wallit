@@ -1,10 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { CreditCard, UsersRound } from 'lucide-react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
 import { EmptyState, LoadingState } from '@/components/ui';
 import { errorMessage } from '@/data';
+import { useUploadPicked } from '@/features/attachments/hooks';
+import type { PickedFile } from '@/features/attachments/pick-attachment';
 import { FormError } from '@/features/auth/FormError';
+import { showError } from '@/utils/confirm';
 import { useFamilyCards } from '@/features/cards/hooks';
 import { useCategories } from '@/features/categories/hooks';
 import { useCurrentFamily, useMembers } from '@/features/families/hooks';
@@ -85,6 +89,8 @@ function NewPurchaseForm(props: {
   categories: NonNullable<ReturnType<typeof useCategories>['data']>;
 }) {
   const create = useCreatePurchase();
+  const uploads = useUploadPicked();
+  const [files, setFiles] = useState<PickedFile[]>([]);
   const form = usePurchaseForm(
     initialPurchaseForm({ cardId: props.defaultCardId, buyerId: props.meId, shares: [{ memberId: props.meId, amountCents: 0 }] }),
   );
@@ -98,11 +104,17 @@ function NewPurchaseForm(props: {
         cards={props.cards}
         categories={props.categories}
         submitLabel="Salvar compra"
-        submitting={create.isPending}
+        submitting={create.isPending || uploads.isPending}
+        files={files}
+        onFilesChange={setFiles}
         error={<FormError message={create.error ? errorMessage(create.error) : null} />}
         onSubmit={() =>
           create.mutate(form.toInput(props.familyId), {
-            onSuccess: (details) => router.replace(`/purchase/${details.purchase.id}?created=1`),
+            onSuccess: async (details) => {
+              const failed = await uploads.upload(details.purchase.id, files);
+              router.replace(`/purchase/${details.purchase.id}?created=1`);
+              if (failed > 0) showError('Compra salva', 'Alguns anexos não foram enviados. Tente de novo pela tela da compra.');
+            },
           })
         }
       />

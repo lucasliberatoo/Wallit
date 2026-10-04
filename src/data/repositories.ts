@@ -1,21 +1,43 @@
-import type { Category, FamilyMember, ID, Invoice, InvoiceRef, InvoiceStatus, Payment, Role, User, Wallet, Card, Family } from '../domain';
 import type {
+  Attachment,
+  Card,
+  Category,
+  Family,
+  FamilyMember,
+  ID,
+  Invoice,
+  InvoiceRef,
+  InvoiceStatus,
+  Payment,
+  PurchaseReview,
+  Role,
+  User,
+  Wallet,
+} from '../domain';
+import type {
+  AddAttachmentInput,
   AddMemberInput,
+  AttachmentData,
   AuditLogView,
   CardSummary,
   CategoryInput,
   CreateCardInput,
   CreatePurchaseInput,
+  DisputeInput,
   FamilySummary,
   HistoryFilters,
   HomeSummary,
   InvoiceDetails,
   InvoiceListItem,
+  MerchantAlias,
+  NotificationView,
   PurchaseDetails,
   PurchaseListItem,
   RegisterPaymentInput,
   Session,
   SignUpInput,
+  StatisticsFilters,
+  StatisticsView,
   UpdatePurchaseInput,
   WalletSummary,
 } from './models';
@@ -32,7 +54,7 @@ export interface AuthRepository {
   signOut(): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
   /** `photo: ''` removes the photo. */
-  updateProfile(changes: Partial<Pick<User, 'name' | 'pixKey' | 'avatarColor' | 'photo'>>): Promise<User>;
+  updateProfile(changes: Partial<Pick<User, 'name' | 'pixKey' | 'avatarColor' | 'photo' | 'notificationPrefs'>>): Promise<User>;
 }
 
 export interface FamilyRepository {
@@ -86,11 +108,59 @@ export interface CategoryRepository {
 
 export interface PaymentRepository {
   register(input: RegisterPaymentInput): Promise<Payment>;
+  /** Holder confirms a transfer a member marked as sent. */
+  confirm(paymentId: ID): Promise<Payment>;
+  reject(paymentId: ID, note?: string): Promise<Payment>;
+}
+
+/** Invoice review ("conferência"): each person confirms or contests their purchases. */
+export interface ReviewRepository {
+  confirm(invoiceId: ID, purchaseId: ID): Promise<PurchaseReview>;
+  dispute(invoiceId: ID, purchaseId: ID, input: DisputeInput): Promise<PurchaseReview>;
+  /** Holder answers a dispute. */
+  resolve(reviewId: ID, note: string): Promise<PurchaseReview>;
+}
+
+export interface AliasRepository {
+  list(familyId: ID): Promise<MerchantAlias[]>;
+  /** Creates or replaces the alias for a statement name. */
+  save(familyId: ID, statementName: string, merchant: string): Promise<MerchantAlias>;
+  remove(aliasId: ID): Promise<void>;
+}
+
+export interface NotificationRepository {
+  list(): Promise<NotificationView[]>;
+  unreadCount(): Promise<number>;
+  /** Marks the given notifications (or all of them) as read. */
+  markRead(ids?: ID[]): Promise<void>;
+}
+
+export interface StatisticsRepository {
+  get(familyId: ID, filters: StatisticsFilters): Promise<StatisticsView>;
+}
+
+export interface AttachmentRepository {
+  add(input: AddAttachmentInput): Promise<Attachment>;
+  remove(attachmentId: ID): Promise<void>;
+  getData(attachmentId: ID): Promise<AttachmentData>;
 }
 
 export interface DashboardRepository {
   home(familyId: ID): Promise<HomeSummary>;
   activity(familyId: ID): Promise<AuditLogView[]>;
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+/** Notifications on the device (Web Push for the installed web app). */
+export interface PushRepository {
+  /** `null` when this backend can't send push (offline demo). */
+  publicKey(): Promise<string | null>;
+  subscribe(subscription: PushSubscriptionInput): Promise<void>;
+  unsubscribe(endpoint: string): Promise<void>;
 }
 
 export interface Repositories {
@@ -102,5 +172,11 @@ export interface Repositories {
   purchases: PurchaseRepository;
   categories: CategoryRepository;
   payments: PaymentRepository;
+  reviews: ReviewRepository;
+  aliases: AliasRepository;
+  notifications: NotificationRepository;
+  statistics: StatisticsRepository;
+  attachments: AttachmentRepository;
+  push: PushRepository;
   dashboard: DashboardRepository;
 }

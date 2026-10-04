@@ -1,5 +1,7 @@
 import {
   addMonths,
+  formatBRL,
+  monthName,
   type Card,
   closingDateFor,
   type FamilyMember,
@@ -61,7 +63,7 @@ export function seedDemoDatabase(store: Store): void {
   db.sessionUserId = users[0].id;
 
   const familyId = newId('fam');
-  db.families.push({ id: familyId, name: 'Família Silva', color: palette.orange500, createdBy: users[0].id, createdAt });
+  db.families.push({ id: familyId, name: 'Família Silva', color: palette.blue500, createdBy: users[0].id, createdAt });
 
   const member = (displayName: string, role: FamilyMember['role'], avatarColor: string, userId: ID | null = null): FamilyMember => {
     const m: FamilyMember = { id: newId('mem'), familyId, userId, displayName, role, avatarColor, status: 'active', joinedAt: createdAt };
@@ -416,6 +418,9 @@ export function seedDemoDatabase(store: Store): void {
       amountCents: cents,
       paidAt: `${invoice.dueDate}T12:00:00.000Z`,
       registeredBy: users[0].id,
+      status: 'confirmed',
+      reviewedBy: users[0].id,
+      reviewedAt: `${invoice.dueDate}T12:00:00.000Z`,
     });
   };
   const settle = (invoice: Invoice, status: InvoiceStatus) => {
@@ -445,5 +450,87 @@ export function seedDemoDatabase(store: Store): void {
   // Secondary card's previous invoices are already settled.
   for (const invoice of db.invoices.filter((i) => i.cardId === secundario.id && i.dueDate < today)) settle(invoice, 'paid');
 
+  seedPhaseTwo(store, { lucas, maria, users, secundario, previousInvoice });
   db.sessionUserId = null;
+}
+
+/**
+ * Review, dispute, a payment waiting for confirmation and a few notifications,
+ * so the demo shows the whole monthly cycle.
+ */
+function seedPhaseTwo(
+  store: Store,
+  ctx: { lucas: FamilyMember; maria: FamilyMember; users: StoredUser[]; secundario: Card; previousInvoice?: Invoice },
+): void {
+  const { db } = store;
+  const { lucas, maria, users, secundario, previousInvoice } = ctx;
+  const now = new Date().toISOString();
+  const ago = (hours: number) => new Date(Date.now() - hours * 3600_000).toISOString();
+
+  // Lucas holds the secondary card: its current invoice is under review.
+  const reviewing = store.findInvoice(secundario.id, invoiceRefForDate(todayISO(), secundario.closingDay));
+  const mercadoLivre = db.purchases.find((p) => p.merchant === 'Mercado Livre');
+  if (reviewing && mercadoLivre) {
+    reviewing.status = 'reviewing';
+    db.reviews.push({
+      id: newId('rev'),
+      familyId: reviewing.familyId,
+      invoiceId: reviewing.id,
+      purchaseId: mercadoLivre.id,
+      memberId: maria.id,
+      status: 'disputed',
+      reason: 'wrong_amount',
+      note: 'Acho que o frete veio cobrado duas vezes.',
+      createdAt: ago(5),
+      updatedAt: ago(5),
+    });
+    db.notifications.push({
+      id: newId('ntf'),
+      familyId: reviewing.familyId,
+      recipientMemberId: lucas.id,
+      type: 'dispute_opened',
+      title: 'Compra contestada',
+      body: `Maria não reconhece Mercado Livre (R$ 189,00).`,
+      link: `/purchase/${mercadoLivre.id}`,
+      createdAt: ago(5),
+    });
+  }
+
+  // Maria marked a transfer on the previous invoice; the owner confirms it.
+  if (previousInvoice) {
+    const pending = invoiceDetails(store, previousInvoice).balances.find((b) => b.memberId === maria.id)?.pendingCents ?? 0;
+    if (pending > 0) {
+      db.payments.push({
+        id: newId('pay'),
+        invoiceId: previousInvoice.id,
+        memberId: maria.id,
+        amountCents: pending,
+        paidAt: ago(3),
+        registeredBy: users[1].id,
+        note: 'PIX enviado',
+        status: 'pending',
+      });
+      db.notifications.push({
+        id: newId('ntf'),
+        familyId: previousInvoice.familyId,
+        recipientMemberId: lucas.id,
+        type: 'payment_registered',
+        title: 'Pagamento para confirmar',
+        body: `Maria marcou um pagamento de ${formatBRL(pending)}.`,
+        link: `/invoice/${previousInvoice.id}`,
+        createdAt: ago(3),
+      });
+    }
+    db.notifications.push({
+      id: newId('ntf'),
+      familyId: previousInvoice.familyId,
+      recipientMemberId: lucas.id,
+      type: 'amount_defined',
+      title: 'Sua parte foi definida',
+      body: `Sua parte da fatura de ${monthName(previousInvoice.ref.month)} (Cartão Principal) foi calculada.`,
+      link: `/invoice/${previousInvoice.id}`,
+      createdAt: ago(72),
+      readAt: now,
+    });
+  }
 }

@@ -16,7 +16,12 @@ export async function pickProfilePhoto(): Promise<string | null> {
   const side = Math.min(asset.width, asset.height);
   const context = ImageManipulator.manipulate(asset.uri);
   if (asset.width !== asset.height && side > 0) {
-    context.crop({ originX: Math.floor((asset.width - side) / 2), originY: Math.floor((asset.height - side) / 2), width: side, height: side });
+    context.crop({
+      originX: Math.floor((asset.width - side) / 2),
+      originY: Math.floor((asset.height - side) / 2),
+      width: side,
+      height: side,
+    });
   }
   context.resize({ width: PHOTO_SIZE, height: PHOTO_SIZE });
   const image = await context.renderAsync();

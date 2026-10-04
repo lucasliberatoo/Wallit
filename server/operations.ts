@@ -1,11 +1,12 @@
 import { eq } from 'drizzle-orm';
 
-import { createCoreRepositories, Store } from '../src/data/core';
+import { createCoreRepositories, type Database, Store } from '../src/data/core';
 import { AppError } from '../src/data/errors';
 import type { Repositories } from '../src/data/repositories';
 import type { Db } from './db/client';
 import * as t from './db/schema';
-import { lockFamilies, loadSnapshot, memberFamilyIds, persistChanges, type Tx } from './unit-of-work';
+import type { PushMessage } from './push';
+import { loadBlob, lockFamilies, loadSnapshot, memberFamilyIds, persistChanges, type Tx } from './unit-of-work';
 
 /**
  * Every repository method the app may call through the API, and whether it
@@ -46,6 +47,21 @@ export const OPERATIONS = {
   'categories.remove': 'write',
   'categories.reorder': 'write',
   'payments.register': 'write',
+  'payments.confirm': 'write',
+  'payments.reject': 'write',
+  'reviews.confirm': 'write',
+  'reviews.dispute': 'write',
+  'reviews.resolve': 'write',
+  'aliases.list': 'read',
+  'aliases.save': 'write',
+  'aliases.remove': 'write',
+  'notifications.list': 'read',
+  'notifications.unreadCount': 'read',
+  'notifications.markRead': 'write',
+  'statistics.get': 'read',
+  'attachments.add': 'write',
+  'attachments.remove': 'write',
+  'attachments.getData': 'read',
   'dashboard.home': 'read',
   'dashboard.activity': 'read',
 } as const satisfies Record<string, 'read' | 'write'>;
@@ -66,18 +82,34 @@ async function extraFamilies(tx: Tx, name: OperationName, args: unknown[]): Prom
   return invite ? [invite.familyId] : [];
 }
 
+/** Notifications created by a write, addressed to the users' devices. */
+export function newPushMessages(before: Database, after: Database): PushMessage[] {
+  const known = new Set(before.notifications.map((n) => n.id));
+  return after.notifications.flatMap((notification) => {
+    if (known.has(notification.id)) return [];
+    const userId = after.members.find((m) => m.id === notification.recipientMemberId)?.userId;
+    return userId ? [{ userId, id: notification.id, title: notification.title, body: notification.body, link: notification.link }] : [];
+  });
+}
+
 /**
  * Runs one repository method for the signed-in user inside a transaction:
  * load the user's families, run the shared business rules, write back what
  * changed. Families the user doesn't belong to are never loaded, so they
  * can't be read or changed.
  */
-export async function runOperation(db: Db, userId: string, name: OperationName, args: unknown[]): Promise<unknown> {
+export async function runOperation(
+  db: Db,
+  userId: string,
+  name: OperationName,
+  args: unknown[],
+): Promise<{ result: unknown; pushes: PushMessage[] }> {
   const writes = OPERATIONS[name] === 'write';
   return db.transaction(async (tx) => {
     const familyIds = [...new Set([...(await memberFamilyIds(tx, userId)), ...(await extraFamilies(tx, name, args))])];
     if (writes) await lockFamilies(tx, familyIds);
     const snapshot = await loadSnapshot(tx, userId, familyIds);
+    if (name === 'attachments.getData' && typeof args[0] === 'string') await loadBlob(tx, snapshot, args[0]);
     const before = structuredClone(snapshot);
     const store = new Store({ persistence: { load: async () => snapshot, save: async () => undefined } });
     const repos = createCoreRepositories(store);
@@ -87,7 +119,8 @@ export async function runOperation(db: Db, userId: string, name: OperationName, 
     if (typeof method !== 'function') throw new AppError('not_found', 'Operação desconhecida.');
     const result = await method(...args);
 
-    if (writes) await persistChanges(tx, before, store.db);
-    return result ?? null;
+    if (!writes) return { result: result ?? null, pushes: [] };
+    await persistChanges(tx, before, store.db);
+    return { result: result ?? null, pushes: newPushMessages(before, store.db) };
   });
 }

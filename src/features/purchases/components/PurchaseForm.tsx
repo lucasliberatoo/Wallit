@@ -6,7 +6,11 @@ import { CategoryIcon } from '@/components/finance';
 import { Screen } from '@/components/layout';
 import { AppText, Avatar, Button, Chip, MoneyInput, PressableScale, TextField } from '@/components/ui';
 import type { CardSummary } from '@/data';
-import type { Category, FamilyMember } from '@/domain';
+import { type Category, type FamilyMember, MAX_ATTACHMENTS_PER_PURCHASE, normalizeStatementName } from '@/domain';
+import { useAliases } from '@/features/aliases/hooks';
+import { AttachButtons } from '@/features/attachments/components/AttachButtons';
+import { PickedFiles } from '@/features/attachments/components/PickedFiles';
+import type { PickedFile } from '@/features/attachments/pick-attachment';
 import { usePurchaseSearch } from '@/features/purchases/hooks';
 import { cardThemes, radius, spacing, useTheme } from '@/theme';
 import { addDaysISO, formatDate, parseBRDate, todayISO } from '@/utils/dates';
@@ -27,6 +31,11 @@ export interface PurchaseFormProps {
   error?: React.ReactNode;
   /** Installments cannot change after creation (they are already in invoices). */
   lockInstallments?: boolean;
+  /** Files picked in the form, uploaded after saving. */
+  files: PickedFile[];
+  onFilesChange: (files: PickedFile[]) => void;
+  /** Attachments the purchase already has (edit). */
+  existingAttachments?: number;
 }
 
 export function PurchaseForm({
@@ -40,10 +49,31 @@ export function PurchaseForm({
   onSubmit,
   error,
   lockInstallments,
+  files,
+  onFilesChange,
+  existingAttachments = 0,
 }: PurchaseFormProps) {
   const { colors } = useTheme();
   const { state, dispatch, split, canSave, missing, installmentValue } = form;
-  const [showMore, setShowMore] = useState(Boolean(state.statementName || state.note));
+  const [showMore, setShowMore] = useState(Boolean(state.statementName || state.note || files.length));
+  const aliases = useAliases(familyId);
+  // Merchant name filled in from an alias; replaced again while the user doesn't type their own.
+  const [aliasFill, setAliasFill] = useState<string | null>(null);
+
+  const changeStatementName = (value: string) => {
+    dispatch({ type: 'setField', field: 'statementName', value });
+    const key = normalizeStatementName(value);
+    const alias = key ? aliases.data?.find((a) => a.statementName === key) : undefined;
+    const merchantIsMine = state.merchant.trim() !== '' && state.merchant !== aliasFill;
+    if (merchantIsMine) return;
+    if (alias) {
+      dispatch({ type: 'setField', field: 'merchant', value: alias.merchant });
+      setAliasFill(alias.merchant);
+    } else if (aliasFill) {
+      dispatch({ type: 'setField', field: 'merchant', value: '' });
+      setAliasFill(null);
+    }
+  };
   const [customDate, setCustomDate] = useState('');
   const recent = usePurchaseSearch(familyId, {});
 
@@ -239,7 +269,11 @@ export function PurchaseForm({
 
         <PressableScale onPress={() => setShowMore((v) => !v)} style={styles.more} accessibilityLabel="Mais detalhes">
           <AppText variant="caption" color="primary">
-            {showMore ? 'Menos detalhes' : 'Nome na fatura e observação'}
+            {showMore
+              ? 'Menos detalhes'
+              : files.length > 0
+                ? `Nome na fatura, observação e anexos (${files.length})`
+                : 'Nome na fatura, observação e anexos'}
           </AppText>
           {showMore ? <ChevronUp size={16} color={colors.primary} /> : <ChevronDown size={16} color={colors.primary} />}
         </PressableScale>
@@ -249,9 +283,13 @@ export function PurchaseForm({
               label="Nome que aparece na fatura"
               placeholder="Ex.: JANUARIO DA SILVEIRA"
               autoCapitalize="characters"
-              hint="Ajuda todo mundo a reconhecer a compra na fatura do banco."
+              hint={
+                aliasFill && state.merchant === aliasFill
+                  ? `Reconhecido como "${aliasFill}" pelos apelidos da família.`
+                  : 'Ajuda todo mundo a reconhecer a compra na fatura do banco.'
+              }
               value={state.statementName}
-              onChangeText={(value) => dispatch({ type: 'setField', field: 'statementName', value })}
+              onChangeText={changeStatementName}
               maxLength={60}
             />
             <TextField
@@ -262,6 +300,13 @@ export function PurchaseForm({
               multiline
               maxLength={200}
             />
+            <AppText variant="caption" color="textSecondary">
+              Anexos: print da compra online, nota ou comprovante
+            </AppText>
+            <PickedFiles files={files} onRemove={(index) => onFilesChange(files.filter((_, i) => i !== index))} />
+            {files.length + existingAttachments < MAX_ATTACHMENTS_PER_PURCHASE ? (
+              <AttachButtons onPicked={(file) => onFilesChange([...files, file])} disabled={submitting} />
+            ) : null}
           </View>
         ) : null}
 

@@ -1,4 +1,6 @@
 import type {
+  AppNotification,
+  Attachment,
   AuditLog,
   Card,
   CardBrand,
@@ -12,12 +14,18 @@ import type {
   InvoiceRef,
   InvoiceTotals,
   ISODate,
+  LineReviewStatus,
   MemberBalance,
+  MerchantAlias,
+  DisputeReason,
   Payment,
   Purchase,
   PurchaseInstallment,
+  PurchaseReview,
+  ReviewProgress,
   Role,
   ShareInput,
+  Statistics,
   User,
   Wallet,
 } from '../domain';
@@ -55,6 +63,22 @@ export interface ShareView {
   amountCents: Cents;
 }
 
+export interface DisputeView {
+  review: PurchaseReview;
+  member: FamilyMember;
+}
+
+/** Where a purchase stands in the invoice review ("conferência"). */
+export interface LineReview {
+  status: LineReviewStatus;
+  /** People who still have to confirm or contest it. */
+  pendingMembers: FamilyMember[];
+  disputes: DisputeView[];
+  myReview: PurchaseReview | null;
+  /** The signed-in user is involved and hasn't answered yet. */
+  awaitingMe: boolean;
+}
+
 /** One installment of a purchase, as it appears inside an invoice. */
 export interface InvoiceLine {
   installment: PurchaseInstallment;
@@ -63,6 +87,8 @@ export interface InvoiceLine {
   buyer: FamilyMember;
   /** Each member's part of this installment. */
   shares: ShareView[];
+  review: LineReview;
+  attachmentCount: number;
 }
 
 export interface MemberBalanceView extends MemberBalance {
@@ -76,8 +102,17 @@ export interface InvoiceDetails {
   lines: InvoiceLine[];
   balances: MemberBalanceView[];
   totals: InvoiceTotals;
-  payments: Payment[];
+  payments: PaymentView[];
   me: FamilyMember;
+  reviewProgress: ReviewProgress;
+  /** The signed-in user can manage this invoice (holder or owner). */
+  canManage: boolean;
+  /** Where members send their part ("Copiar chave PIX"). */
+  holderPixKey: string | null;
+}
+
+export interface PaymentView extends Payment {
+  member: FamilyMember;
 }
 
 export interface InvoiceListItem {
@@ -106,6 +141,13 @@ export interface PurchaseDetails {
   installments: { installment: PurchaseInstallment; invoice: Invoice }[];
   history: AuditLogView[];
   canEdit: boolean;
+  /** Holder power over the card: answers disputes, removes any attachment. */
+  canManage: boolean;
+  me: FamilyMember;
+  /** Review state while one of its invoices is being reviewed. */
+  review: (LineReview & { invoiceId: ID }) | null;
+  attachments: Attachment[];
+  disputes: DisputeView[];
 }
 
 export interface HomeSummary {
@@ -119,7 +161,31 @@ export interface HomeSummary {
   recentPurchases: PurchaseListItem[];
   activeInstallments: { count: number; remainingCents: Cents };
   myCurrentShareCents: Cents;
+  /** Purchases waiting for my confirmation in invoices under review. */
+  toReview: { count: number; invoiceId: ID | null };
+  /** Payments other members marked, waiting for me as holder. */
+  paymentsToConfirm: { count: number; invoiceId: ID | null };
 }
+
+export interface NotificationView extends AppNotification {
+  familyName: string;
+}
+
+export interface StatisticsFilters {
+  from: InvoiceRef;
+  to: InvoiceRef;
+  cardId?: ID;
+  memberId?: ID;
+  categoryId?: ID;
+}
+
+export interface StatisticsView extends Statistics {
+  categories: Category[];
+  members: FamilyMember[];
+  cards: Card[];
+}
+
+export type { MerchantAlias };
 
 export interface HistoryFilters {
   search?: string;
@@ -175,6 +241,26 @@ export interface CategoryInput {
   name: string;
   icon: string;
   color: string;
+}
+
+export interface DisputeInput {
+  reason: DisputeReason;
+  note?: string;
+}
+
+export interface AddAttachmentInput {
+  purchaseId: ID;
+  /** Attaches the file to a dispute about the purchase. */
+  reviewId?: ID;
+  name: string;
+  mimeType: string;
+  /** `data:<mime>;base64,...` */
+  dataUrl: string;
+}
+
+export interface AttachmentData {
+  attachment: Attachment;
+  dataUrl: string;
 }
 
 export interface RegisterPaymentInput {
