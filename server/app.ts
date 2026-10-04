@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
@@ -27,7 +28,31 @@ app.use(
   }),
 );
 
-app.get('/health', (c) => c.json({ ok: true }));
+/** Checks the function, the database and the auth setup without exposing data. */
+app.get('/health', async (c) => {
+  const checks: Record<string, string> = { api: 'ok' };
+  try {
+    await getDb().execute(sql`select 1`);
+    checks.database = 'ok';
+  } catch (error) {
+    checks.database = describe(error);
+  }
+  try {
+    getAuth();
+    checks.auth = 'ok';
+  } catch (error) {
+    checks.auth = describe(error);
+  }
+  const ok = Object.values(checks).every((value) => value === 'ok');
+  return c.json({ ok, checks }, ok ? 200 : 503);
+});
+
+function describe(error: unknown): string {
+  const cause = (error as { cause?: unknown }).cause;
+  const message = cause instanceof Error ? cause.message : error instanceof Error ? error.message : String(error);
+  // Never echo connection strings.
+  return message.replace(/postgres(ql)?:\/\/\S+/g, 'postgres://***');
+}
 
 app.on(['GET', 'POST'], '/auth/*', (c) => getAuth().handler(c.req.raw));
 

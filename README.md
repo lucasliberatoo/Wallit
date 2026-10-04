@@ -30,7 +30,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3000/api npm run web
 TEST_DATABASE_URL=postgres://.../wallit_test npm run test:api   # testes de ponta a ponta
 ```
 
-Na Vercel, o build (`scripts/vercel-build.sh`) aplica as migrações, cria a demo e publica a versão web já apontando para `/api` sempre que houver um banco conectado.
+Na Vercel, o build (`scripts/build-vercel.mjs`, via Build Output API) aplica as migrações, cria a demo e publica a versão web já apontando para `/api` sempre que houver um banco conectado.
 
 ## Estrutura
 

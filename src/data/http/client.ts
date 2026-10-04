@@ -51,8 +51,13 @@ export class ApiClient {
       throw new AppError('network', 'Sem conexão com o servidor. Confira sua internet.');
     }
     const text = await response.text();
-    const data = (text ? JSON.parse(text) : null) as T;
-    return { status: response.status, data };
+    try {
+      return { status: response.status, data: (text ? JSON.parse(text) : null) as T };
+    } catch {
+      // Not JSON: the platform answered instead of the API (crash, timeout, wrong route).
+      console.warn(`[api] ${init.method ?? 'GET'} ${path} -> ${response.status}: ${text.slice(0, 200)}`);
+      throw new AppError('internal', `O servidor não respondeu direito (erro ${response.status}). Tente de novo em instantes.`);
+    }
   }
 
   /** Calls one repository method on the server. */

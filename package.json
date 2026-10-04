@@ -49,6 +49,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "~19.2.2",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.25.12",
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.2",
     "jest": "^29.7.0",
@@ -70,7 +71,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/scripts/migrate.ts",
     "db:seed": "tsx server/scripts/seed.ts",
-    "vercel-build": "bash scripts/vercel-build.sh",
+    "vercel-build": "node scripts/build-vercel.mjs",
     "test:api": "tsx --test server/tests/*.e2e.ts"
   },
   "private": true,
