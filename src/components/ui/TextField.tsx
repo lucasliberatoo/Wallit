@@ -1,7 +1,7 @@
 import { forwardRef, useState } from 'react';
-import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
+import { TextInput, type TextInputProps, View } from 'react-native';
 
-import { colors, fontFamily, radius, spacing, touchTarget } from '@/theme';
+import { fontFamily, makeStyles, radius, spacing, touchTarget, useTheme } from '@/theme';
 import { AppText } from './AppText';
 
 export interface TextFieldProps extends TextInputProps {
@@ -15,6 +15,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   { label, error, hint, trailing, style, onFocus, onBlur, ...rest },
   ref,
 ) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [focused, setFocused] = useState(false);
   const borderColor = error ? colors.danger : focused ? colors.primary : colors.border;
 
@@ -54,7 +56,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   );
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrapper: { gap: spacing.xs },
   field: {
     minHeight: touchTarget + 8,
@@ -72,4 +74,4 @@ const styles = StyleSheet.create({
     color: colors.text,
     paddingVertical: spacing.sm,
   },
-});
+}));

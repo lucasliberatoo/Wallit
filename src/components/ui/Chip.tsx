@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
 
@@ -12,6 +12,7 @@ export interface ChipProps {
 }
 
 export function Chip({ label, selected = false, onPress, leading }: ChipProps) {
+  const styles = useStyles();
   return (
     <PressableScale
       onPress={onPress}
@@ -22,7 +23,7 @@ export function Chip({ label, selected = false, onPress, leading }: ChipProps) {
       style={[styles.chip, selected ? styles.selected : styles.idle]}>
       <View style={styles.row}>
         {leading}
-        <AppText variant="caption" color={selected ? 'textOnDark' : 'text'}>
+        <AppText variant="caption" color={selected ? 'onPrimary' : 'text'}>
           {label}
         </AppText>
       </View>
@@ -30,7 +31,7 @@ export function Chip({ label, selected = false, onPress, leading }: ChipProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   chip: {
     minHeight: 36,
     paddingHorizontal: spacing.md,
@@ -39,6 +40,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   idle: { backgroundColor: colors.surface, borderColor: colors.border },
-  selected: { backgroundColor: colors.brand, borderColor: colors.brand },
+  selected: { backgroundColor: colors.primaryFill, borderColor: colors.primaryFill },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-});
+}));

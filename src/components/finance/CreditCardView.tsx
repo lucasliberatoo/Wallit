@@ -1,10 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Nfc } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
 import { type Card, type Cents, formatBRL } from '@/domain';
-import { cardThemes, radius, shadows, spacing } from '@/theme';
+import { cardThemes, makeStyles, radius, spacing } from '@/theme';
+
+/** Silver contact chip, readable on every card theme. */
+const CARD_CHIP_COLOR = 'rgba(226,232,240,0.85)';
 
 const BRAND_LABEL: Record<NonNullable<Card['brand']>, string> = {
   visa: 'VISA',
@@ -26,6 +29,7 @@ export interface CreditCardViewProps {
 
 /** Physical-card representation. Shows no card number, only a nickname. */
 export function CreditCardView({ card, holderName, amountCents, amountLabel = 'Fatura atual', width = 280, onPress }: CreditCardViewProps) {
+  const styles = useStyles();
   const theme = cardThemes[card.theme];
   const height = width * 0.62;
   const body = (
@@ -77,15 +81,15 @@ export function CreditCardView({ card, holderName, amountCents, amountLabel = 'F
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((_colors, { shadows }) => ({
   shadow: shadows.md,
   card: { borderRadius: radius.xl, padding: spacing.lg, overflow: 'hidden', justifyContent: 'space-between' },
   glow: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)' },
   glowSmall: { backgroundColor: 'rgba(255,255,255,0.06)' },
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  chip: { width: 36, height: 26, borderRadius: 6, backgroundColor: 'rgba(255,214,0,0.85)' },
+  chip: { width: 36, height: 26, borderRadius: 6, backgroundColor: CARD_CHIP_COLOR },
   bottom: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   flex: { flex: 1 },
   dim: { opacity: 0.8 },
   brand: { fontStyle: 'italic', letterSpacing: 0.5 },
-});
+}));

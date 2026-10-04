@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Copy, KeyRound, Trash2, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
 import {
@@ -22,7 +22,7 @@ import { errorMessage } from '@/data';
 import { can, ROLE_LABEL, type Role } from '@/domain';
 import { FormError } from '@/features/auth/FormError';
 import { useAddMember, useCreateInvite, useFamily, useMembers, useRemoveMember, useUpdateMemberRole } from '@/features/families/hooks';
-import { colors, palette, spacing } from '@/theme';
+import { makeStyles, spacing, useTheme } from '@/theme';
 
 const ROLES: Role[] = ['owner', 'titular', 'member', 'guest'];
 const ROLE_HINT: Record<Role, string> = {
@@ -33,6 +33,8 @@ const ROLE_HINT: Record<Role, string> = {
 };
 
 export default function MembersScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { familyId } = useLocalSearchParams<{ familyId: string }>();
   const family = useFamily(familyId);
   const members = useMembers(familyId);
@@ -86,7 +88,7 @@ export default function MembersScreen() {
                     {member.id === family.data.me.id ? ' (você)' : ''}
                   </AppText>
                   <View style={styles.badges}>
-                    <Badge label={ROLE_LABEL[member.role]} color={palette.navy700} background={palette.blue50} />
+                    <Badge label={ROLE_LABEL[member.role]} color={colors.brand} background={colors.brandSoft} />
                     {!member.userId ? <Badge label="Sem conta" color={colors.textSecondary} background={colors.surfaceMuted} /> : null}
                   </View>
                 </View>
@@ -164,7 +166,7 @@ export default function MembersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   flex: { flex: 1, gap: 4 },
@@ -182,4 +184,4 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   codeText: { letterSpacing: 4 },
-});
+}));

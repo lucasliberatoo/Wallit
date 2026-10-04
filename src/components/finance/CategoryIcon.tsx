@@ -28,7 +28,10 @@ import {
 } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { radius } from '@/theme';
+import { mixHex, radius, useTheme } from '@/theme';
+
+/** On dark surfaces, category colors are lifted toward white so dim ones (gray, navy) stay visible. */
+const DARK_LIFT = 0.35;
 
 export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'shopping-cart': ShoppingCart,
@@ -68,10 +71,12 @@ export interface CategoryIconProps {
 
 /** Category glyph inside a soft tinted circle. */
 export function CategoryIcon({ icon = 'shapes', color = '#6B7487', size = 44 }: CategoryIconProps) {
+  const { scheme, colors } = useTheme();
   const Icon = CATEGORY_ICONS[icon] ?? Shapes;
+  const glyph = scheme === 'dark' ? mixHex(color, colors.text, DARK_LIFT) : color;
   return (
-    <View style={[styles.wrap, { width: size, height: size, backgroundColor: `${color}1A` }]}>
-      <Icon size={size * 0.46} color={color} strokeWidth={2.2} />
+    <View style={[styles.wrap, { width: size, height: size, backgroundColor: `${glyph}1A` }]}>
+      <Icon size={size * 0.46} color={glyph} strokeWidth={2.2} />
     </View>
   );
 }

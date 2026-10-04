@@ -1,9 +1,9 @@
 import { Minus, Plus } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, IconButton } from '@/components/ui';
 import { type Cents, formatBRL, MAX_INSTALLMENTS } from '@/domain';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing } from '@/theme';
 
 export interface InstallmentStepperProps {
   count: number;
@@ -12,6 +12,7 @@ export interface InstallmentStepperProps {
 }
 
 export function InstallmentStepper({ count, installmentValue, onChange }: InstallmentStepperProps) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <IconButton icon={Minus} accessibilityLabel="Menos parcelas" onPress={() => onChange(count - 1)} />
@@ -28,7 +29,7 @@ export function InstallmentStepper({ count, installmentValue, onChange }: Instal
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceMuted, borderRadius: radius.lg, padding: spacing.xs },
   center: { flex: 1, alignItems: 'center' },
-});
+}));

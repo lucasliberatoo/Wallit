@@ -2,11 +2,11 @@ import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { House, type LucideIcon, Plus, ReceiptText, UserRound, UsersRound } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, PressableScale } from '@/components/ui';
-import { colors, gradients, layout, radius, shadows, spacing } from '@/theme';
+import { layout, makeStyles, radius, spacing, useTheme } from '@/theme';
 
 const TABS: Record<string, { label: string; icon: LucideIcon }> = {
   index: { label: 'Início', icon: House },
@@ -18,6 +18,8 @@ const TABS: Record<string, { label: string; icon: LucideIcon }> = {
 /** Bottom navigation with a highlighted central "+" that opens "Nova compra". */
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { colors, gradients } = useTheme();
+  const styles = useStyles();
 
   return (
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
@@ -32,8 +34,8 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
                   onPress={() => router.push('/purchase/new')}
                   accessibilityLabel="Nova compra"
                   style={styles.fabShadow}>
-                  <LinearGradient colors={gradients.sunrise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fab}>
-                    <Plus size={28} color={colors.brand} strokeWidth={2.8} />
+                  <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fab}>
+                    <Plus size={28} color={colors.textOnAccent} strokeWidth={2.8} />
                   </LinearGradient>
                 </PressableScale>
               </View>
@@ -69,7 +71,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors, { shadows }) => ({
   wrapper: {
     position: 'absolute',
     left: 0,
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: layout.tabBarHeight,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.tabBar,
     borderRadius: radius.xl,
     maxWidth: layout.maxContentWidth,
     width: '100%',
@@ -99,6 +101,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
-    borderColor: colors.surface,
+    borderColor: colors.tabBar,
   },
-});
+}));

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText, ProgressBar, Surface } from '@/components/ui';
 import { formatBRL, type InvoiceStatus, type InvoiceTotals } from '@/domain';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 import { InvoiceStatusBadge } from './StatusBadges';
 
@@ -25,6 +25,7 @@ export function InvoiceSummaryCard({
   holderName,
   pendingLabel = 'Falta receber',
 }: InvoiceSummaryCardProps) {
+  const { colors } = useTheme();
   const accruing = status === 'open' || status === 'reviewing';
   return (
     <Surface elevation="md" style={styles.card}>

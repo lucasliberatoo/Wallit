@@ -14,31 +14,60 @@ import {
 
 import { Badge } from '@/components/ui';
 import { INVOICE_STATUS_LABEL, type InvoiceStatus, type MemberPaymentStatus } from '@/domain';
-import { colors, palette } from '@/theme';
+import { type ThemeColors, useTheme } from '@/theme';
 
-const invoiceStyles: Record<InvoiceStatus, { color: string; background: string; icon: LucideIcon }> = {
-  open: { color: colors.primary, background: colors.primarySoft, icon: CircleDot },
-  reviewing: { color: colors.warning, background: colors.warningSoft, icon: SearchCheck },
-  closed: { color: colors.success, background: colors.successSoft, icon: Lock },
-  collecting: { color: palette.navy700, background: palette.blue50, icon: HandCoins },
-  paid: { color: colors.textOnDark, background: palette.gray700, icon: CircleCheck },
-  archived: { color: colors.textSecondary, background: colors.surfaceMuted, icon: Archive },
-};
-
-export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
-  const style = invoiceStyles[status];
-  return <Badge label={INVOICE_STATUS_LABEL[status]} {...style} />;
+interface StatusStyle {
+  color: string;
+  background: string;
+  icon: LucideIcon;
 }
 
-export const PAYMENT_STATUS: Record<MemberPaymentStatus, { label: string; color: string; background: string; icon: LucideIcon }> = {
-  paid: { label: 'Pago', color: colors.success, background: colors.successSoft, icon: CircleCheck },
-  partial: { label: 'Parcial', color: colors.warning, background: colors.warningSoft, icon: CircleDashed },
-  pending: { label: 'Pendente', color: colors.danger, background: colors.dangerSoft, icon: Clock },
-  none: { label: 'Sem gastos', color: colors.textSecondary, background: colors.surfaceMuted, icon: Minus },
-  holder: { label: 'Titular', color: palette.navy700, background: palette.yellow100, icon: Crown },
+function invoiceStatusStyle(status: InvoiceStatus, colors: ThemeColors): StatusStyle {
+  switch (status) {
+    case 'open':
+      return { color: colors.primary, background: colors.primarySoft, icon: CircleDot };
+    case 'reviewing':
+      return { color: colors.warning, background: colors.warningSoft, icon: SearchCheck };
+    case 'closed':
+      return { color: colors.success, background: colors.successSoft, icon: Lock };
+    case 'collecting':
+      return { color: colors.brand, background: colors.brandSoft, icon: HandCoins };
+    case 'paid':
+      return { color: colors.onNeutralStrong, background: colors.neutralStrong, icon: CircleCheck };
+    case 'archived':
+      return { color: colors.textSecondary, background: colors.surfaceMuted, icon: Archive };
+  }
+}
+
+export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
+  const { colors } = useTheme();
+  return <Badge label={INVOICE_STATUS_LABEL[status]} {...invoiceStatusStyle(status, colors)} />;
+}
+
+export const PAYMENT_STATUS_LABEL: Record<MemberPaymentStatus, string> = {
+  paid: 'Pago',
+  partial: 'Parcial',
+  pending: 'Pendente',
+  none: 'Sem gastos',
+  holder: 'Titular',
 };
 
+export function paymentStatusStyle(status: MemberPaymentStatus, colors: ThemeColors): StatusStyle {
+  switch (status) {
+    case 'paid':
+      return { color: colors.success, background: colors.successSoft, icon: CircleCheck };
+    case 'partial':
+      return { color: colors.warning, background: colors.warningSoft, icon: CircleDashed };
+    case 'pending':
+      return { color: colors.danger, background: colors.dangerSoft, icon: Clock };
+    case 'none':
+      return { color: colors.textSecondary, background: colors.surfaceMuted, icon: Minus };
+    case 'holder':
+      return { color: colors.primary, background: colors.primarySoft, icon: Crown };
+  }
+}
+
 export function PaymentStatusBadge({ status }: { status: MemberPaymentStatus }) {
-  const { label, ...style } = PAYMENT_STATUS[status];
-  return <Badge label={label} {...style} />;
+  const { colors } = useTheme();
+  return <Badge label={PAYMENT_STATUS_LABEL[status]} {...paymentStatusStyle(status, colors)} />;
 }

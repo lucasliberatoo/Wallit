@@ -1,7 +1,7 @@
-import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
+import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { type Cents, formatBRL, parseMoneyInput } from '@/domain';
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { fontFamily, makeStyles, radius, spacing, useTheme } from '@/theme';
 import { AppText } from './AppText';
 
 export interface MoneyInputProps extends Omit<TextInputProps, 'value' | 'onChangeText'> {
@@ -13,6 +13,8 @@ export interface MoneyInputProps extends Omit<TextInputProps, 'value' | 'onChang
 
 /** Bank-style money input: digits fill from the right (R$ 0,01 -> R$ 0,12 -> R$ 1,20). */
 export function MoneyInput({ value, onChangeValue, size = 'inline', label = 'Valor', style, ...rest }: MoneyInputProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const hero = size === 'hero';
   const text = formatBRL(value, { symbol: false });
   // The hero input grows with its content so "R$" stays next to the digits.
@@ -36,7 +38,7 @@ export function MoneyInput({ value, onChangeValue, size = 'inline', label = 'Val
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   heroRow: { justifyContent: 'center', alignSelf: 'stretch' },
   inline: {
@@ -65,4 +67,4 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
-});
+}));

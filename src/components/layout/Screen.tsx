@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, layout, spacing } from '@/theme';
+import { layout, makeStyles, spacing, useTheme } from '@/theme';
 
 export interface ScreenProps extends ScrollViewProps {
   /** Extra space at the bottom so content clears the tab bar. */
@@ -26,6 +26,8 @@ export function Screen({
   ...rest
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const bottom = (withTabBar ? layout.tabBarHeight + spacing.xxl : spacing.xxl) + insets.bottom;
 
   return (
@@ -44,7 +46,7 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   root: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center', gap: spacing.xxl },
   padded: { paddingHorizontal: layout.screenPadding, paddingTop: spacing.xl },
@@ -55,4 +57,4 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
-});
+}));

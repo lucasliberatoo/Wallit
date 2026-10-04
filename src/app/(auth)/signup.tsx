@@ -1,7 +1,6 @@
 import { Link } from 'expo-router';
 import { UserPlus } from 'lucide-react-native';
 import { Controller } from 'react-hook-form';
-import { StyleSheet } from 'react-native';
 
 import { AppText, Button, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
@@ -10,9 +9,10 @@ import { FormError } from '@/features/auth/FormError';
 import { useSignUp } from '@/features/auth/hooks';
 import { signUpSchema } from '@/features/auth/schemas';
 import { useZodForm } from '@/lib/form';
-import { colors, fontFamily } from '@/theme';
+import { fontFamily, makeStyles } from '@/theme';
 
 export default function SignUpScreen() {
+  const styles = useStyles();
   const signUp = useSignUp();
   const form = useZodForm(signUpSchema, { defaultValues: { name: '', email: '', password: '' } });
   const submit = form.handleSubmit((values) => signUp.mutate(values));
@@ -84,6 +84,6 @@ export default function SignUpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   link: { color: colors.primary, fontFamily: fontFamily.semibold },
-});
+}));

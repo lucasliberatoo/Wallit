@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { History as HistoryIcon, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { PurchaseRow } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
@@ -13,7 +13,7 @@ import { useCategories } from '@/features/categories/hooks';
 import { useCurrentFamily, useMembers } from '@/features/families/hooks';
 import { useActivity } from '@/features/home/hooks';
 import { usePurchaseSearch } from '@/features/purchases/hooks';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDateTime, formatDayMonth, todayISO } from '@/utils/dates';
 
 type Tab = 'purchases' | 'activity';
@@ -28,6 +28,8 @@ function lastMonths(count: number) {
 }
 
 export default function HistoryScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const params = useLocalSearchParams<{ tab?: Tab; installments?: string }>();
   const { current } = useCurrentFamily();
   const familyId = current?.family.id;
@@ -167,6 +169,7 @@ export default function HistoryScreen() {
 }
 
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.filter}>
       <AppText variant="overline" color="textSecondary">
@@ -179,7 +182,7 @@ function FilterRow({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   section: { gap: spacing.md },
   filter: { gap: spacing.xs },
   chips: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.lg },
@@ -188,4 +191,4 @@ const styles = StyleSheet.create({
   log: { flexDirection: 'row', gap: spacing.md },
   dot: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.primary, marginTop: 6 },
   flex: { flex: 1, gap: 2 },
-});
+}));

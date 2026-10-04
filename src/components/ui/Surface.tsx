@@ -1,17 +1,19 @@
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { View, type ViewProps } from 'react-native';
 
-import { colors, radius, shadows, spacing } from '@/theme';
+import { makeStyles, radius, type ShadowLevel, spacing, useTheme } from '@/theme';
 import { PressableScale } from './PressableScale';
 
 export interface SurfaceProps extends ViewProps {
   padded?: boolean;
-  elevation?: keyof typeof shadows;
+  elevation?: ShadowLevel;
   onPress?: () => void;
   accessibilityLabel?: string;
 }
 
-/** Rounded white card with a soft shadow. Becomes tappable when `onPress` is set. */
+/** Rounded surface card with a soft shadow. Becomes tappable when `onPress` is set. */
 export function Surface({ padded = true, elevation = 'sm', onPress, style, children, accessibilityLabel, ...rest }: SurfaceProps) {
+  const { shadows } = useTheme();
+  const styles = useStyles();
   const surfaceStyle = [styles.base, shadows[elevation], padded && styles.padded, style];
   if (onPress) {
     return (
@@ -27,10 +29,10 @@ export function Surface({ padded = true, elevation = 'sm', onPress, style, child
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   base: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
   },
   padded: { padding: spacing.lg },
-});
+}));

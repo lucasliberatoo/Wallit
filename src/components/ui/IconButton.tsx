@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 
-import { colors, radius, touchTarget } from '@/theme';
+import { radius, type ThemeColors, touchTarget, useTheme } from '@/theme';
 import { PressableScale } from './PressableScale';
 
 export interface IconButtonProps {
@@ -12,14 +12,22 @@ export interface IconButtonProps {
   size?: number;
 }
 
-const tones = {
-  light: { background: colors.surface, icon: colors.brand },
-  dark: { background: colors.brand, icon: colors.textOnDark },
-  glass: { background: 'rgba(255,255,255,0.28)', icon: colors.brand },
-} as const;
+type Tone = NonNullable<IconButtonProps['tone']>;
+
+function toneStyle(tone: Tone, colors: ThemeColors): { background: string; icon: string } {
+  switch (tone) {
+    case 'light':
+      return { background: colors.surface, icon: colors.brand };
+    case 'dark':
+      return { background: colors.primaryFill, icon: colors.onPrimary };
+    case 'glass':
+      return { background: colors.headerGlass, icon: colors.headerText };
+  }
+}
 
 export function IconButton({ icon: Icon, onPress, accessibilityLabel, tone = 'light', size = 20 }: IconButtonProps) {
-  const palette = tones[tone];
+  const { colors } = useTheme();
+  const palette = toneStyle(tone, colors);
   return (
     <PressableScale
       onPress={onPress}

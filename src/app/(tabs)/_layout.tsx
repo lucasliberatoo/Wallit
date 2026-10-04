@@ -1,9 +1,10 @@
 import { Tabs } from 'expo-router/js-tabs';
 
 import { TabBar } from '@/components/layout';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}

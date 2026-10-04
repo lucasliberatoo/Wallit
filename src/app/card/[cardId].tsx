@@ -9,10 +9,11 @@ import { errorMessage } from '@/data';
 import { formatBRL, formatRef, installmentAmounts, installmentProgress } from '@/domain';
 import { useCard } from '@/features/cards/hooks';
 import { useCardInvoices, useInvoice } from '@/features/invoices/hooks';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 
 export default function CardScreen() {
+  const { colors } = useTheme();
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const card = useCard(cardId);
   const invoices = useCardInvoices(cardId);

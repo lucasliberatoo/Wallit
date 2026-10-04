@@ -1,10 +1,10 @@
 import { CircleAlert, CircleCheck, Divide } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { AppText, Avatar, Button, MoneyInput, PressableScale } from '@/components/ui';
 import { describeSplit, type FamilyMember, type ShareInput, type SplitValidation } from '@/domain';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export interface SplitEditorProps {
   members: FamilyMember[];
@@ -29,6 +29,8 @@ export function SplitEditor({
   onSplitEqually,
   onFillRemaining,
 }: SplitEditorProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const selectedIds = new Set(shares.map((s) => s.memberId));
   const complete = validation.status === 'complete';
   const showStatus = validation.total > 0 && shares.length > 0;
@@ -106,7 +108,7 @@ export function SplitEditor({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrapper: { gap: spacing.md },
   people: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   person: {
@@ -128,4 +130,4 @@ const styles = StyleSheet.create({
   status: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md },
   statusOk: { backgroundColor: colors.successSoft },
   statusWarn: { backgroundColor: colors.warningSoft },
-});
+}));

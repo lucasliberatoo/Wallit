@@ -8,7 +8,7 @@ import { AppText, Avatar, Button, Chip, MoneyInput, PressableScale, TextField } 
 import type { CardSummary } from '@/data';
 import type { Category, FamilyMember } from '@/domain';
 import { usePurchaseSearch } from '@/features/purchases/hooks';
-import { cardThemes, colors, radius, spacing } from '@/theme';
+import { cardThemes, radius, spacing, useTheme } from '@/theme';
 import { addDaysISO, formatDate, parseBRDate, todayISO } from '@/utils/dates';
 import type { usePurchaseForm } from '../use-purchase-form';
 import { FieldBlock } from './FieldBlock';
@@ -41,6 +41,7 @@ export function PurchaseForm({
   error,
   lockInstallments,
 }: PurchaseFormProps) {
+  const { colors } = useTheme();
   const { state, dispatch, split, canSave, missing, installmentValue } = form;
   const [showMore, setShowMore] = useState(Boolean(state.statementName || state.note));
   const [customDate, setCustomDate] = useState('');
@@ -178,7 +179,7 @@ export function PurchaseForm({
                 leading={
                   <CategoryIcon
                     icon={category.icon}
-                    color={state.categoryId === category.id ? colors.textOnDark : category.color}
+                    color={state.categoryId === category.id ? colors.onPrimary : category.color}
                     size={20}
                   />
                 }

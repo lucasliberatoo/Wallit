@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, Copy, RotateCcw, Search, Send } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 
 import { InvoiceSummaryCard, PurchaseRow } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
@@ -22,7 +22,7 @@ import { can, canTransition, formatBRL, formatRef, INVOICE_STATUS_LABEL, nextInv
 import { useChangeInvoiceStatus, useInvoice } from '@/features/invoices/hooks';
 import { filterLines, type GroupBy, groupLines } from '@/features/invoices/group-lines';
 import { MemberBalanceRow } from '@/features/invoices/components/MemberBalanceRow';
-import { colors, palette, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 
 type Tab = 'purchases' | 'members';
 
@@ -35,6 +35,8 @@ const NEXT_ACTION_LABEL: Partial<Record<string, string>> = {
 };
 
 export default function InvoiceScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { invoiceId } = useLocalSearchParams<{ invoiceId: string }>();
   const invoice = useInvoice(invoiceId);
   const changeStatus = useChangeInvoiceStatus();
@@ -215,8 +217,8 @@ export default function InvoiceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  pix: { gap: spacing.md, backgroundColor: palette.yellow100, borderWidth: 1, borderColor: palette.yellow400 },
+const useStyles = makeStyles((colors) => ({
+  pix: { gap: spacing.md, backgroundColor: colors.highlightSoft, borderWidth: 1, borderColor: colors.primarySoft },
   pixText: { gap: 2 },
   statusActions: { gap: spacing.xs },
   section: { gap: spacing.md },
@@ -226,4 +228,4 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.lg, borderRadius: radius.xl },
   pixHint: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', paddingHorizontal: spacing.xs },
   flex: { flex: 1 },
-});
+}));

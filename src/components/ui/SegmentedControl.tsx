@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, radius, shadows, spacing } from '@/theme';
+import { makeStyles, radius, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
 
@@ -11,6 +11,7 @@ export interface SegmentedControlProps<T extends string> {
 }
 
 export function SegmentedControl<T extends string>({ options, value, onChange }: SegmentedControlProps<T>) {
+  const styles = useStyles();
   return (
     <View style={styles.track} accessibilityRole="tablist">
       {options.map((option) => {
@@ -35,8 +36,8 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors, { shadows }) => ({
   track: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radius.md, padding: 3 },
   segment: { flex: 1, minHeight: 38, justifyContent: 'center', borderRadius: radius.sm + 2, paddingHorizontal: spacing.sm },
-  selected: { backgroundColor: colors.surface, ...shadows.sm },
-});
+  selected: { backgroundColor: colors.surfaceRaised, ...shadows.sm },
+}));
