@@ -1,18 +1,20 @@
 import { router } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
 import { AppText, Button, PressableScale, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { FormError } from '@/features/auth/FormError';
 import { useCreateFamily } from '@/features/families/hooks';
-import { colors, identityColors, radius, spacing } from '@/theme';
+import { identityColors, makeStyles, radius, spacing, useTheme } from '@/theme';
 
 const SUGGESTIONS = ['Minha Casa', 'Amigos', 'Viagem', 'República'];
 
 export default function NewFamilyScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(identityColors[0]);
   const create = useCreateFamily();
@@ -61,7 +63,7 @@ export default function NewFamilyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: -spacing.md },
   suggestion: {
     paddingHorizontal: spacing.md,
@@ -72,4 +74,4 @@ const styles = StyleSheet.create({
   colorSection: { gap: spacing.sm },
   colors: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   swatch: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-});
+}));

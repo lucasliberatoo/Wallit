@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { CircleCheck, History, Pencil, ShoppingBag, Trash2, UserRound } from 'lucide-react-native';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { CategoryIcon, InvoiceStatusBadge } from '@/components/finance';
@@ -21,10 +21,12 @@ import {
 import { errorMessage } from '@/data';
 import { formatBRL, formatRef, installmentAmounts, installmentProgress } from '@/domain';
 import { useCancelPurchase, usePurchase } from '@/features/purchases/hooks';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDate, formatDateTime, formatShortDate, todayISO } from '@/utils/dates';
 
 export default function PurchaseScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { purchaseId, created } = useLocalSearchParams<{ purchaseId: string; created?: string }>();
   const purchase = usePurchase(purchaseId);
   const cancel = useCancelPurchase();
@@ -204,7 +206,7 @@ export default function PurchaseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   success: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -231,4 +233,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-});
+}));

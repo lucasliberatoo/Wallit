@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { MailCheck, Send } from 'lucide-react-native';
 import { Controller } from 'react-hook-form';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, Button, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
@@ -10,9 +10,11 @@ import { FormError } from '@/features/auth/FormError';
 import { useRequestPasswordReset } from '@/features/auth/hooks';
 import { resetSchema } from '@/features/auth/schemas';
 import { useZodForm } from '@/lib/form';
-import { colors, fontFamily, spacing } from '@/theme';
+import { fontFamily, makeStyles, spacing, useTheme } from '@/theme';
 
 export default function ForgotPasswordScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const reset = useRequestPasswordReset();
   const form = useZodForm(resetSchema, { defaultValues: { email: '' } });
   const submit = form.handleSubmit((values) => reset.mutate(values.email));
@@ -60,7 +62,7 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   link: { color: colors.primary, fontFamily: fontFamily.semibold },
   success: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
-});
+}));

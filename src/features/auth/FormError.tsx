@@ -1,10 +1,12 @@
 import { CircleAlert } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export function FormError({ message }: { message?: string | null }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   if (!message) return null;
   return (
     <View style={styles.box} accessibilityLiveRegion="polite" accessibilityRole="alert">
@@ -16,7 +18,7 @@ export function FormError({ message }: { message?: string | null }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   box: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -26,4 +28,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   text: { flex: 1 },
-});
+}));

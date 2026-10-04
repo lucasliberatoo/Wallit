@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Check, Pencil, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, ScrollView, View } from 'react-native';
 
 import { CATEGORY_ICON_NAMES, CategoryIcon } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
@@ -9,11 +9,12 @@ import { errorMessage } from '@/data';
 import type { Category } from '@/domain';
 import { useCategories, useCreateCategory, useRemoveCategory, useReorderCategories, useUpdateCategory } from '@/features/categories/hooks';
 import { useCurrentFamily } from '@/features/families/hooks';
-import { colors, identityColors, radius, spacing } from '@/theme';
+import { identityColors, makeStyles, radius, spacing, useTheme } from '@/theme';
 
 const COLORS = [...identityColors, '#E31B54', '#EE46BC', '#475467'];
 
 export default function CategoriesScreen() {
+  const styles = useStyles();
   const { current } = useCurrentFamily();
   const familyId = current?.family.id;
   const categories = useCategories(familyId);
@@ -108,6 +109,8 @@ function CategoryEditor({
   onSave: (input: { name: string; icon: string; color: string }) => void;
   onCancel: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [name, setName] = useState(initial?.name ?? '');
   const [icon, setIcon] = useState(initial?.icon ?? 'shapes');
   const [color, setColor] = useState(initial?.color ?? COLORS[0]);
@@ -164,7 +167,7 @@ function CategoryEditor({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   list: { paddingHorizontal: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
   flex: { flex: 1 },
@@ -176,4 +179,4 @@ const styles = StyleSheet.create({
   colors: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   swatch: { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', gap: spacing.sm },
-});
+}));

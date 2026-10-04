@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { CreditCard, Plus } from 'lucide-react-native';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { CreditCardView, InvoiceStatusBadge } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
@@ -8,10 +8,11 @@ import { AppText, Button, Divider, EmptyState, ErrorState, ListRow, LoadingState
 import { errorMessage } from '@/data';
 import { formatBRL, sumCents } from '@/domain';
 import { useWallet } from '@/features/wallets/hooks';
-import { cardThemes, colors, radius, spacing } from '@/theme';
+import { cardThemes, makeStyles, radius, spacing } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 
 export default function WalletScreen() {
+  const styles = useStyles();
   const { walletId } = useLocalSearchParams<{ walletId: string }>();
   const wallet = useWallet(walletId);
 
@@ -86,10 +87,10 @@ export default function WalletScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   carousel: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, gap: spacing.md },
   padded: { paddingHorizontal: spacing.xl, gap: spacing.md },
   list: { paddingHorizontal: spacing.lg },
   swatch: { width: 36, height: 24, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
   note: { marginTop: spacing.sm },
-});
+}));

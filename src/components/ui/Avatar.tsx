@@ -1,6 +1,6 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, View } from 'react-native';
 
-import { colors, radius } from '@/theme';
+import { makeStyles, radius } from '@/theme';
 import { AppText } from './AppText';
 
 export interface AvatarProps {
@@ -19,6 +19,7 @@ export function initials(name: string): string {
 }
 
 export function Avatar({ name, color, size = 40, ringColor, photo }: AvatarProps) {
+  const styles = useStyles();
   const ring = ringColor ? 3 : 0;
   const inner = size - ring * 2 - (ringColor ? 4 : 0);
   return (
@@ -42,7 +43,7 @@ export function Avatar({ name, color, size = 40, ringColor, photo }: AvatarProps
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   outer: { borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
   inner: { borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-});
+}));

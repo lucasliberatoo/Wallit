@@ -21,10 +21,12 @@ import { formatBRL } from '@/domain';
 import { useCurrentUser } from '@/features/auth/hooks';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { useHomeSummary } from '@/features/home/hooks';
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { fontFamily, makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDayMonth, formatLongDate } from '@/utils/dates';
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const user = useCurrentUser();
   const { current, isLoading: loadingFamilies } = useCurrentFamily();
   const home = useHomeSummary(current?.family.id);
@@ -33,9 +35,15 @@ export default function HomeScreen() {
   const header = (
     <GradientHeader overlap={current && home.data ? <OwedCard summary={home.data} /> : undefined}>
       <View style={styles.topRow}>
-        <Avatar name={user?.name ?? '?'} color={user?.avatarColor ?? colors.primary} photo={user?.photo} size={40} />
+        <Avatar
+          name={user?.name ?? '?'}
+          color={user?.avatarColor ?? colors.primary}
+          photo={user?.photo}
+          size={44}
+          ringColor={colors.headerText}
+        />
         <View style={styles.greeting}>
-          <AppText variant="h2" color="brand">
+          <AppText variant="h2" color="headerText">
             Olá, {firstName}!
           </AppText>
           {current ? (
@@ -43,10 +51,10 @@ export default function HomeScreen() {
               onPress={() => router.navigate('/families')}
               accessibilityLabel={`Família atual: ${current.family.name}. Trocar família`}
               style={styles.familyPill}>
-              <AppText variant="caption" color="brand" numberOfLines={1}>
+              <AppText variant="caption" color="headerText" numberOfLines={1}>
                 {current.family.name}
               </AppText>
-              <ChevronDown size={14} color={colors.brand} />
+              <ChevronDown size={14} color={colors.headerText} />
             </PressableScale>
           ) : null}
         </View>
@@ -154,6 +162,7 @@ export default function HomeScreen() {
 }
 
 function OwedCard({ summary }: { summary: NonNullable<ReturnType<typeof useHomeSummary>['data']> }) {
+  const styles = useStyles();
   const settled = summary.owedCents === 0;
   return (
     <Surface elevation="md" style={styles.owed}>
@@ -183,6 +192,7 @@ interface TileProps {
 }
 
 function Tile({ icon: Icon, tint, title, value, caption, onPress }: TileProps) {
+  const styles = useStyles();
   return (
     <Surface onPress={onPress} style={styles.tile} accessibilityLabel={`${title}: ${value}`}>
       <View style={[styles.tileIcon, { backgroundColor: `${tint}1A` }]}>
@@ -203,7 +213,7 @@ function Tile({ icon: Icon, tint, title, value, caption, onPress }: TileProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   greeting: { flex: 1, gap: 2 },
   familyPill: {
@@ -211,7 +221,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: colors.headerGlass,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -227,4 +237,4 @@ const styles = StyleSheet.create({
   list: { paddingVertical: spacing.xs },
   rowPad: { paddingHorizontal: spacing.lg },
   emptyList: { padding: spacing.lg },
-});
+}));

@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
 
@@ -15,6 +15,7 @@ export interface ListRowProps {
 }
 
 export function ListRow({ title, subtitle, leading, trailing, onPress, showChevron = Boolean(onPress) }: ListRowProps) {
+  const { colors } = useTheme();
   const content = (
     <View style={styles.row}>
       {leading}

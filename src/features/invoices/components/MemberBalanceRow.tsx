@@ -1,11 +1,11 @@
 import { CircleDot, HandCoins } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { PaymentStatusBadge, PAYMENT_STATUS } from '@/components/finance';
+import { PaymentStatusBadge, paymentStatusStyle } from '@/components/finance';
 import { AppText, Avatar, Badge, Button, ProgressBar } from '@/components/ui';
 import type { MemberBalanceView } from '@/data';
 import { formatBRL } from '@/domain';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 export interface MemberBalanceRowProps {
   balance: MemberBalanceView;
@@ -17,10 +17,11 @@ export interface MemberBalanceRowProps {
 }
 
 export function MemberBalanceRow({ balance, isMe, canRegister, invoiceOpen, onRegister }: MemberBalanceRowProps) {
+  const { colors } = useTheme();
   const { member, owedCents, paidCents, pendingCents, status } = balance;
   const progress = owedCents === 0 ? 0 : paidCents / owedCents;
   const accruing = invoiceOpen && status === 'pending';
-  const ring = accruing ? colors.borderStrong : PAYMENT_STATUS[status].color;
+  const ring = accruing ? colors.borderStrong : paymentStatusStyle(status, colors).color;
   return (
     <View style={styles.row}>
       <View style={styles.top}>
