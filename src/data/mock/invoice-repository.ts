@@ -1,12 +1,4 @@
-import {
-  can,
-  canTransition,
-  type Card,
-  type Invoice,
-  INVOICE_STATUS_LABEL,
-  invoiceRefForDate,
-  compareRefs,
-} from '@/domain';
+import { can, canTransition, type Card, type Invoice, INVOICE_STATUS_LABEL, invoiceRefForDate, compareRefs } from '@/domain';
 import { AppError } from '../errors';
 import type { InvoiceRepository } from '../repositories';
 import type { MockStore } from './store';
@@ -38,8 +30,7 @@ export function createMockInvoiceRepository(store: MockStore): InvoiceRepository
         );
       }),
 
-    getDetails: (invoiceId) =>
-      store.run(() => invoiceDetails(store, store.require('invoices', invoiceId, 'Fatura') as Invoice)),
+    getDetails: (invoiceId) => store.run(() => invoiceDetails(store, store.require('invoices', invoiceId, 'Fatura') as Invoice)),
 
     create: (cardId, ref) =>
       store.run(
@@ -50,7 +41,14 @@ export function createMockInvoiceRepository(store: MockStore): InvoiceRepository
           const current = invoiceRefForDate(todayISO(), card.closingDay);
           if (compareRefs(ref, current) > 12) throw new AppError('validation', 'Só é possível criar faturas até 12 meses à frente.');
           const invoice = store.getOrCreateInvoice(card, ref);
-          store.audit({ familyId: card.familyId, entity: 'invoice', entityId: invoice.id, action: 'created', summary: 'Fatura criada', changes: [] });
+          store.audit({
+            familyId: card.familyId,
+            entity: 'invoice',
+            entityId: invoice.id,
+            action: 'created',
+            summary: 'Fatura criada',
+            changes: [],
+          });
           return invoice;
         },
         { write: true },
@@ -63,7 +61,10 @@ export function createMockInvoiceRepository(store: MockStore): InvoiceRepository
           const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
           requireHolderPower(card);
           if (!canTransition(invoice.status, status)) {
-            throw new AppError('validation', `Não é possível ir de "${INVOICE_STATUS_LABEL[invoice.status]}" para "${INVOICE_STATUS_LABEL[status]}".`);
+            throw new AppError(
+              'validation',
+              `Não é possível ir de "${INVOICE_STATUS_LABEL[invoice.status]}" para "${INVOICE_STATUS_LABEL[status]}".`,
+            );
           }
           const before = invoice.status;
           invoice.status = status;

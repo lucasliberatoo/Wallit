@@ -50,7 +50,15 @@ export function MemberBalanceRow({ balance, isMe, canRegister, invoiceOpen, onRe
               Pago {formatBRL(paidCents)}
             </AppText>
             {canRegister ? (
-              <Button label={isMe ? 'Informar' : 'Registrar'} icon={HandCoins} variant="secondary" fullWidth={false} onPress={onRegister} style={styles.button} accessibilityHint={`Registrar pagamento de ${member.displayName}`} />
+              <Button
+                label={isMe ? 'Informar' : 'Registrar'}
+                icon={HandCoins}
+                variant="secondary"
+                fullWidth={false}
+                onPress={onRegister}
+                style={styles.button}
+                accessibilityHint={`Registrar pagamento de ${member.displayName}`}
+              />
             ) : null}
           </View>
         </View>

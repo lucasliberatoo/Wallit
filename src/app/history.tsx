@@ -66,7 +66,13 @@ export default function HistoryScreen() {
 
         {tab === 'purchases' ? (
           <View style={styles.section}>
-            <TextField label="Buscar" placeholder="Estabelecimento, nome na fatura ou observação" value={search} onChangeText={setSearch} trailing={<Search size={18} color={colors.textMuted} />} />
+            <TextField
+              label="Buscar"
+              placeholder="Estabelecimento, nome na fatura ou observação"
+              value={search}
+              onChangeText={setSearch}
+              trailing={<Search size={18} color={colors.textMuted} />}
+            />
             <FilterRow label="Período">
               {months.map((m) => (
                 <Chip key={m.key} label={m.label} selected={month === m.key} onPress={() => toggle(month, m.key, setMonth)} />
@@ -80,12 +86,22 @@ export default function HistoryScreen() {
             </FilterRow>
             <FilterRow label="Pessoa">
               {members.data?.map((member) => (
-                <Chip key={member.id} label={member.displayName} selected={memberId === member.id} onPress={() => toggle(memberId, member.id, setMemberId)} />
+                <Chip
+                  key={member.id}
+                  label={member.displayName}
+                  selected={memberId === member.id}
+                  onPress={() => toggle(memberId, member.id, setMemberId)}
+                />
               ))}
             </FilterRow>
             <FilterRow label="Categoria">
               {categories.data?.map((category) => (
-                <Chip key={category.id} label={category.name} selected={categoryId === category.id} onPress={() => toggle(categoryId, category.id, setCategoryId)} />
+                <Chip
+                  key={category.id}
+                  label={category.name}
+                  selected={categoryId === category.id}
+                  onPress={() => toggle(categoryId, category.id, setCategoryId)}
+                />
               ))}
             </FilterRow>
 
@@ -98,7 +114,8 @@ export default function HistoryScreen() {
             ) : (
               <>
                 <AppText variant="caption" color="textSecondary">
-                  {results.length} {results.length === 1 ? 'compra' : 'compras'} · {formatBRL(sumCents(results.map((r) => r.purchase.totalCents)))}
+                  {results.length} {results.length === 1 ? 'compra' : 'compras'} ·{' '}
+                  {formatBRL(sumCents(results.map((r) => r.purchase.totalCents)))}
                 </AppText>
                 <Surface padded={false} style={styles.list}>
                   {results.map((item, index) => (

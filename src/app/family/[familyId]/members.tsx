@@ -4,7 +4,20 @@ import { useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, Avatar, Badge, Button, Chip, Divider, ErrorState, IconButton, LoadingState, SectionHeader, Surface, TextField } from '@/components/ui';
+import {
+  AppText,
+  Avatar,
+  Badge,
+  Button,
+  Chip,
+  Divider,
+  ErrorState,
+  IconButton,
+  LoadingState,
+  SectionHeader,
+  Surface,
+  TextField,
+} from '@/components/ui';
 import { errorMessage } from '@/data';
 import { can, ROLE_LABEL, type Role } from '@/domain';
 import { FormError } from '@/features/auth/FormError';
@@ -35,7 +48,15 @@ export default function MembersScreen() {
   const canManage = can(family.data.me.role, 'member.manage');
 
   const submit = () =>
-    addMember.mutate({ familyId, displayName: name, role }, { onSuccess: () => { setName(''); setRole('member'); } });
+    addMember.mutate(
+      { familyId, displayName: name, role },
+      {
+        onSuccess: () => {
+          setName('');
+          setRole('member');
+        },
+      },
+    );
 
   const confirmRemove = (memberId: string, memberName: string) => {
     const run = () => removeMember.mutate(memberId);
@@ -70,13 +91,22 @@ export default function MembersScreen() {
                   </View>
                 </View>
                 {canManage && member.id !== family.data.me.id ? (
-                  <IconButton icon={Trash2} accessibilityLabel={`Remover ${member.displayName}`} onPress={() => confirmRemove(member.id, member.displayName)} />
+                  <IconButton
+                    icon={Trash2}
+                    accessibilityLabel={`Remover ${member.displayName}`}
+                    onPress={() => confirmRemove(member.id, member.displayName)}
+                  />
                 ) : null}
               </View>
               {canManage && member.id !== family.data.me.id ? (
                 <View style={styles.roles}>
                   {ROLES.map((option) => (
-                    <Chip key={option} label={ROLE_LABEL[option]} selected={member.role === option} onPress={() => updateRole.mutate({ memberId: member.id, role: option })} />
+                    <Chip
+                      key={option}
+                      label={ROLE_LABEL[option]}
+                      selected={member.role === option}
+                      onPress={() => updateRole.mutate({ memberId: member.id, role: option })}
+                    />
                   ))}
                 </View>
               ) : null}
@@ -120,7 +150,12 @@ export default function MembersScreen() {
                   <Copy size={18} color={colors.textMuted} />
                 </View>
               ) : null}
-              <Button label={invite.data ? 'Gerar outro código' : 'Gerar código'} variant="secondary" onPress={() => invite.mutate(familyId)} loading={invite.isPending} />
+              <Button
+                label={invite.data ? 'Gerar outro código' : 'Gerar código'}
+                variant="secondary"
+                onPress={() => invite.mutate(familyId)}
+                loading={invite.isPending}
+              />
             </Surface>
           </>
         ) : null}
@@ -137,6 +172,14 @@ const styles = StyleSheet.create({
   roles: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingBottom: spacing.md },
   section: { gap: spacing.md },
   inviteHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  code: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.md, backgroundColor: colors.surfaceMuted, borderRadius: 12 },
+  code: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 12,
+  },
   codeText: { letterSpacing: 4 },
 });

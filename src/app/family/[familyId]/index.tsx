@@ -4,7 +4,18 @@ import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { MemberChip, WalletFolder } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, Button, Divider, EmptyState, ErrorState, ListRow, LoadingState, PressableScale, SectionHeader, Surface } from '@/components/ui';
+import {
+  AppText,
+  Button,
+  Divider,
+  EmptyState,
+  ErrorState,
+  ListRow,
+  LoadingState,
+  PressableScale,
+  SectionHeader,
+  Surface,
+} from '@/components/ui';
 import { errorMessage } from '@/data';
 import { can, ROLE_LABEL, sumCents } from '@/domain';
 import { useFamily, useLeaveFamily, useMembers } from '@/features/families/hooks';
@@ -41,14 +52,21 @@ export default function FamilyScreen() {
       <PageHeader title={family.data.family.name} subtitle={`Você é ${ROLE_LABEL[me.role].toLowerCase()}`} />
       <Screen refreshing={wallets.isRefetching} onRefresh={() => Promise.all([wallets.refetch(), members.refetch()])}>
         <View>
-          <SectionHeader title="Membros" actionLabel={canManage ? 'Gerenciar' : 'Ver todos'} onAction={() => router.push(`/family/${familyId}/members`)} />
+          <SectionHeader
+            title="Membros"
+            actionLabel={canManage ? 'Gerenciar' : 'Ver todos'}
+            onAction={() => router.push(`/family/${familyId}/members`)}
+          />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.members}>
             {members.data?.map((member) => (
               <MemberChip key={member.id} member={member} caption={member.nickname ?? ROLE_LABEL[member.role]} isMe={member.id === me.id} />
             ))}
             {canManage ? (
               <View style={styles.addMember}>
-                <PressableScale onPress={() => router.push(`/family/${familyId}/members`)} accessibilityLabel="Adicionar membro" style={styles.addButton}>
+                <PressableScale
+                  onPress={() => router.push(`/family/${familyId}/members`)}
+                  accessibilityLabel="Adicionar membro"
+                  style={styles.addButton}>
                   <UserPlus size={22} color={colors.primary} />
                 </PressableScale>
                 <AppText variant="caption" color="textSecondary">
@@ -90,9 +108,19 @@ export default function FamilyScreen() {
         </View>
 
         <Surface padded={false} style={styles.menu}>
-          <ListRow title="Categorias" subtitle="Personalize ícones e cores" leading={<Shapes size={20} color={colors.primary} />} onPress={() => router.push('/categories')} />
+          <ListRow
+            title="Categorias"
+            subtitle="Personalize ícones e cores"
+            leading={<Shapes size={20} color={colors.primary} />}
+            onPress={() => router.push('/categories')}
+          />
           <Divider inset={spacing.lg + 32} />
-          <ListRow title="Histórico" subtitle="Compras, faturas e alterações" leading={<History size={20} color={colors.primary} />} onPress={() => router.push('/history')} />
+          <ListRow
+            title="Histórico"
+            subtitle="Compras, faturas e alterações"
+            leading={<History size={20} color={colors.primary} />}
+            onPress={() => router.push('/history')}
+          />
           <Divider inset={spacing.lg + 32} />
           <ListRow
             title="Sair da família"
@@ -115,7 +143,17 @@ export default function FamilyScreen() {
 const styles = StyleSheet.create({
   members: { gap: spacing.sm, paddingRight: spacing.lg },
   addMember: { alignItems: 'center', width: 72, gap: spacing.xxs },
-  addButton: { width: 56, height: 56, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.primary },
+  addButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.primary,
+  },
   section: { gap: spacing.md },
   menu: { paddingHorizontal: spacing.lg },
 });

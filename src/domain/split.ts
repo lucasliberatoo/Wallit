@@ -8,12 +8,7 @@ export interface ShareInput {
 
 export type SplitStatus = 'complete' | 'missing' | 'exceeding' | 'invalid';
 
-export type SplitIssue =
-  | 'invalid_total'
-  | 'no_participants'
-  | 'invalid_amount'
-  | 'duplicate_member'
-  | 'empty_share';
+export type SplitIssue = 'invalid_total' | 'no_participants' | 'invalid_amount' | 'duplicate_member' | 'empty_share';
 
 export interface SplitValidation {
   status: SplitStatus;

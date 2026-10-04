@@ -1,9 +1,4 @@
-import {
-  allocateSharesToInstallments,
-  installmentAmounts,
-  installmentProgress,
-  planInstallments,
-} from '../installments';
+import { allocateSharesToInstallments, installmentAmounts, installmentProgress, planInstallments } from '../installments';
 import { refKey } from '../invoice-period';
 import { sumCents } from '../money';
 

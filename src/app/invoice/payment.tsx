@@ -49,7 +49,9 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
             size="lg"
             disabled={Boolean(error)}
             loading={register.isPending}
-            onPress={() => register.mutate({ invoiceId, memberId, amountCents: amount, note: note || undefined }, { onSuccess: () => router.back() })}
+            onPress={() =>
+              register.mutate({ invoiceId, memberId, amountCents: amount, note: note || undefined }, { onSuccess: () => router.back() })
+            }
           />
         }>
         <Surface style={styles.who}>
@@ -74,10 +76,20 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
 
         <View style={styles.quick}>
           <Chip label="Valor total" selected={amount === balance.pendingCents} onPress={() => setAmount(balance.pendingCents)} />
-          <Chip label="Metade" selected={amount === Math.round(balance.pendingCents / 2)} onPress={() => setAmount(Math.round(balance.pendingCents / 2))} />
+          <Chip
+            label="Metade"
+            selected={amount === Math.round(balance.pendingCents / 2)}
+            onPress={() => setAmount(Math.round(balance.pendingCents / 2))}
+          />
         </View>
 
-        <TextField label="Observação (opcional)" placeholder="Ex.: PIX enviado dia 05" value={note} onChangeText={setNote} maxLength={120} />
+        <TextField
+          label="Observação (opcional)"
+          placeholder="Ex.: PIX enviado dia 05"
+          value={note}
+          onChangeText={setNote}
+          maxLength={120}
+        />
         <FormError message={register.error ? errorMessage(register.error) : null} />
         <AppText variant="small" color="textMuted">
           O Wallit não movimenta dinheiro. Ele apenas registra o PIX feito para a titular.

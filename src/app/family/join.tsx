@@ -27,7 +27,15 @@ export default function JoinFamilyScreen() {
         <AppText variant="body" color="textSecondary">
           Peça o código de convite para o dono da família e digite abaixo.
         </AppText>
-        <TextField label="Código" placeholder="EX: A1B2C3" autoCapitalize="characters" value={code} onChangeText={setCode} autoFocus maxLength={8} />
+        <TextField
+          label="Código"
+          placeholder="EX: A1B2C3"
+          autoCapitalize="characters"
+          value={code}
+          onChangeText={setCode}
+          autoFocus
+          maxLength={8}
+        />
         <FormError message={join.error ? errorMessage(join.error) : null} />
       </Screen>
     </>

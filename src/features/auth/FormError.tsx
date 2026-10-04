@@ -17,6 +17,13 @@ export function FormError({ message }: { message?: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  box: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', backgroundColor: colors.dangerSoft, padding: spacing.md, borderRadius: radius.md },
+  box: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+    backgroundColor: colors.dangerSoft,
+    padding: spacing.md,
+    borderRadius: radius.md,
+  },
   text: { flex: 1 },
 });

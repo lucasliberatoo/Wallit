@@ -7,7 +7,11 @@ import { useRepositories } from '@/providers/RepositoriesProvider';
 
 export function usePurchase(purchaseId: string | undefined) {
   const { purchases } = useRepositories();
-  return useQuery({ queryKey: queryKeys.purchase(purchaseId ?? ''), queryFn: () => purchases.get(purchaseId!), enabled: Boolean(purchaseId) });
+  return useQuery({
+    queryKey: queryKeys.purchase(purchaseId ?? ''),
+    queryFn: () => purchases.get(purchaseId!),
+    enabled: Boolean(purchaseId),
+  });
 }
 
 export function usePurchaseSearch(familyId: string | undefined, filters: HistoryFilters) {

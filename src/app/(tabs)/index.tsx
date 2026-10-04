@@ -4,7 +4,18 @@ import { StyleSheet, View } from 'react-native';
 
 import { MoneyText, PurchaseRow } from '@/components/finance';
 import { GradientHeader, Screen } from '@/components/layout';
-import { AppText, Avatar, Divider, EmptyState, ErrorState, IconButton, LoadingState, PressableScale, SectionHeader, Surface } from '@/components/ui';
+import {
+  AppText,
+  Avatar,
+  Divider,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  LoadingState,
+  PressableScale,
+  SectionHeader,
+  Surface,
+} from '@/components/ui';
 import { errorMessage } from '@/data';
 import { formatBRL } from '@/domain';
 import { useCurrentUser } from '@/features/auth/hooks';
@@ -28,7 +39,10 @@ export default function HomeScreen() {
             Olá, {firstName}!
           </AppText>
           {current ? (
-            <PressableScale onPress={() => router.navigate('/families')} accessibilityLabel={`Família atual: ${current.family.name}. Trocar família`} style={styles.familyPill}>
+            <PressableScale
+              onPress={() => router.navigate('/families')}
+              accessibilityLabel={`Família atual: ${current.family.name}. Trocar família`}
+              style={styles.familyPill}>
               <AppText variant="caption" color="brand" numberOfLines={1}>
                 {current.family.name}
               </AppText>
@@ -36,7 +50,12 @@ export default function HomeScreen() {
             </PressableScale>
           ) : null}
         </View>
-        <IconButton icon={Bell} tone="glass" accessibilityLabel="Atividades recentes" onPress={() => router.push('/history?tab=activity')} />
+        <IconButton
+          icon={Bell}
+          tone="glass"
+          accessibilityLabel="Atividades recentes"
+          onPress={() => router.push('/history?tab=activity')}
+        />
       </View>
     </GradientHeader>
   );

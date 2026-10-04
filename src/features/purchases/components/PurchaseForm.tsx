@@ -29,7 +29,18 @@ export interface PurchaseFormProps {
   lockInstallments?: boolean;
 }
 
-export function PurchaseForm({ form, familyId, members, cards, categories, submitLabel, submitting, onSubmit, error, lockInstallments }: PurchaseFormProps) {
+export function PurchaseForm({
+  form,
+  familyId,
+  members,
+  cards,
+  categories,
+  submitLabel,
+  submitting,
+  onSubmit,
+  error,
+  lockInstallments,
+}: PurchaseFormProps) {
   const { state, dispatch, split, canSave, missing, installmentValue } = form;
   const [showMore, setShowMore] = useState(Boolean(state.statementName || state.note));
   const [customDate, setCustomDate] = useState('');
@@ -61,20 +72,44 @@ export function PurchaseForm({ form, familyId, members, cards, categories, submi
                 Falta: {missing.join(', ')}
               </AppText>
             ) : null}
-            <Button label={submitLabel} icon={Save} size="lg" variant="accent" onPress={onSubmit} disabled={!canSave} loading={submitting} />
+            <Button
+              label={submitLabel}
+              icon={Save}
+              size="lg"
+              variant="accent"
+              onPress={onSubmit}
+              disabled={!canSave}
+              loading={submitting}
+            />
           </View>
         }>
         <View style={styles.hero}>
           <AppText variant="caption" color="textSecondary">
             Valor da compra
           </AppText>
-          <MoneyInput value={state.totalCents} onChangeValue={(value) => dispatch({ type: 'setTotal', value })} size="hero" label="Valor da compra" autoFocus={!state.merchant} />
+          <MoneyInput
+            value={state.totalCents}
+            onChangeValue={(value) => dispatch({ type: 'setTotal', value })}
+            size="hero"
+            label="Valor da compra"
+            autoFocus={!state.merchant}
+          />
         </View>
 
         <View style={styles.block}>
-          <TextField label="Estabelecimento" placeholder="Ex.: Mercado Três Amigos" value={state.merchant} onChangeText={(value) => dispatch({ type: 'setField', field: 'merchant', value })} maxLength={60} />
+          <TextField
+            label="Estabelecimento"
+            placeholder="Ex.: Mercado Três Amigos"
+            value={state.merchant}
+            onChangeText={(value) => dispatch({ type: 'setField', field: 'merchant', value })}
+            maxLength={60}
+          />
           {!state.merchant && suggestions.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.row}
+              keyboardShouldPersistTaps="handled">
               {suggestions.map((item) => (
                 <Chip
                   key={item.purchase.id}
@@ -82,7 +117,8 @@ export function PurchaseForm({ form, familyId, members, cards, categories, submi
                   leading={item.category ? <CategoryIcon icon={item.category.icon} color={item.category.color} size={20} /> : undefined}
                   onPress={() => {
                     dispatch({ type: 'setField', field: 'merchant', value: item.purchase.merchant });
-                    if (item.purchase.statementName) dispatch({ type: 'setField', field: 'statementName', value: item.purchase.statementName });
+                    if (item.purchase.statementName)
+                      dispatch({ type: 'setField', field: 'statementName', value: item.purchase.statementName });
                     dispatch({ type: 'setCategory', value: item.purchase.categoryId });
                   }}
                 />
@@ -139,7 +175,13 @@ export function PurchaseForm({ form, familyId, members, cards, categories, submi
                 label={category.name}
                 selected={state.categoryId === category.id}
                 onPress={() => dispatch({ type: 'setCategory', value: category.id })}
-                leading={<CategoryIcon icon={category.icon} color={state.categoryId === category.id ? colors.textOnDark : category.color} size={20} />}
+                leading={
+                  <CategoryIcon
+                    icon={category.icon}
+                    color={state.categoryId === category.id ? colors.textOnDark : category.color}
+                    size={20}
+                  />
+                }
               />
             ))}
           </View>
@@ -147,9 +189,21 @@ export function PurchaseForm({ form, familyId, members, cards, categories, submi
 
         <FieldBlock label="Data">
           <View style={styles.wrap}>
-            <Chip label="Hoje" selected={state.date === today} onPress={() => dispatch({ type: 'setField', field: 'date', value: today })} />
-            <Chip label="Ontem" selected={state.date === yesterday} onPress={() => dispatch({ type: 'setField', field: 'date', value: yesterday })} />
-            <Chip label={isCustomDate ? formatDate(state.date) : 'Outra data'} selected={isCustomDate} onPress={() => setCustomDate(isCustomDate ? formatDate(state.date) : '')} />
+            <Chip
+              label="Hoje"
+              selected={state.date === today}
+              onPress={() => dispatch({ type: 'setField', field: 'date', value: today })}
+            />
+            <Chip
+              label="Ontem"
+              selected={state.date === yesterday}
+              onPress={() => dispatch({ type: 'setField', field: 'date', value: yesterday })}
+            />
+            <Chip
+              label={isCustomDate ? formatDate(state.date) : 'Outra data'}
+              selected={isCustomDate}
+              onPress={() => setCustomDate(isCustomDate ? formatDate(state.date) : '')}
+            />
           </View>
           {customDate !== '' || isCustomDate ? (
             <TextField
@@ -174,7 +228,11 @@ export function PurchaseForm({ form, familyId, members, cards, categories, submi
               {state.installmentCount === 1 ? 'À vista' : `${state.installmentCount}x`} (não pode ser alterado depois de criado)
             </AppText>
           ) : (
-            <InstallmentStepper count={state.installmentCount} installmentValue={installmentValue} onChange={(value) => dispatch({ type: 'setInstallments', value })} />
+            <InstallmentStepper
+              count={state.installmentCount}
+              installmentValue={installmentValue}
+              onChange={(value) => dispatch({ type: 'setInstallments', value })}
+            />
           )}
         </FieldBlock>
 
@@ -195,7 +253,14 @@ export function PurchaseForm({ form, familyId, members, cards, categories, submi
               onChangeText={(value) => dispatch({ type: 'setField', field: 'statementName', value })}
               maxLength={60}
             />
-            <TextField label="Observação" placeholder="Opcional" value={state.note} onChangeText={(value) => dispatch({ type: 'setField', field: 'note', value })} multiline maxLength={200} />
+            <TextField
+              label="Observação"
+              placeholder="Opcional"
+              value={state.note}
+              onChangeText={(value) => dispatch({ type: 'setField', field: 'note', value })}
+              multiline
+              maxLength={200}
+            />
           </View>
         ) : null}
 
@@ -212,6 +277,13 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.lg },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   cardDot: { width: 18, height: 12, borderRadius: 3 },
-  more: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'center', padding: spacing.sm, borderRadius: radius.pill },
+  more: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'center',
+    padding: spacing.sm,
+    borderRadius: radius.pill,
+  },
   footer: { gap: spacing.xs },
 });

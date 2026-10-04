@@ -20,7 +20,13 @@ export function filterLines(lines: InvoiceLine[], search: string): InvoiceLine[]
   if (!term) return lines;
   return lines.filter((line) =>
     normalize(
-      [line.purchase.merchant, line.purchase.statementName, line.category?.name, line.buyer.displayName, ...line.shares.map((s) => s.member.displayName)]
+      [
+        line.purchase.merchant,
+        line.purchase.statementName,
+        line.category?.name,
+        line.buyer.displayName,
+        ...line.shares.map((s) => s.member.displayName),
+      ]
         .filter(Boolean)
         .join(' '),
     ).includes(term),
@@ -36,6 +42,9 @@ export function groupLines(lines: InvoiceLine[], groupBy: GroupBy): LineGroup[] 
     group.lines.push(line);
     groups.set(key, group);
   }
-  const result = [...groups.values()].map((group) => ({ ...group, totalCents: sumCents(group.lines.map((l) => l.installment.amountCents)) }));
+  const result = [...groups.values()].map((group) => ({
+    ...group,
+    totalCents: sumCents(group.lines.map((l) => l.installment.amountCents)),
+  }));
   return groupBy === 'date' ? result.sort((a, b) => b.key.localeCompare(a.key)) : result.sort((a, b) => b.totalCents - a.totalCents);
 }

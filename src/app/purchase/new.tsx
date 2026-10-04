@@ -34,7 +34,12 @@ export default function NewPurchaseScreen() {
       <>
         <PageHeader title="Nova compra" />
         <Screen>
-          <EmptyState icon={UsersRound} title="Crie uma família primeiro" actionLabel="Criar família" onAction={() => router.replace('/family/new')} />
+          <EmptyState
+            icon={UsersRound}
+            title="Crie uma família primeiro"
+            actionLabel="Criar família"
+            onAction={() => router.replace('/family/new')}
+          />
         </Screen>
       </>
     );
@@ -45,7 +50,13 @@ export default function NewPurchaseScreen() {
       <>
         <PageHeader title="Nova compra" />
         <Screen>
-          <EmptyState icon={CreditCard} title="Cadastre um cartão primeiro" description="As compras são registradas no cartão compartilhado." actionLabel="Ver carteiras" onAction={() => router.replace(`/family/${familyId}`)} />
+          <EmptyState
+            icon={CreditCard}
+            title="Cadastre um cartão primeiro"
+            description="As compras são registradas no cartão compartilhado."
+            actionLabel="Ver carteiras"
+            onAction={() => router.replace(`/family/${familyId}`)}
+          />
         </Screen>
       </>
     );

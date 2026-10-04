@@ -71,22 +71,48 @@ export default function ProfileScreen() {
             {errorMessage(update.error)}
           </AppText>
         ) : null}
-        <Button label="Salvar" disabled={!dirty || !name.trim()} loading={update.isPending} onPress={() => update.mutate({ name: name.trim(), pixKey: pixKey.trim() || undefined })} />
+        <Button
+          label="Salvar"
+          disabled={!dirty || !name.trim()}
+          loading={update.isPending}
+          onPress={() => update.mutate({ name: name.trim(), pixKey: pixKey.trim() || undefined })}
+        />
       </Surface>
 
       <Surface padded={false} style={styles.menu}>
-        <ListRow title="Histórico" subtitle="Pesquise compras antigas" leading={<History size={20} color={colors.primary} />} onPress={() => router.push('/history')} />
+        <ListRow
+          title="Histórico"
+          subtitle="Pesquise compras antigas"
+          leading={<History size={20} color={colors.primary} />}
+          onPress={() => router.push('/history')}
+        />
         <Divider inset={spacing.lg + 32} />
         <ListRow title="Categorias" leading={<Shapes size={20} color={colors.primary} />} onPress={() => router.push('/categories')} />
         <Divider inset={spacing.lg + 32} />
-        <ListRow title="Entrar em uma família" subtitle="Usar código de convite" leading={<KeyRound size={20} color={colors.primary} />} onPress={() => router.push('/family/join')} />
+        <ListRow
+          title="Entrar em uma família"
+          subtitle="Usar código de convite"
+          leading={<KeyRound size={20} color={colors.primary} />}
+          onPress={() => router.push('/family/join')}
+        />
         <Divider inset={spacing.lg + 32} />
-        <ListRow title="Segurança" subtitle="O Wallit nunca guarda número, CVV ou senha de cartão" leading={<ShieldCheck size={20} color={colors.success} />} showChevron={false} />
+        <ListRow
+          title="Segurança"
+          subtitle="O Wallit nunca guarda número, CVV ou senha de cartão"
+          leading={<ShieldCheck size={20} color={colors.success} />}
+          showChevron={false}
+        />
       </Surface>
 
       <View style={styles.actions}>
         <Button label="Restaurar dados de exemplo" icon={RefreshCcw} variant="ghost" onPress={resetDemo} />
-        <Button label="Sair da conta" icon={LogOut} variant="danger" onPress={() => signOut.mutate(undefined)} loading={signOut.isPending} />
+        <Button
+          label="Sair da conta"
+          icon={LogOut}
+          variant="danger"
+          onPress={() => signOut.mutate(undefined)}
+          loading={signOut.isPending}
+        />
       </View>
 
       <View style={styles.brand}>

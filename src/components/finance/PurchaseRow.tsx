@@ -21,7 +21,17 @@ export interface PurchaseRowProps {
 /**
  * Always answers: what, how much, who bought, who pays, which installment.
  */
-export function PurchaseRow({ merchant, statementName, amountCents, category, buyer, payers, installment, dateLabel, onPress }: PurchaseRowProps) {
+export function PurchaseRow({
+  merchant,
+  statementName,
+  amountCents,
+  category,
+  buyer,
+  payers,
+  installment,
+  dateLabel,
+  onPress,
+}: PurchaseRowProps) {
   const payersLabel = payers.map((p) => p.displayName).join(' + ');
   const showPayers = payersLabel && payersLabel !== buyer.displayName;
   const details = [`Comprou: ${buyer.displayName}`, showPayers ? `Paga: ${payersLabel}` : null].filter(Boolean).join(' · ');

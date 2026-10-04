@@ -5,7 +5,18 @@ import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { InvoiceSummaryCard, PurchaseRow } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, Button, Chip, Divider, EmptyState, ErrorState, LoadingState, SegmentedControl, Surface, TextField } from '@/components/ui';
+import {
+  AppText,
+  Button,
+  Chip,
+  Divider,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  SegmentedControl,
+  Surface,
+  TextField,
+} from '@/components/ui';
 import { errorMessage } from '@/data';
 import { can, canTransition, formatBRL, formatRef, INVOICE_STATUS_LABEL, nextInvoiceStatus } from '@/domain';
 import { useChangeInvoiceStatus, useInvoice } from '@/features/invoices/hooks';
@@ -53,7 +64,10 @@ export default function InvoiceScreen() {
         { invoiceId, status: next },
         { onError: (error) => Alert.alert('Não foi possível alterar', errorMessage(error)) },
       );
-    const message = next === 'closed' ? 'Depois de fechada, as compras ficam protegidas e só a titular pode alterá-las.' : `A fatura passará para "${INVOICE_STATUS_LABEL[next]}".`;
+    const message =
+      next === 'closed'
+        ? 'Depois de fechada, as compras ficam protegidas e só a titular pode alterá-las.'
+        : `A fatura passará para "${INVOICE_STATUS_LABEL[next]}".`;
     if (Platform.OS === 'web') {
       if (window.confirm(message)) run();
     } else {
@@ -83,17 +97,31 @@ export default function InvoiceScreen() {
               <AppText variant="caption" color="textSecondary">
                 Sua parte
               </AppText>
-              <AppText variant="h3">Enviar {formatBRL(myBalance.pendingCents)} para {data.holder.displayName}</AppText>
+              <AppText variant="h3">
+                Enviar {formatBRL(myBalance.pendingCents)} para {data.holder.displayName}
+              </AppText>
             </View>
-            <Button label="Informar pagamento" icon={Send} variant="accent" onPress={() => router.push(`/invoice/payment?invoiceId=${invoiceId}&memberId=${data.me.id}`)} />
+            <Button
+              label="Informar pagamento"
+              icon={Send}
+              variant="accent"
+              onPress={() => router.push(`/invoice/payment?invoiceId=${invoiceId}&memberId=${data.me.id}`)}
+            />
           </Surface>
         ) : null}
 
         {canChangeStatus && (next || canTransition(data.invoice.status, 'open')) ? (
           <View style={styles.statusActions}>
-            {next ? <Button label={NEXT_ACTION_LABEL[next] ?? 'Avançar'} icon={ArrowRight} onPress={advance} loading={changeStatus.isPending} /> : null}
+            {next ? (
+              <Button label={NEXT_ACTION_LABEL[next] ?? 'Avançar'} icon={ArrowRight} onPress={advance} loading={changeStatus.isPending} />
+            ) : null}
             {canTransition(data.invoice.status, 'open') ? (
-              <Button label="Reabrir fatura" icon={RotateCcw} variant="ghost" onPress={() => changeStatus.mutate({ invoiceId, status: 'open' })} />
+              <Button
+                label="Reabrir fatura"
+                icon={RotateCcw}
+                variant="ghost"
+                onPress={() => changeStatus.mutate({ invoiceId, status: 'open' })}
+              />
             ) : null}
           </View>
         ) : null}

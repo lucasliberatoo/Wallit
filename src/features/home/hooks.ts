@@ -10,5 +10,9 @@ export function useHomeSummary(familyId: string | undefined) {
 
 export function useActivity(familyId: string | undefined) {
   const { dashboard } = useRepositories();
-  return useQuery({ queryKey: queryKeys.activity(familyId ?? ''), queryFn: () => dashboard.activity(familyId!), enabled: Boolean(familyId) });
+  return useQuery({
+    queryKey: queryKeys.activity(familyId ?? ''),
+    queryFn: () => dashboard.activity(familyId!),
+    enabled: Boolean(familyId),
+  });
 }

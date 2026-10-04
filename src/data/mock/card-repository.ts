@@ -35,7 +35,14 @@ export function createMockWalletRepository(store: MockStore): WalletRepository {
           if (!name.trim()) throw new AppError('validation', 'Dê um nome para a carteira.');
           const wallet: Wallet = { id: newId('wal'), familyId, name: name.trim(), createdAt: nowISO() };
           store.db.wallets.push(wallet);
-          store.audit({ familyId, entity: 'wallet', entityId: wallet.id, action: 'created', summary: `Carteira criada: ${wallet.name}`, changes: [] });
+          store.audit({
+            familyId,
+            entity: 'wallet',
+            entityId: wallet.id,
+            action: 'created',
+            summary: `Carteira criada: ${wallet.name}`,
+            changes: [],
+          });
           return wallet;
         },
         { write: true },
@@ -92,7 +99,14 @@ export function createMockCardRepository(store: MockStore): CardRepository {
           if (holder.role === 'member') holder.role = 'titular';
           // The current invoice exists from day one so it can be opened right away.
           store.getOrCreateInvoice(card, invoiceRefForDate(todayISO(), card.closingDay));
-          store.audit({ familyId: card.familyId, entity: 'card', entityId: card.id, action: 'created', summary: `Cartão criado: ${card.name}`, changes: [] });
+          store.audit({
+            familyId: card.familyId,
+            entity: 'card',
+            entityId: card.id,
+            action: 'created',
+            summary: `Cartão criado: ${card.name}`,
+            changes: [],
+          });
           return card;
         },
         { write: true },

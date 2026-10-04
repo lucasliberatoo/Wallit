@@ -20,7 +20,15 @@ export interface SplitEditorProps {
  * "Quem paga": pick one or more people and set each amount. The save button
  * stays disabled until the shares add up exactly to the purchase total.
  */
-export function SplitEditor({ members, shares, validation, onTogglePayer, onChangeAmount, onSplitEqually, onFillRemaining }: SplitEditorProps) {
+export function SplitEditor({
+  members,
+  shares,
+  validation,
+  onTogglePayer,
+  onChangeAmount,
+  onSplitEqually,
+  onFillRemaining,
+}: SplitEditorProps) {
   const selectedIds = new Set(shares.map((s) => s.memberId));
   const complete = validation.status === 'complete';
   const showStatus = validation.total > 0 && shares.length > 0;
@@ -61,13 +69,20 @@ export function SplitEditor({ members, shares, validation, onTogglePayer, onChan
                   {member.displayName}
                 </AppText>
                 {validation.difference > 0 ? (
-                  <PressableScale onPress={() => onFillRemaining(member.id)} accessibilityLabel={`Completar com ${member.displayName}`} hitSlop={6}>
+                  <PressableScale
+                    onPress={() => onFillRemaining(member.id)}
+                    accessibilityLabel={`Completar com ${member.displayName}`}
+                    hitSlop={6}>
                     <AppText variant="small" color="primary">
                       completar
                     </AppText>
                   </PressableScale>
                 ) : null}
-                <MoneyInput value={share.amountCents} onChangeValue={(value) => onChangeAmount(member.id, value)} label={`Valor de ${member.displayName}`} />
+                <MoneyInput
+                  value={share.amountCents}
+                  onChangeValue={(value) => onChangeAmount(member.id, value)}
+                  label={`Valor de ${member.displayName}`}
+                />
               </Animated.View>
             );
           })}

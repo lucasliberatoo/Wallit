@@ -1,13 +1,6 @@
 import type { InvoiceStatus } from './types';
 
-export const INVOICE_STATUS_FLOW: readonly InvoiceStatus[] = [
-  'open',
-  'reviewing',
-  'closed',
-  'collecting',
-  'paid',
-  'archived',
-];
+export const INVOICE_STATUS_FLOW: readonly InvoiceStatus[] = ['open', 'reviewing', 'closed', 'collecting', 'paid', 'archived'];
 
 export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
   open: 'Aberta',

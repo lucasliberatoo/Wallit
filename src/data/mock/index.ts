@@ -3,11 +3,7 @@ import { createMockAuthRepository } from './auth-repository';
 import { createMockCardRepository, createMockWalletRepository } from './card-repository';
 import { createMockFamilyRepository } from './family-repository';
 import { createMockInvoiceRepository } from './invoice-repository';
-import {
-  createMockCategoryRepository,
-  createMockDashboardRepository,
-  createMockPaymentRepository,
-} from './misc-repositories';
+import { createMockCategoryRepository, createMockDashboardRepository, createMockPaymentRepository } from './misc-repositories';
 import { createMockPurchaseRepository } from './purchase-repository';
 import { seedMockDatabase } from './seed';
 import { MockStore } from './store';

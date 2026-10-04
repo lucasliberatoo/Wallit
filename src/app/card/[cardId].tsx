@@ -33,7 +33,10 @@ export default function CardScreen() {
           <CreditCardView card={card.data.card} holderName={holder.displayName} width={320} />
         </View>
 
-        <Surface style={styles.summary} onPress={currentInvoice ? () => router.push(`/invoice/${currentInvoice.id}`) : undefined} accessibilityLabel="Abrir fatura atual">
+        <Surface
+          style={styles.summary}
+          onPress={currentInvoice ? () => router.push(`/invoice/${currentInvoice.id}`) : undefined}
+          accessibilityLabel="Abrir fatura atual">
           <View style={styles.summaryHeader}>
             <AppText variant="caption" color="textSecondary">
               Fatura atual{currentInvoice ? ` · ${formatRef(currentInvoice.ref, { capitalize: true })}` : ''}
@@ -46,19 +49,31 @@ export default function CardScreen() {
           <ProgressBar progress={totals.progress} />
           <View style={styles.stats}>
             <Stat label="Recebido" value={formatBRL(totals.receivedCents)} color={colors.success} />
-            <Stat label={accruing ? 'A receber' : 'Falta receber'} value={formatBRL(totals.pendingCents)} color={totals.pendingCents && !accruing ? colors.danger : colors.text} />
+            <Stat
+              label={accruing ? 'A receber' : 'Falta receber'}
+              value={formatBRL(totals.pendingCents)}
+              color={totals.pendingCents && !accruing ? colors.danger : colors.text}
+            />
             <Stat label="Vencimento" value={currentInvoice ? formatShortDate(currentInvoice.dueDate) : '—'} color={colors.text} />
           </View>
         </Surface>
 
-        <Button label="Nova compra neste cartão" icon={Plus} variant="accent" onPress={() => router.push(`/purchase/new?cardId=${cardId}`)} />
+        <Button
+          label="Nova compra neste cartão"
+          icon={Plus}
+          variant="accent"
+          onPress={() => router.push(`/purchase/new?cardId=${cardId}`)}
+        />
 
         {installments.length > 0 ? (
           <View>
             <SectionHeader title="Parcelamentos ativos" />
             <Surface padded={false} style={styles.list}>
               {installments.map((line, index) => {
-                const progress = installmentProgress(installmentAmounts(line.purchase.totalCents, line.installment.count), line.installment.number);
+                const progress = installmentProgress(
+                  installmentAmounts(line.purchase.totalCents, line.installment.count),
+                  line.installment.number,
+                );
                 return (
                   <View key={line.installment.id}>
                     {index > 0 && <Divider />}
@@ -72,7 +87,9 @@ export default function CardScreen() {
                       <ProgressBar progress={progress.current / progress.count} color={colors.primary} height={6} />
                       <AppText variant="caption" color="textSecondary">
                         Parcela {progress.current} de {progress.count} ·{' '}
-                        {progress.remainingCount === 0 ? 'última parcela' : `restam ${progress.remainingCount} (${formatBRL(progress.remainingCents)})`}
+                        {progress.remainingCount === 0
+                          ? 'última parcela'
+                          : `restam ${progress.remainingCount} (${formatBRL(progress.remainingCents)})`}
                       </AppText>
                     </View>
                   </View>

@@ -42,9 +42,7 @@ export function purchaseShares(store: MockStore, purchaseId: ID): ShareView[] {
 }
 
 function purchaseInstallments(store: MockStore, purchaseId: ID): PurchaseInstallment[] {
-  return store.db.installments
-    .filter((installment) => installment.purchaseId === purchaseId)
-    .sort((a, b) => a.number - b.number);
+  return store.db.installments.filter((installment) => installment.purchaseId === purchaseId).sort((a, b) => a.number - b.number);
 }
 
 /** Each member's part of one installment, derived from the purchase shares. */
@@ -56,9 +54,7 @@ export function installmentShares(store: MockStore, installment: PurchaseInstall
     shares.map((share) => ({ memberId: share.member.id, amountCents: share.amountCents })),
   );
   const row = matrix[installment.number - 1];
-  return shares
-    .map((share, index) => ({ member: share.member, amountCents: row[index] }))
-    .filter((share) => share.amountCents > 0);
+  return shares.map((share, index) => ({ member: share.member, amountCents: row[index] })).filter((share) => share.amountCents > 0);
 }
 
 function activePurchase(store: MockStore, purchaseId: ID): Purchase | undefined {
@@ -110,9 +106,7 @@ export function invoiceDetails(store: MockStore, invoice: Invoice): InvoiceDetai
     card,
     holder: store.member(card.holderMemberId),
     lines,
-    balances: balances
-      .map((balance) => ({ ...balance, member: store.member(balance.memberId) }))
-      .sort((a, b) => b.owedCents - a.owedCents),
+    balances: balances.map((balance) => ({ ...balance, member: store.member(balance.memberId) })).sort((a, b) => b.owedCents - a.owedCents),
     totals,
     payments,
     me,
@@ -141,11 +135,7 @@ export function sortInvoicesDesc(invoices: Invoice[]): Invoice[] {
   return [...invoices].sort((a, b) => compareRefs(b.ref, a.ref));
 }
 
-export function purchaseListItem(
-  store: MockStore,
-  purchase: Purchase,
-  installment?: PurchaseInstallment,
-): PurchaseListItem {
+export function purchaseListItem(store: MockStore, purchase: Purchase, installment?: PurchaseInstallment): PurchaseListItem {
   return {
     purchase,
     category: store.db.categories.find((c) => c.id === purchase.categoryId) ?? null,

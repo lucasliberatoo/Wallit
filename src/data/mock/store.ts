@@ -69,9 +69,7 @@ export class MockStore {
   }
 
   find<K extends Collection>(collection: K, id: ID): MockDatabase[K][number] | undefined {
-    return (this.db[collection] as { id?: ID }[]).find((item) => item.id === id) as
-      | MockDatabase[K][number]
-      | undefined;
+    return (this.db[collection] as { id?: ID }[]).find((item) => item.id === id) as MockDatabase[K][number] | undefined;
   }
 
   require<K extends Collection>(collection: K, id: ID, label = 'Registro'): MockDatabase[K][number] {
@@ -88,9 +86,7 @@ export class MockStore {
   /** Rule 8/9: every read and write is scoped to families the user belongs to. */
   requireMembership(familyId: ID): FamilyMember {
     const userId = this.currentUserId();
-    const member = this.db.members.find(
-      (m) => m.familyId === familyId && m.userId === userId && m.status === 'active',
-    );
+    const member = this.db.members.find((m) => m.familyId === familyId && m.userId === userId && m.status === 'active');
     if (!member) throw new AppError('forbidden', 'Você não tem acesso a esta família.');
     return member;
   }

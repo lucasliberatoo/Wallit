@@ -38,7 +38,12 @@ function equalShares(total: Cents, memberIds: string[]): ShareInput[] {
 function reducer(state: PurchaseFormState, action: Action): PurchaseFormState {
   switch (action.type) {
     case 'setTotal': {
-      const shares = state.autoSplit ? equalShares(action.value, state.shares.map((s) => s.memberId)) : state.shares;
+      const shares = state.autoSplit
+        ? equalShares(
+            action.value,
+            state.shares.map((s) => s.memberId),
+          )
+        : state.shares;
       return { ...state, totalCents: action.value, shares };
     }
     case 'setField':
@@ -76,7 +81,14 @@ function reducer(state: PurchaseFormState, action: Action): PurchaseFormState {
         shares: state.shares.map((s) => (s.memberId === action.memberId ? { ...s, amountCents: action.value } : s)),
       };
     case 'splitEqually':
-      return { ...state, autoSplit: true, shares: equalShares(state.totalCents, state.shares.map((s) => s.memberId)) };
+      return {
+        ...state,
+        autoSplit: true,
+        shares: equalShares(
+          state.totalCents,
+          state.shares.map((s) => s.memberId),
+        ),
+      };
     case 'fillRemaining': {
       const others = state.shares.filter((s) => s.memberId !== action.memberId).reduce((sum, s) => sum + s.amountCents, 0);
       const value = Math.max(state.totalCents - others, 0);

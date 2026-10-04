@@ -73,7 +73,12 @@ export function Button({
         style,
       ]}>
       {variant === 'accent' ? (
-        <LinearGradient colors={gradients.sunrise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, styles.gradient]} />
+        <LinearGradient
+          colors={gradients.sunrise}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, styles.gradient]}
+        />
       ) : null}
       {content}
     </PressableScale>

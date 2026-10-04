@@ -21,18 +21,25 @@ export type Action =
  */
 const ROLE_ACTIONS: Record<Role, readonly Action[]> = {
   owner: [
-    'family.manage', 'member.manage', 'wallet.create', 'card.create', 'card.manage',
-    'invoice.changeStatus', 'invoice.editLocked', 'payment.register',
-    'purchase.create', 'purchase.edit', 'category.manage', 'family.view',
+    'family.manage',
+    'member.manage',
+    'wallet.create',
+    'card.create',
+    'card.manage',
+    'invoice.changeStatus',
+    'invoice.editLocked',
+    'payment.register',
+    'purchase.create',
+    'purchase.edit',
+    'category.manage',
+    'family.view',
   ],
   titular: ['card.create', 'purchase.create', 'purchase.edit', 'category.manage', 'family.view'],
   member: ['purchase.create', 'purchase.edit', 'family.view'],
   guest: ['family.view'],
 };
 
-const HOLDER_ACTIONS: readonly Action[] = [
-  'card.manage', 'invoice.changeStatus', 'invoice.editLocked', 'payment.register',
-];
+const HOLDER_ACTIONS: readonly Action[] = ['card.manage', 'invoice.changeStatus', 'invoice.editLocked', 'payment.register'];
 
 export function can(role: Role, action: Action, context: { isCardHolder?: boolean } = {}): boolean {
   if (ROLE_ACTIONS[role].includes(action)) return true;

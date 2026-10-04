@@ -4,7 +4,15 @@ import { initialPurchaseForm, usePurchaseForm } from '../use-purchase-form';
 
 async function setup() {
   return await renderHook(() =>
-    usePurchaseForm(initialPurchaseForm({ cardId: 'card', categoryId: 'cat', buyerId: 'lucas', merchant: 'Farmácia', shares: [{ memberId: 'lucas', amountCents: 0 }] })),
+    usePurchaseForm(
+      initialPurchaseForm({
+        cardId: 'card',
+        categoryId: 'cat',
+        buyerId: 'lucas',
+        merchant: 'Farmácia',
+        shares: [{ memberId: 'lucas', amountCents: 0 }],
+      }),
+    ),
   );
 }
 

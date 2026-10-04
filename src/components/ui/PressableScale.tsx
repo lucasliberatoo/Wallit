@@ -12,7 +12,16 @@ export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
 }
 
 /** Base for every tappable surface: a subtle spring scale + optional haptic tick. */
-export function PressableScale({ style, scaleTo = 0.97, haptic = false, onPressIn, onPressOut, onPress, disabled, ...rest }: PressableScaleProps) {
+export function PressableScale({
+  style,
+  scaleTo = 0.97,
+  haptic = false,
+  onPressIn,
+  onPressOut,
+  onPress,
+  disabled,
+  ...rest
+}: PressableScaleProps) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 

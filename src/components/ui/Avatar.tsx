@@ -23,11 +23,7 @@ export function Avatar({ name, color, size = 40, ringColor }: AvatarProps) {
     <View
       accessible
       accessibilityLabel={name}
-      style={[
-        styles.outer,
-        { width: size, height: size },
-        ringColor && { borderWidth: ring, borderColor: ringColor, padding: 2 },
-      ]}>
+      style={[styles.outer, { width: size, height: size }, ringColor && { borderWidth: ring, borderColor: ringColor, padding: 2 }]}>
       <View style={[styles.inner, { width: inner, height: inner, backgroundColor: color }]}>
         <AppText
           variant="bodyStrong"

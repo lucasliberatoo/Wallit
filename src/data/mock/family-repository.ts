@@ -51,7 +51,14 @@ export function createMockFamilyRepository(store: MockStore): FamilyRepository {
             joinedAt: nowISO(),
           });
           seedDefaultCategories(store, family.id);
-          store.audit({ familyId: family.id, entity: 'family', entityId: family.id, action: 'created', summary: `Família criada: ${family.name}`, changes: [] });
+          store.audit({
+            familyId: family.id,
+            entity: 'family',
+            entityId: family.id,
+            action: 'created',
+            summary: `Família criada: ${family.name}`,
+            changes: [],
+          });
           return family;
         },
         { write: true },
@@ -79,7 +86,14 @@ export function createMockFamilyRepository(store: MockStore): FamilyRepository {
             joinedAt: nowISO(),
           };
           store.db.members.push(member);
-          store.audit({ familyId, entity: 'member', entityId: member.id, action: 'created', summary: `${member.displayName} entrou como ${ROLE_LABEL[role]}`, changes: [] });
+          store.audit({
+            familyId,
+            entity: 'member',
+            entityId: member.id,
+            action: 'created',
+            summary: `${member.displayName} entrou como ${ROLE_LABEL[role]}`,
+            changes: [],
+          });
           return member;
         },
         { write: true },
@@ -111,7 +125,14 @@ export function createMockFamilyRepository(store: MockStore): FamilyRepository {
           const member = store.member(memberId);
           requireManager(member.familyId);
           member.status = 'removed';
-          store.audit({ familyId: member.familyId, entity: 'member', entityId: member.id, action: 'cancelled', summary: `${member.displayName} saiu da família`, changes: [] });
+          store.audit({
+            familyId: member.familyId,
+            entity: 'member',
+            entityId: member.id,
+            action: 'cancelled',
+            summary: `${member.displayName} saiu da família`,
+            changes: [],
+          });
         },
         { write: true },
       ),

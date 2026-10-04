@@ -65,9 +65,7 @@ function writeInstallments(store: MockStore, purchase: Purchase, card: Card, act
 }
 
 function canEditLocked(store: MockStore, card: Card, actorUserId: ID): boolean {
-  const member = store.db.members.find(
-    (m) => m.familyId === card.familyId && m.userId === actorUserId && m.status === 'active',
-  );
+  const member = store.db.members.find((m) => m.familyId === card.familyId && m.userId === actorUserId && m.status === 'active');
   if (!member) return false;
   return can(member.role, 'invoice.editLocked', { isCardHolder: card.holderMemberId === member.id });
 }
@@ -131,12 +129,7 @@ function sharesLabel(store: MockStore, purchaseId: ID): string {
  * Section 18: edits never silently erase data; every relevant change is
  * recorded with before/after values.
  */
-export function updatePurchaseRecord(
-  store: MockStore,
-  purchase: Purchase,
-  next: CreatePurchaseInput,
-  actorUserId: ID,
-): Purchase {
+export function updatePurchaseRecord(store: MockStore, purchase: Purchase, next: CreatePurchaseInput, actorUserId: ID): Purchase {
   const card = validate(store, next);
   const changes: FieldChange[] = [];
   const track = (field: string, from: string | undefined, to: string | undefined) => {

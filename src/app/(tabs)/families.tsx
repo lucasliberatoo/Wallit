@@ -69,7 +69,10 @@ export default function FamiliesScreen() {
               </PressableScale>
             );
           })}
-          <PressableScale onPress={() => router.push('/family/new')} accessibilityLabel="Criar nova família" style={[styles.tile, styles.newTile, { width: tileWidth }]}>
+          <PressableScale
+            onPress={() => router.push('/family/new')}
+            accessibilityLabel="Criar nova família"
+            style={[styles.tile, styles.newTile, { width: tileWidth }]}>
             <View style={styles.plus}>
               <Plus size={26} color={colors.textOnDark} strokeWidth={2.6} />
             </View>
@@ -88,7 +91,28 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   tile: { height: 132, borderRadius: radius.xl, padding: spacing.lg, justifyContent: 'space-between', ...shadows.sm },
   tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  check: { width: 22, height: 22, borderRadius: radius.pill, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  newTile: { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, shadowOpacity: 0, elevation: 0 },
-  plus: { width: 48, height: 48, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newTile: {
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  plus: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

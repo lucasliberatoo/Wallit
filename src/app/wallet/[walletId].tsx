@@ -39,7 +39,12 @@ export default function WalletScreen() {
           </View>
         ) : (
           <>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={292} decelerationRate="fast" contentContainerStyle={styles.carousel}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={292}
+              decelerationRate="fast"
+              contentContainerStyle={styles.carousel}>
               {cards.map(({ card, holder, totals }) => (
                 <CreditCardView
                   key={card.id}

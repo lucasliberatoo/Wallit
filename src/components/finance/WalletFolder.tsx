@@ -42,7 +42,10 @@ export function WalletFolder({ name, cards, totalCents, onPress }: WalletFolderP
                 colors={cardThemes[card.theme].colors}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={[styles.miniCard, { left: index * 22, top: index * 6, zIndex: 3 - index, transform: [{ rotate: `${-4 + index * 4}deg` }] }]}>
+                style={[
+                  styles.miniCard,
+                  { left: index * 22, top: index * 6, zIndex: 3 - index, transform: [{ rotate: `${-4 + index * 4}deg` }] },
+                ]}>
                 {index === 0 ? (
                   <AppText variant="small" color={cardThemes[card.theme].text} numberOfLines={1}>
                     {card.name}
@@ -101,6 +104,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     ...shadows.sm,
   },
-  emptyCard: { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderStrong },
+  emptyCard: {
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.borderStrong,
+  },
   info: { flex: 1, gap: 2 },
 });

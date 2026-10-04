@@ -7,8 +7,5 @@ import { useCallback } from 'react';
  */
 export function useInvalidateData() {
   const queryClient = useQueryClient();
-  return useCallback(
-    () => queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'session' }),
-    [queryClient],
-  );
+  return useCallback(() => queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'session' }), [queryClient]);
 }

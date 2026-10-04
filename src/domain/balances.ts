@@ -80,9 +80,7 @@ export interface InvoiceTotals {
 /** Rule 13: the invoice must show total, received and pending. */
 export function computeInvoiceTotals(balances: readonly MemberBalance[]): InvoiceTotals {
   const totalCents = sumCents(balances.map((balance) => balance.owedCents));
-  const holderShareCents = sumCents(
-    balances.filter((balance) => balance.status === 'holder').map((balance) => balance.owedCents),
-  );
+  const holderShareCents = sumCents(balances.filter((balance) => balance.status === 'holder').map((balance) => balance.owedCents));
   const others = balances.filter((balance) => balance.status !== 'holder');
   const receivableCents = sumCents(others.map((balance) => balance.owedCents));
   const receivedCents = sumCents(others.map((balance) => Math.min(balance.paidCents, balance.owedCents)));
@@ -103,11 +101,7 @@ export type PaymentValidationError = 'invalid_amount' | 'exceeds_pending' | 'not
  * Rule 11: partial payments are allowed.
  * Rule 12: the amount paid can never exceed what is owed.
  */
-export function validatePayment(params: {
-  owedCents: Cents;
-  alreadyPaidCents: Cents;
-  amountCents: Cents;
-}): PaymentValidationError | null {
+export function validatePayment(params: { owedCents: Cents; alreadyPaidCents: Cents; amountCents: Cents }): PaymentValidationError | null {
   const pending = params.owedCents - params.alreadyPaidCents;
   if (!isValidCents(params.amountCents) || params.amountCents === 0) return 'invalid_amount';
   if (pending <= 0) return 'nothing_owed';

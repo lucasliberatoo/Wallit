@@ -49,7 +49,11 @@ export default function CategoriesScreen() {
 
   return (
     <>
-      <PageHeader title="Categorias" subtitle={current?.family.name} right={<IconButton icon={Plus} accessibilityLabel="Nova categoria" onPress={() => setEditing('new')} />} />
+      <PageHeader
+        title="Categorias"
+        subtitle={current?.family.name}
+        right={<IconButton icon={Plus} accessibilityLabel="Nova categoria" onPress={() => setEditing('new')} />}
+      />
       <Screen>
         {editing ? (
           <CategoryEditor
@@ -76,7 +80,12 @@ export default function CategoriesScreen() {
                 <IconButton icon={ArrowUp} size={16} accessibilityLabel={`Subir ${category.name}`} onPress={() => move(index, -1)} />
                 <IconButton icon={ArrowDown} size={16} accessibilityLabel={`Descer ${category.name}`} onPress={() => move(index, 1)} />
                 <IconButton icon={Pencil} size={16} accessibilityLabel={`Editar ${category.name}`} onPress={() => setEditing(category)} />
-                <IconButton icon={Trash2} size={16} accessibilityLabel={`Excluir ${category.name}`} onPress={() => confirmRemove(category)} />
+                <IconButton
+                  icon={Trash2}
+                  size={16}
+                  accessibilityLabel={`Excluir ${category.name}`}
+                  onPress={() => confirmRemove(category)}
+                />
               </View>
             </View>
           ))}
@@ -117,7 +126,12 @@ function CategoryEditor({
       </AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.options}>
         {CATEGORY_ICON_NAMES.map((iconName) => (
-          <PressableScale key={iconName} onPress={() => setIcon(iconName)} accessibilityLabel={`Ícone ${iconName}`} accessibilityState={{ selected: icon === iconName }} style={[styles.option, icon === iconName && styles.optionSelected]}>
+          <PressableScale
+            key={iconName}
+            onPress={() => setIcon(iconName)}
+            accessibilityLabel={`Ícone ${iconName}`}
+            accessibilityState={{ selected: icon === iconName }}
+            style={[styles.option, icon === iconName && styles.optionSelected]}>
             <CategoryIcon icon={iconName} color={color} size={40} />
           </PressableScale>
         ))}
@@ -127,7 +141,12 @@ function CategoryEditor({
       </AppText>
       <View style={styles.colors}>
         {COLORS.map((option) => (
-          <PressableScale key={option} onPress={() => setColor(option)} accessibilityLabel="Escolher cor" accessibilityState={{ selected: option === color }} style={[styles.swatch, { backgroundColor: option }]}>
+          <PressableScale
+            key={option}
+            onPress={() => setColor(option)}
+            accessibilityLabel="Escolher cor"
+            accessibilityState={{ selected: option === color }}
+            style={[styles.swatch, { backgroundColor: option }]}>
             {option === color ? <Check size={16} color={colors.textOnDark} strokeWidth={3} /> : null}
           </PressableScale>
         ))}

@@ -58,10 +58,20 @@ export default function NewCardScreen() {
       <PageHeader title="Novo cartão" subtitle={wallet.data?.wallet.name} />
       <Screen footer={<Button label="Salvar cartão" size="lg" onPress={submit} disabled={!canSubmit} loading={create.isPending} />}>
         <View style={styles.preview}>
-          <CreditCardView card={{ name: name || 'Nome do cartão', theme, brand }} holderName={holder?.displayName ?? 'Escolha o titular'} width={300} />
+          <CreditCardView
+            card={{ name: name || 'Nome do cartão', theme, brand }}
+            holderName={holder?.displayName ?? 'Escolha o titular'}
+            width={300}
+          />
         </View>
 
-        <TextField label="Apelido do cartão" placeholder="Cartão da Vó, Nubank Principal…" value={name} onChangeText={setName} maxLength={30} />
+        <TextField
+          label="Apelido do cartão"
+          placeholder="Cartão da Vó, Nubank Principal…"
+          value={name}
+          onChangeText={setName}
+          maxLength={30}
+        />
 
         <View style={styles.group}>
           <AppText variant="caption" color="textSecondary">
@@ -82,10 +92,24 @@ export default function NewCardScreen() {
 
         <View style={styles.row}>
           <View style={styles.flex}>
-            <TextField label="Dia de fechamento" placeholder="25" keyboardType="number-pad" value={closingDay} onChangeText={setClosingDay} maxLength={2} />
+            <TextField
+              label="Dia de fechamento"
+              placeholder="25"
+              keyboardType="number-pad"
+              value={closingDay}
+              onChangeText={setClosingDay}
+              maxLength={2}
+            />
           </View>
           <View style={styles.flex}>
-            <TextField label="Dia de vencimento" placeholder="5" keyboardType="number-pad" value={dueDay} onChangeText={setDueDay} maxLength={2} />
+            <TextField
+              label="Dia de vencimento"
+              placeholder="5"
+              keyboardType="number-pad"
+              value={dueDay}
+              onChangeText={setDueDay}
+              maxLength={2}
+            />
           </View>
         </View>
         {closingDay && dueDay && !validDays ? (
@@ -111,7 +135,12 @@ export default function NewCardScreen() {
           </AppText>
           <View style={styles.wrap}>
             {BRANDS.map((option) => (
-              <Chip key={option.value} label={option.label} selected={brand === option.value} onPress={() => setBrand(brand === option.value ? undefined : option.value)} />
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={brand === option.value}
+                onPress={() => setBrand(brand === option.value ? undefined : option.value)}
+              />
             ))}
           </View>
         </View>

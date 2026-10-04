@@ -39,7 +39,11 @@ export function useCurrentFamily() {
 
 export function useMembers(familyId: string | undefined) {
   const { families } = useRepositories();
-  return useQuery({ queryKey: queryKeys.members(familyId ?? ''), queryFn: () => families.listMembers(familyId!), enabled: Boolean(familyId) });
+  return useQuery({
+    queryKey: queryKeys.members(familyId ?? ''),
+    queryFn: () => families.listMembers(familyId!),
+    enabled: Boolean(familyId),
+  });
 }
 
 export function useCreateFamily() {
@@ -83,7 +87,10 @@ export function useAddMember() {
 export function useUpdateMemberRole() {
   const { families } = useRepositories();
   const invalidate = useInvalidateData();
-  return useMutation({ mutationFn: ({ memberId, role }: { memberId: string; role: Role }) => families.updateMemberRole(memberId, role), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: Role }) => families.updateMemberRole(memberId, role),
+    onSuccess: invalidate,
+  });
 }
 
 export function useRemoveMember() {

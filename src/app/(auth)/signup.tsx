@@ -33,7 +33,15 @@ export default function SignUpScreen() {
         control={form.control}
         name="name"
         render={({ field, fieldState }) => (
-          <TextField label="Nome" placeholder="Como te chamam" autoComplete="name" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={fieldState.error?.message} />
+          <TextField
+            label="Nome"
+            placeholder="Como te chamam"
+            autoComplete="name"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={fieldState.error?.message}
+          />
         )}
       />
       <Controller

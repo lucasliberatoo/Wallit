@@ -31,7 +31,9 @@ export function CreditCardView({ card, holderName, amountCents, amountLabel = 'F
   const body = (
     <LinearGradient colors={theme.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { width, height }]}>
       <View style={[styles.glow, { width: width * 0.9, height: width * 0.9, right: -width * 0.45, top: -width * 0.5 }]} />
-      <View style={[styles.glow, styles.glowSmall, { width: width * 0.5, height: width * 0.5, left: -width * 0.2, bottom: -width * 0.3 }]} />
+      <View
+        style={[styles.glow, styles.glowSmall, { width: width * 0.5, height: width * 0.5, left: -width * 0.2, bottom: -width * 0.3 }]}
+      />
       <View style={styles.top}>
         <AppText variant="bodyStrong" color={theme.text} numberOfLines={1} style={styles.flex}>
           {card.name}
@@ -66,7 +68,10 @@ export function CreditCardView({ card, holderName, amountCents, amountLabel = 'F
 
   if (!onPress) return <View style={[styles.shadow, { borderRadius: radius.xl }]}>{body}</View>;
   return (
-    <PressableScale onPress={onPress} style={[styles.shadow, { borderRadius: radius.xl }]} accessibilityLabel={`${card.name}, titular ${holderName}`}>
+    <PressableScale
+      onPress={onPress}
+      style={[styles.shadow, { borderRadius: radius.xl }]}
+      accessibilityLabel={`${card.name}, titular ${holderName}`}>
       {body}
     </PressableScale>
   );

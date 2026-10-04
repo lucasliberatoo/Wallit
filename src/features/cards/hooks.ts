@@ -6,7 +6,11 @@ import { useRepositories } from '@/providers/RepositoriesProvider';
 
 export function useFamilyCards(familyId: string | undefined) {
   const { cards } = useRepositories();
-  return useQuery({ queryKey: queryKeys.familyCards(familyId ?? ''), queryFn: () => cards.listByFamily(familyId!), enabled: Boolean(familyId) });
+  return useQuery({
+    queryKey: queryKeys.familyCards(familyId ?? ''),
+    queryFn: () => cards.listByFamily(familyId!),
+    enabled: Boolean(familyId),
+  });
 }
 
 export function useCard(cardId: string | undefined) {

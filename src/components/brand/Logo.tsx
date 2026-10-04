@@ -25,7 +25,13 @@ export function Logo({ size = 72, variant = 'sunrise' }: LogoProps) {
       style={[styles.box, { width: size, height: size, borderRadius: size * 0.26 }]}>
       <View style={[styles.stripe, { top: size * 0.43, right: size * 0.08, width: size * 0.3, height: Math.max(2, size * 0.04) }]} />
       <AppText
-        style={{ fontFamily: fontFamily.extrabold, fontSize: size * 0.27, lineHeight: size * 0.34, letterSpacing: -size * 0.01, color: textColor }}>
+        style={{
+          fontFamily: fontFamily.extrabold,
+          fontSize: size * 0.27,
+          lineHeight: size * 0.34,
+          letterSpacing: -size * 0.01,
+          color: textColor,
+        }}>
         Wallit
       </AppText>
     </LinearGradient>

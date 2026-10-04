@@ -60,18 +60,13 @@ export function planInstallments(params: {
  *
  * Returns one array per installment, aligned with `shares`.
  */
-export function allocateSharesToInstallments(
-  amounts: readonly Cents[],
-  shares: readonly ShareInput[],
-): Cents[][] {
+export function allocateSharesToInstallments(amounts: readonly Cents[], shares: readonly ShareInput[]): Cents[][] {
   const remaining = shares.map((share) => share.amountCents);
   let remainingTotal = amounts.reduce((sum, amount) => sum + amount, 0);
 
   return amounts.map((amount) => {
     const allocation =
-      amount === 0
-        ? remaining.map(() => 0)
-        : amount === remainingTotal ? [...remaining] : allocateProportionally(amount, remaining);
+      amount === 0 ? remaining.map(() => 0) : amount === remainingTotal ? [...remaining] : allocateProportionally(amount, remaining);
     allocation.forEach((value, index) => {
       remaining[index] -= value;
     });

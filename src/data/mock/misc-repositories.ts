@@ -1,13 +1,4 @@
-import {
-  can,
-  type Card,
-  type Category,
-  formatBRL,
-  type Invoice,
-  isInvoiceLocked,
-  type Payment,
-  validatePayment,
-} from '@/domain';
+import { can, type Card, type Category, formatBRL, type Invoice, isInvoiceLocked, type Payment, validatePayment } from '@/domain';
 import { AppError } from '../errors';
 import type { CategoryRepository, DashboardRepository, PaymentRepository } from '../repositories';
 import { newId, nowISO, type MockStore } from './store';
@@ -205,7 +196,11 @@ export function createMockDashboardRepository(store: MockStore): DashboardReposi
     activity: (familyId) =>
       store.run(() => {
         store.requireMembership(familyId);
-        return store.db.auditLogs.filter((log) => log.familyId === familyId).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 100).map((log) => withActor(store, log));
+        return store.db.auditLogs
+          .filter((log) => log.familyId === familyId)
+          .sort((a, b) => b.at.localeCompare(a.at))
+          .slice(0, 100)
+          .map((log) => withActor(store, log));
       }),
   };
 }

@@ -17,7 +17,14 @@ export interface InvoiceSummaryCardProps {
 }
 
 /** Rule 13: total, received and pending, always together. */
-export function InvoiceSummaryCard({ title, totals, dueDate, status, holderName, pendingLabel = 'Falta receber' }: InvoiceSummaryCardProps) {
+export function InvoiceSummaryCard({
+  title,
+  totals,
+  dueDate,
+  status,
+  holderName,
+  pendingLabel = 'Falta receber',
+}: InvoiceSummaryCardProps) {
   const accruing = status === 'open' || status === 'reviewing';
   return (
     <Surface elevation="md" style={styles.card}>
@@ -40,7 +47,11 @@ export function InvoiceSummaryCard({ title, totals, dueDate, status, holderName,
       <ProgressBar progress={totals.progress} />
       <View style={styles.stats}>
         <Stat label="Recebido" value={formatBRL(totals.receivedCents)} color={colors.success} />
-        <Stat label={pendingLabel} value={formatBRL(totals.pendingCents)} color={totals.pendingCents > 0 && !accruing ? colors.danger : colors.text} />
+        <Stat
+          label={pendingLabel}
+          value={formatBRL(totals.pendingCents)}
+          color={totals.pendingCents > 0 && !accruing ? colors.danger : colors.text}
+        />
         <Stat label="Parte da titular" value={formatBRL(totals.holderShareCents)} color={colors.text} />
       </View>
     </Surface>

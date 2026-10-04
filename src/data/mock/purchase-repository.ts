@@ -45,8 +45,7 @@ export function createMockPurchaseRepository(store: MockStore): PurchaseReposito
             buyerMemberId: changes.buyerMemberId ?? purchase.buyerMemberId,
             note: changes.note ?? purchase.note,
             shares:
-              changes.shares ??
-              purchaseShares(store, purchase.id).map((s) => ({ memberId: s.member.id, amountCents: s.amountCents })),
+              changes.shares ?? purchaseShares(store, purchase.id).map((s) => ({ memberId: s.member.id, amountCents: s.amountCents })),
           };
           return purchaseDetails(store, updatePurchaseRecord(store, purchase, next, store.currentUserId()));
         },

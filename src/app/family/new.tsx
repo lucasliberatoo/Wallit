@@ -17,8 +17,7 @@ export default function NewFamilyScreen() {
   const [color, setColor] = useState<string>(identityColors[0]);
   const create = useCreateFamily();
 
-  const submit = () =>
-    create.mutate({ name, color }, { onSuccess: (family) => router.replace(`/family/${family.id}`) });
+  const submit = () => create.mutate({ name, color }, { onSuccess: (family) => router.replace(`/family/${family.id}`) });
 
   return (
     <>
@@ -30,7 +29,11 @@ export default function NewFamilyScreen() {
         <TextField label="Nome" placeholder="Família Silva" value={name} onChangeText={setName} autoFocus maxLength={40} />
         <View style={styles.suggestions}>
           {SUGGESTIONS.map((suggestion) => (
-            <PressableScale key={suggestion} onPress={() => setName(suggestion)} style={styles.suggestion} accessibilityLabel={`Usar nome ${suggestion}`}>
+            <PressableScale
+              key={suggestion}
+              onPress={() => setName(suggestion)}
+              style={styles.suggestion}
+              accessibilityLabel={`Usar nome ${suggestion}`}>
               <AppText variant="caption">{suggestion}</AppText>
             </PressableScale>
           ))}
@@ -60,7 +63,12 @@ export default function NewFamilyScreen() {
 
 const styles = StyleSheet.create({
   suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: -spacing.md },
-  suggestion: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.pill, backgroundColor: colors.surfaceMuted },
+  suggestion: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+  },
   colorSection: { gap: spacing.sm },
   colors: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   swatch: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },

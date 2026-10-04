@@ -5,7 +5,19 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { CategoryIcon, InvoiceStatusBadge } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, Avatar, Button, Divider, ErrorState, IconButton, ListRow, LoadingState, ProgressBar, SectionHeader, Surface } from '@/components/ui';
+import {
+  AppText,
+  Avatar,
+  Button,
+  Divider,
+  ErrorState,
+  IconButton,
+  ListRow,
+  LoadingState,
+  ProgressBar,
+  SectionHeader,
+  Surface,
+} from '@/components/ui';
 import { errorMessage } from '@/data';
 import { formatBRL, formatRef, installmentAmounts, installmentProgress } from '@/domain';
 import { useCancelPurchase, usePurchase } from '@/features/purchases/hooks';
@@ -25,11 +37,16 @@ export default function PurchaseScreen() {
   const amounts = installmentAmounts(p.totalCents, p.installmentCount);
   const today = todayISO();
   const currentIndex = data.installments.findIndex(({ invoice }) => invoice.dueDate >= today);
-  const progress = p.installmentCount > 1 ? installmentProgress(amounts, currentIndex === -1 ? p.installmentCount : currentIndex + 1) : null;
+  const progress =
+    p.installmentCount > 1 ? installmentProgress(amounts, currentIndex === -1 ? p.installmentCount : currentIndex + 1) : null;
   const cancelled = p.status === 'cancelled';
 
   const confirmCancel = () => {
-    const run = () => cancel.mutate(purchaseId, { onSuccess: () => router.back(), onError: (error) => Alert.alert('Não foi possível cancelar', errorMessage(error)) });
+    const run = () =>
+      cancel.mutate(purchaseId, {
+        onSuccess: () => router.back(),
+        onError: (error) => Alert.alert('Não foi possível cancelar', errorMessage(error)),
+      });
     if (Platform.OS === 'web') {
       if (window.confirm('Cancelar esta compra? Ela sai das faturas, mas continua no histórico.')) run();
     } else {
@@ -46,7 +63,11 @@ export default function PurchaseScreen() {
         title="Compra"
         subtitle={data.card.name}
         onBack={created ? () => router.navigate('/') : undefined}
-        right={data.canEdit ? <IconButton icon={Pencil} accessibilityLabel="Editar compra" onPress={() => router.push(`/purchase/edit/${purchaseId}`)} /> : null}
+        right={
+          data.canEdit ? (
+            <IconButton icon={Pencil} accessibilityLabel="Editar compra" onPress={() => router.push(`/purchase/edit/${purchaseId}`)} />
+          ) : null
+        }
       />
       <Screen refreshing={purchase.isRefetching} onRefresh={() => purchase.refetch()}>
         {created ? (
@@ -111,7 +132,9 @@ export default function PurchaseScreen() {
               </AppText>
               <ProgressBar progress={progress.current / progress.count} color={colors.primary} />
               <AppText variant="caption" color="textSecondary">
-                {progress.remainingCount === 0 ? 'Última parcela' : `Restam ${progress.remainingCount} parcelas · ${formatBRL(progress.remainingCents)}`}
+                {progress.remainingCount === 0
+                  ? 'Última parcela'
+                  : `Restam ${progress.remainingCount} parcelas · ${formatBRL(progress.remainingCents)}`}
               </AppText>
               <Divider />
               {data.installments.map(({ installment, invoice }) => (
@@ -126,7 +149,10 @@ export default function PurchaseScreen() {
             </Surface>
           </View>
         ) : data.installments[0] ? (
-          <Surface onPress={() => router.push(`/invoice/${data.installments[0].invoice.id}`)} style={styles.invoiceLink} accessibilityLabel="Abrir fatura">
+          <Surface
+            onPress={() => router.push(`/invoice/${data.installments[0].invoice.id}`)}
+            style={styles.invoiceLink}
+            accessibilityLabel="Abrir fatura">
             <AppText variant="bodyStrong" style={styles.flex}>
               Fatura {formatRef(data.installments[0].invoice.ref, { capitalize: true })}
             </AppText>
@@ -170,14 +196,24 @@ export default function PurchaseScreen() {
           </Surface>
         </View>
 
-        {data.canEdit ? <Button label="Cancelar compra" icon={Trash2} variant="danger" onPress={confirmCancel} loading={cancel.isPending} /> : null}
+        {data.canEdit ? (
+          <Button label="Cancelar compra" icon={Trash2} variant="danger" onPress={confirmCancel} loading={cancel.isPending} />
+        ) : null}
       </Screen>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  success: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.successSoft, padding: spacing.md, borderRadius: radius.lg },
+  success: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.successSoft,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+  },
   hero: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.xxl },
   strike: { textDecorationLine: 'line-through' },
   list: { paddingHorizontal: spacing.lg },
@@ -186,6 +222,13 @@ const styles = StyleSheet.create({
   flex: { flex: 1, gap: 2 },
   history: { gap: spacing.lg },
   log: { flexDirection: 'row', gap: spacing.md },
-  logIcon: { width: 28, height: 28, borderRadius: radius.pill, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  logIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   logMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
 });
