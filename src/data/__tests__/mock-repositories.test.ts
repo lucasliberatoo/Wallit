@@ -96,16 +96,16 @@ describe('mock backend (end-to-end business rules)', () => {
     const invoices = await repos.invoices.listByCard(principal.card.id);
     const collecting = invoices.find((i) => i.invoice.status === 'collecting')!;
     const details = await repos.invoices.getDetails(collecting.invoice.id);
-    const maria = details.balances.find((b) => b.member.displayName === 'Maria')!;
-    expect(maria.status).toBe('partial');
+    const lucas = details.balances.find((b) => b.member.displayName === 'Lucas')!;
+    expect(lucas.status).toBe('partial');
 
     await expect(
-      repos.payments.register({ invoiceId: collecting.invoice.id, memberId: maria.memberId, amountCents: maria.pendingCents + 1 }),
+      repos.payments.register({ invoiceId: collecting.invoice.id, memberId: lucas.memberId, amountCents: lucas.pendingCents + 1 }),
     ).rejects.toBeInstanceOf(AppError);
 
-    await repos.payments.register({ invoiceId: collecting.invoice.id, memberId: maria.memberId, amountCents: maria.pendingCents });
+    await repos.payments.register({ invoiceId: collecting.invoice.id, memberId: lucas.memberId, amountCents: lucas.pendingCents });
     const updated = await repos.invoices.getDetails(collecting.invoice.id);
-    expect(updated.balances.find((b) => b.memberId === maria.memberId)!.status).toBe('paid');
+    expect(updated.balances.find((b) => b.memberId === lucas.memberId)!.status).toBe('paid');
   });
 
   it('records edits in the audit history', async () => {

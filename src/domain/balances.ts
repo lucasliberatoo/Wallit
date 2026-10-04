@@ -1,5 +1,5 @@
 import { type Cents, isValidCents, sumCents } from './money';
-import type { ID } from './types';
+import type { ID, PaymentStatus } from './types';
 
 /** One member's responsibility for one installment in an invoice. */
 export interface DebtLine {
@@ -10,6 +10,8 @@ export interface DebtLine {
 export interface PaymentLine {
   memberId: ID;
   amountCents: Cents;
+  /** Defaults to confirmed. Only confirmed payments count as received. */
+  status?: PaymentStatus;
 }
 
 export type MemberPaymentStatus = 'paid' | 'partial' | 'pending' | 'none' | 'holder';
@@ -19,6 +21,8 @@ export interface MemberBalance {
   owedCents: Cents;
   paidCents: Cents;
   pendingCents: Cents;
+  /** Transfers the member marked as done that the holder hasn't confirmed yet. */
+  awaitingCents: Cents;
   status: MemberPaymentStatus;
 }
 
@@ -42,9 +46,13 @@ export function computeMemberBalances(params: {
 }): MemberBalance[] {
   const owed = new Map<ID, Cents>();
   const paid = new Map<ID, Cents>();
+  const awaiting = new Map<ID, Cents>();
   for (const debt of params.debts) owed.set(debt.memberId, (owed.get(debt.memberId) ?? 0) + debt.amountCents);
   for (const payment of params.payments) {
-    paid.set(payment.memberId, (paid.get(payment.memberId) ?? 0) + payment.amountCents);
+    const status = payment.status ?? 'confirmed';
+    if (status === 'rejected') continue;
+    const target = status === 'confirmed' ? paid : awaiting;
+    target.set(payment.memberId, (target.get(payment.memberId) ?? 0) + payment.amountCents);
   }
 
   const ids = [...new Set([...params.memberIds, ...owed.keys()])];
@@ -57,6 +65,7 @@ export function computeMemberBalances(params: {
       owedCents,
       paidCents: isHolder ? owedCents : paidCents,
       pendingCents: isHolder ? 0 : Math.max(owedCents - paidCents, 0),
+      awaitingCents: isHolder ? 0 : (awaiting.get(memberId) ?? 0),
       status: isHolder ? 'holder' : paymentStatus(owedCents, paidCents),
     };
   });
@@ -73,6 +82,8 @@ export interface InvoiceTotals {
   receivedCents: Cents;
   /** What is still missing. */
   pendingCents: Cents;
+  /** Part of the pending amount already marked as sent, waiting for the holder. */
+  awaitingCents: Cents;
   /** 0-1, share of the receivable already received. */
   progress: number;
 }
@@ -91,6 +102,7 @@ export function computeInvoiceTotals(balances: readonly MemberBalance[]): Invoic
     receivableCents,
     receivedCents,
     pendingCents,
+    awaitingCents: sumCents(others.map((balance) => Math.min(balance.awaitingCents, balance.pendingCents))),
     progress: receivableCents === 0 ? 1 : receivedCents / receivableCents,
   };
 }
@@ -101,8 +113,14 @@ export type PaymentValidationError = 'invalid_amount' | 'exceeds_pending' | 'not
  * Rule 11: partial payments are allowed.
  * Rule 12: the amount paid can never exceed what is owed.
  */
-export function validatePayment(params: { owedCents: Cents; alreadyPaidCents: Cents; amountCents: Cents }): PaymentValidationError | null {
-  const pending = params.owedCents - params.alreadyPaidCents;
+export function validatePayment(params: {
+  owedCents: Cents;
+  alreadyPaidCents: Cents;
+  amountCents: Cents;
+  /** Payments still waiting for confirmation also count, so nobody pays twice. */
+  awaitingCents?: Cents;
+}): PaymentValidationError | null {
+  const pending = params.owedCents - params.alreadyPaidCents - (params.awaitingCents ?? 0);
   if (!isValidCents(params.amountCents) || params.amountCents === 0) return 'invalid_amount';
   if (pending <= 0) return 'nothing_owed';
   if (params.amountCents > pending) return 'exceeds_pending';

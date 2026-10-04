@@ -1,4 +1,4 @@
-import type { User } from '../../domain';
+import type { NotificationPrefs, User } from '../../domain';
 import { AppError } from '../errors';
 import type { Session } from '../models';
 import type { AuthRepository, Repositories } from '../repositories';
@@ -11,6 +11,7 @@ interface AuthUser {
   avatarColor?: string | null;
   pixKey?: string | null;
   image?: string | null;
+  notificationPrefs?: NotificationPrefs | null;
 }
 
 const toUser = (user: AuthUser): User => ({
@@ -20,6 +21,7 @@ const toUser = (user: AuthUser): User => ({
   avatarColor: user.avatarColor ?? '#155EEF',
   pixKey: user.pixKey ?? undefined,
   photo: user.image ?? undefined,
+  notificationPrefs: user.notificationPrefs ?? undefined,
 });
 
 function createHttpAuthRepository(api: ApiClient): AuthRepository {
@@ -84,6 +86,11 @@ export function createHttpRepositories(apiUrl: string, tokens: TokenStorage): Re
     purchases: remote(api, 'purchases'),
     categories: remote(api, 'categories'),
     payments: remote(api, 'payments'),
+    reviews: remote(api, 'reviews'),
+    aliases: remote(api, 'aliases'),
+    notifications: remote(api, 'notifications'),
+    statistics: remote(api, 'statistics'),
+    attachments: remote(api, 'attachments'),
     dashboard: remote(api, 'dashboard'),
   };
 }

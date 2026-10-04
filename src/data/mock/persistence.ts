@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { DATABASE_VERSION, type Database } from '../core/database';
+import { type Database, migrateDatabase } from '../core/database';
 import type { Persistence } from '../core/store';
 
 const STORAGE_KEY = 'wallit:mock-db';
@@ -11,8 +11,7 @@ export const asyncStoragePersistence: Persistence = {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
-      const parsed = JSON.parse(raw) as Database;
-      return parsed.version === DATABASE_VERSION ? parsed : null;
+      return migrateDatabase(JSON.parse(raw) as Database);
     } catch {
       return null;
     }

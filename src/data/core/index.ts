@@ -3,12 +3,19 @@ import { createAuthRepository } from './auth-repository';
 import { createCardRepository, createWalletRepository } from './card-repository';
 import { createFamilyRepository } from './family-repository';
 import { createInvoiceRepository } from './invoice-repository';
-import { createCategoryRepository, createDashboardRepository, createPaymentRepository } from './misc-repositories';
+import { createAliasRepository } from './alias-repository';
+import { createAttachmentRepository } from './attachment-repository';
+import { createCategoryRepository, createDashboardRepository } from './misc-repositories';
+import { createNotificationRepository } from './notification-repository';
+import { createPaymentRepository } from './payment-repository';
 import { createPurchaseRepository } from './purchase-repository';
+import { createReviewRepository } from './review-repository';
+import { createStatisticsRepository } from './statistics-repository';
 import type { Store } from './store';
 
 export { Store, type Persistence, newId, nowISO } from './store';
-export { emptyDatabase, DATABASE_VERSION, type Database, type Collection, type StoredUser, type Invite } from './database';
+export { createDueReminders } from './reminders';
+export { emptyDatabase, migrateDatabase, DATABASE_VERSION, type Database, type Collection, type StoredUser, type Invite } from './database';
 export { seedDemoDatabase, DEMO_ACCOUNT } from './seed';
 
 /** Business rules shared by the offline mock and the server API. */
@@ -22,6 +29,11 @@ export function createCoreRepositories(store: Store): Repositories {
     purchases: createPurchaseRepository(store),
     categories: createCategoryRepository(store),
     payments: createPaymentRepository(store),
+    reviews: createReviewRepository(store),
+    aliases: createAliasRepository(store),
+    notifications: createNotificationRepository(store),
+    statistics: createStatisticsRepository(store),
+    attachments: createAttachmentRepository(store),
     dashboard: createDashboardRepository(store),
   };
 }

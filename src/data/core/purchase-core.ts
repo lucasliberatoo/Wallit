@@ -15,7 +15,15 @@ import {
 } from '../../domain';
 import { AppError } from '../errors';
 import type { CreatePurchaseInput } from '../models';
+import { findAlias, learnAlias } from './alias-repository';
 import { newId, nowISO, type Store } from './store';
+
+/** A purchase typed with only the statement name gets the family's alias. */
+function withAlias(store: Store, input: CreatePurchaseInput): CreatePurchaseInput {
+  if (input.merchant.trim()) return input;
+  const alias = findAlias(store, input.familyId, input.statementName);
+  return alias ? { ...input, merchant: alias.merchant } : input;
+}
 
 function validate(store: Store, input: CreatePurchaseInput): Card {
   const card = store.require('cards', input.cardId, 'Cartão') as Card;
@@ -70,7 +78,8 @@ function canEditLocked(store: Store, card: Card, actorUserId: ID): boolean {
   return can(member.role, 'invoice.editLocked', { isCardHolder: card.holderMemberId === member.id });
 }
 
-export function insertPurchase(store: Store, input: CreatePurchaseInput, actorUserId: ID, createdAt = nowISO()): Purchase {
+export function insertPurchase(store: Store, rawInput: CreatePurchaseInput, actorUserId: ID, createdAt = nowISO()): Purchase {
+  const input = withAlias(store, rawInput);
   const card = validate(store, input);
   const purchase: Purchase = {
     id: newId('pur'),
@@ -115,6 +124,7 @@ export function insertPurchase(store: Store, input: CreatePurchaseInput, actorUs
     actorUserId,
     at: createdAt,
   });
+  learnAlias(store, purchase, actorUserId);
   return purchase;
 }
 
@@ -129,7 +139,8 @@ function sharesLabel(store: Store, purchaseId: ID): string {
  * Section 18: edits never silently erase data; every relevant change is
  * recorded with before/after values.
  */
-export function updatePurchaseRecord(store: Store, purchase: Purchase, next: CreatePurchaseInput, actorUserId: ID): Purchase {
+export function updatePurchaseRecord(store: Store, purchase: Purchase, rawNext: CreatePurchaseInput, actorUserId: ID): Purchase {
+  const next = withAlias(store, rawNext);
   const card = validate(store, next);
   const changes: FieldChange[] = [];
   const track = (field: string, from: string | undefined, to: string | undefined) => {
@@ -173,9 +184,16 @@ export function updatePurchaseRecord(store: Store, purchase: Purchase, next: Cre
   for (const share of next.shares) {
     store.db.shares.push({ id: newId('shr'), purchaseId: purchase.id, memberId: share.memberId, amountCents: share.amountCents });
   }
-  track('Divisão', sharesBefore, sharesLabel(store, purchase.id));
+  const sharesAfter = sharesLabel(store, purchase.id);
+  track('Divisão', sharesBefore, sharesAfter);
+
+  // Confirmations were about the old values: everyone checks the purchase again.
+  if (regenerate || sharesBefore !== sharesAfter || purchase.buyerMemberId !== next.buyerMemberId) {
+    store.db.reviews = store.db.reviews.filter((review) => review.purchaseId !== purchase.id || review.status === 'resolved');
+  }
 
   Object.assign(purchase, updated);
+  learnAlias(store, purchase, actorUserId);
   if (changes.length > 0) {
     store.audit({
       familyId: purchase.familyId,

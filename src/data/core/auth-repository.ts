@@ -1,9 +1,16 @@
-import { PROFILE_PHOTO_MAX_LENGTH } from '../../domain';
+import { NOTIFICATION_CATEGORY_LABEL, type NotificationPrefs, PROFILE_PHOTO_MAX_LENGTH } from '../../domain';
 import { identityColors } from '../../theme/colors';
 import { AppError } from '../errors';
 import type { AuthRepository } from '../repositories';
 import type { StoredUser } from './database';
 import { newId, type Store } from './store';
+
+/** Keeps only known categories with boolean values. */
+function cleanPrefs(prefs: NotificationPrefs): NotificationPrefs {
+  return Object.fromEntries(
+    Object.entries(prefs).filter(([key, value]) => key in NOTIFICATION_CATEGORY_LABEL && typeof value === 'boolean'),
+  ) as NotificationPrefs;
+}
 
 function publicUser({ password: _password, ...user }: StoredUser) {
   return user;
@@ -69,7 +76,8 @@ export function createAuthRepository(store: Store): AuthRepository {
       store.run(
         () => {
           const user = store.require('users', store.currentUserId(), 'Usuário') as StoredUser;
-          const { photo, ...rest } = changes;
+          const { photo, notificationPrefs, ...rest } = changes;
+          if (notificationPrefs) user.notificationPrefs = { ...user.notificationPrefs, ...cleanPrefs(notificationPrefs) };
           if (photo !== undefined) {
             if (photo && (!photo.startsWith('data:image/') || photo.length > PROFILE_PHOTO_MAX_LENGTH)) {
               throw new AppError('validation', 'Essa foto não pôde ser usada. Escolha outra imagem.');
