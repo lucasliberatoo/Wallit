@@ -1,15 +1,17 @@
 import { router } from 'expo-router';
 import { Check, KeyRound, Plus, UsersRound } from 'lucide-react-native';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { GradientHeader, Screen } from '@/components/layout';
 import { AppText, Button, ErrorState, LoadingState, PressableScale } from '@/components/ui';
 import { errorMessage, type FamilySummary } from '@/data';
 import { ROLE_LABEL } from '@/domain';
 import { useCurrentFamily, useFamilies } from '@/features/families/hooks';
-import { colors, layout, radius, shadows, spacing } from '@/theme';
+import { layout, makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export default function FamiliesScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { current, select } = useCurrentFamily();
   const families = useFamilies();
   const { width } = useWindowDimensions();
@@ -28,10 +30,10 @@ export default function FamiliesScreen() {
       onRefresh={() => families.refetch()}
       header={
         <GradientHeader>
-          <AppText variant="h1" color="brand">
+          <AppText variant="h1" color="headerText">
             Suas famílias
           </AppText>
-          <AppText variant="body" color="brand">
+          <AppText variant="body" color="headerTextSecondary">
             Cada família tem suas carteiras, cartões e faturas separados.
           </AppText>
         </GradientHeader>
@@ -87,7 +89,7 @@ export default function FamiliesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors, { shadows }) => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   tile: { height: 132, borderRadius: radius.xl, padding: spacing.lg, justifyContent: 'space-between', ...shadows.sm },
   tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -95,7 +97,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: radius.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.textOnDark,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -111,8 +113,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

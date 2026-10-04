@@ -6,10 +6,11 @@ import { PageHeader, Screen } from '@/components/layout';
 import { AppText, Button, Surface } from '@/components/ui';
 import { useInstallPrompt } from '@/features/download/use-install-prompt';
 import { ANDROID_APK_URL } from '@/lib/links';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 /** Public page: get the Wallit app from the browser (APK or home-screen install). */
 export default function DownloadScreen() {
+  const { colors } = useTheme();
   const { canInstall, installed, install } = useInstallPrompt();
 
   return (
@@ -41,8 +42,8 @@ export default function DownloadScreen() {
             <AppText variant="bodyStrong">iPhone</AppText>
           </View>
           <AppText variant="body" color="textSecondary">
-            Abra este site no Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”. O Wallit aparece com ícone próprio e abre
-            em tela cheia.
+            Abra este site no Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”. O Wallit aparece com ícone próprio e
+            abre em tela cheia.
           </AppText>
         </Surface>
 

@@ -1,9 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
 import type { Category, Cents, FamilyMember } from '@/domain';
 import { formatBRL } from '@/domain';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing } from '@/theme';
 import { CategoryIcon } from './CategoryIcon';
 
 export interface PurchaseRowProps {
@@ -32,6 +32,7 @@ export function PurchaseRow({
   dateLabel,
   onPress,
 }: PurchaseRowProps) {
+  const styles = useStyles();
   const payersLabel = payers.map((p) => p.displayName).join(' + ');
   const showPayers = payersLabel && payersLabel !== buyer.displayName;
   const details = [`Comprou: ${buyer.displayName}`, showPayers ? `Paga: ${payersLabel}` : null].filter(Boolean).join(' · ');
@@ -72,9 +73,9 @@ export function PurchaseRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   text: { flex: 1, gap: 1 },
   right: { alignItems: 'flex-end', gap: 4 },
   installment: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-});
+}));

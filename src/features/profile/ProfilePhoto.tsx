@@ -1,16 +1,18 @@
 import { Camera } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, Avatar, PressableScale } from '@/components/ui';
 import { errorMessage } from '@/data';
 import type { User } from '@/domain';
 import { useUpdateProfile } from '@/features/auth/hooks';
-import { colors, palette, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { pickProfilePhoto } from './pick-photo';
 
 /** Avatar that opens the photo picker; the photo is shown to the whole family. */
 export function ProfilePhoto({ user }: { user: User | null | undefined }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const update = useUpdateProfile();
   const [pickError, setPickError] = useState<string | null>(null);
 
@@ -29,13 +31,19 @@ export function ProfilePhoto({ user }: { user: User | null | undefined }) {
   return (
     <View style={styles.wrap}>
       <PressableScale onPress={choose} accessibilityLabel={user?.photo ? 'Trocar foto' : 'Adicionar foto'} disabled={update.isPending}>
-        <Avatar name={user?.name ?? '?'} color={user?.avatarColor ?? colors.primary} photo={user?.photo} size={72} />
+        <Avatar
+          name={user?.name ?? '?'}
+          color={user?.avatarColor ?? colors.primary}
+          photo={user?.photo}
+          size={76}
+          ringColor={colors.headerText}
+        />
         <View style={styles.badge}>
-          <Camera size={14} color={palette.white} />
+          <Camera size={14} color={colors.onPrimary} />
         </View>
       </PressableScale>
       {user?.photo ? (
-        <AppText variant="small" color="brand" onPress={() => update.mutate({ photo: '' })} accessibilityRole="button">
+        <AppText variant="small" color="headerText" onPress={() => update.mutate({ photo: '' })} accessibilityRole="button">
           Remover foto
         </AppText>
       ) : null}
@@ -48,7 +56,7 @@ export function ProfilePhoto({ user }: { user: User | null | undefined }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrap: { alignItems: 'center', gap: spacing.xs },
   badge: {
     position: 'absolute',
@@ -57,10 +65,10 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: radius.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryFill,
     borderWidth: 2,
-    borderColor: palette.white,
+    borderColor: colors.headerText,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { History, LogOut, Plus, Shapes, UserPlus, WalletCards } from 'lucide-react-native';
-import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, ScrollView, View } from 'react-native';
 
 import { MemberChip, WalletFolder } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
@@ -20,7 +20,7 @@ import { errorMessage } from '@/data';
 import { can, ROLE_LABEL, sumCents } from '@/domain';
 import { useFamily, useLeaveFamily, useMembers } from '@/features/families/hooks';
 import { useWallets } from '@/features/wallets/hooks';
-import { colors, spacing } from '@/theme';
+import { makeStyles, spacing, useTheme } from '@/theme';
 
 function confirm(title: string, message: string, onConfirm: () => void) {
   if (Platform.OS === 'web') {
@@ -34,6 +34,8 @@ function confirm(title: string, message: string, onConfirm: () => void) {
 }
 
 export default function FamilyScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { familyId } = useLocalSearchParams<{ familyId: string }>();
   const family = useFamily(familyId);
   const members = useMembers(familyId);
@@ -140,7 +142,7 @@ export default function FamilyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   members: { gap: spacing.sm, paddingRight: spacing.lg },
   addMember: { alignItems: 'center', width: 72, gap: spacing.xxs },
   addButton: {
@@ -156,4 +158,4 @@ const styles = StyleSheet.create({
   },
   section: { gap: spacing.md },
   menu: { paddingHorizontal: spacing.lg },
-});
+}));

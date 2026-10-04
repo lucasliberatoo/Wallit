@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { LucideIcon } from 'lucide-react-native';
 import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, gradients, radius, spacing, touchTarget } from '@/theme';
+import { radius, spacing, type ThemeColors, touchTarget, useTheme } from '@/theme';
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
 
@@ -21,13 +21,20 @@ export interface ButtonProps {
   accessibilityHint?: string;
 }
 
-const variantStyles: Record<Variant, { background: string; text: string; border?: string }> = {
-  primary: { background: colors.primary, text: colors.textOnDark },
-  accent: { background: colors.accent, text: colors.textOnAccent },
-  secondary: { background: colors.surface, text: colors.brand, border: colors.border },
-  ghost: { background: 'transparent', text: colors.primary },
-  danger: { background: colors.dangerSoft, text: colors.danger },
-};
+function variantStyle(variant: Variant, colors: ThemeColors): { background: string; text: string; border?: string } {
+  switch (variant) {
+    case 'primary':
+      return { background: colors.primaryFill, text: colors.onPrimary };
+    case 'accent':
+      return { background: colors.primaryFill, text: colors.textOnAccent };
+    case 'secondary':
+      return { background: colors.surface, text: colors.brand, border: colors.border };
+    case 'ghost':
+      return { background: 'transparent', text: colors.primary };
+    case 'danger':
+      return { background: colors.dangerSoft, text: colors.danger };
+  }
+}
 
 export function Button({
   label,
@@ -41,7 +48,8 @@ export function Button({
   style,
   accessibilityHint,
 }: ButtonProps) {
-  const palette = variantStyles[variant];
+  const { colors, gradients } = useTheme();
+  const palette = variantStyle(variant, colors);
   const height = size === 'lg' ? 56 : touchTarget + 4;
   const content = (
     <View style={styles.content}>
@@ -74,7 +82,7 @@ export function Button({
       ]}>
       {variant === 'accent' ? (
         <LinearGradient
-          colors={gradients.sunrise}
+          colors={gradients.accent}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[StyleSheet.absoluteFill, styles.gradient]}

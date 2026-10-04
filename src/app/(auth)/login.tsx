@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { LogIn, Sparkles } from 'lucide-react-native';
 import { Controller } from 'react-hook-form';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { AppText, Button, TextField } from '@/components/ui';
 import { DEMO_ACCOUNT, errorMessage } from '@/data';
@@ -10,9 +10,10 @@ import { FormError } from '@/features/auth/FormError';
 import { useSignIn } from '@/features/auth/hooks';
 import { signInSchema } from '@/features/auth/schemas';
 import { useZodForm } from '@/lib/form';
-import { colors, fontFamily, spacing } from '@/theme';
+import { fontFamily, makeStyles, spacing } from '@/theme';
 
 export default function LoginScreen() {
+  const styles = useStyles();
   const signIn = useSignIn();
   const form = useZodForm(signInSchema, { defaultValues: { email: '', password: '' } });
 
@@ -89,9 +90,9 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   link: { color: colors.primary, fontFamily: fontFamily.semibold },
   forgot: { alignSelf: 'flex-end', fontSize: 13 },
   actions: { gap: spacing.sm },
   footer: { alignItems: 'center', gap: spacing.sm },
-});
+}));

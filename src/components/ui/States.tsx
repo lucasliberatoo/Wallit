@@ -1,12 +1,14 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { CircleAlert } from 'lucide-react-native';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 
 export function LoadingState({ label = 'Carregando…' }: { label?: string }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.center} accessibilityLabel={label}>
       <ActivityIndicator color={colors.primary} size="large" />
@@ -15,6 +17,8 @@ export function LoadingState({ label = 'Carregando…' }: { label?: string }) {
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.center}>
       <CircleAlert color={colors.danger} size={32} />
@@ -35,6 +39,8 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, actionLabel, onAction }: EmptyStateProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.empty}>
       <View style={styles.iconWrap}>
@@ -53,7 +59,7 @@ export function EmptyState({ icon: Icon, title, description, actionLabel, onActi
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xxl, minHeight: 200 },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl, paddingHorizontal: spacing.lg },
   iconWrap: {
@@ -65,4 +71,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
-});
+}));

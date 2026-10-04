@@ -1,10 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, WalletCards } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
 import { type Card, type Cents, formatBRL } from '@/domain';
-import { cardThemes, colors, radius, shadows, spacing } from '@/theme';
+import { cardThemes, makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export interface WalletFolderProps {
   name: string;
@@ -18,6 +18,8 @@ export interface WalletFolderProps {
  * by the original prototype.
  */
 export function WalletFolder({ name, cards, totalCents, onPress }: WalletFolderProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const visible = cards.slice(0, 3);
   return (
     <PressableScale onPress={onPress} scaleTo={0.98} accessibilityLabel={`${name}, ${cards.length} cartões`}>
@@ -70,7 +72,7 @@ export function WalletFolder({ name, cards, totalCents, onPress }: WalletFolderP
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors, { shadows }) => ({
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -113,4 +115,4 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
   },
   info: { flex: 1, gap: 2 },
-});
+}));

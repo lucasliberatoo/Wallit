@@ -1,5 +1,4 @@
 import { Platform, type ViewStyle } from 'react-native';
-import { palette } from './colors';
 
 export const spacing = {
   xxs: 2,
@@ -32,11 +31,12 @@ export const layout = {
   headerCurve: radius.xxl,
 } as const;
 
-function shadow(elevation: number, opacity: number, blur: number, y: number): ViewStyle {
+function shadow(color: string, elevation: number, opacity: number, blur: number, y: number): ViewStyle {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
   return Platform.select<ViewStyle>({
-    web: { boxShadow: `0px ${y}px ${blur}px rgba(11,31,77,${opacity})` } as ViewStyle,
+    web: { boxShadow: `0px ${y}px ${blur}px rgba(${r},${g},${b},${opacity})` } as ViewStyle,
     default: {
-      shadowColor: palette.navy800,
+      shadowColor: color,
       shadowOpacity: opacity,
       shadowRadius: blur / 2,
       shadowOffset: { width: 0, height: y },
@@ -45,12 +45,21 @@ function shadow(elevation: number, opacity: number, blur: number, y: number): Vi
   })!;
 }
 
-export const shadows = {
-  none: {} as ViewStyle,
-  sm: shadow(2, 0.06, 8, 2),
-  md: shadow(6, 0.08, 20, 6),
-  lg: shadow(12, 0.14, 32, 12),
-} as const;
+export type ShadowLevel = 'none' | 'sm' | 'md' | 'lg';
+export type ThemeShadows = Record<ShadowLevel, ViewStyle>;
+
+/**
+ * Elevation styles for a shadow base color (`#RRGGBB`). Dark surfaces need a
+ * stronger shadow to still read as elevated.
+ */
+export function createShadows(color: string, strength = 1): ThemeShadows {
+  return {
+    none: {},
+    sm: shadow(color, 2, 0.06 * strength, 8, 2),
+    md: shadow(color, 6, 0.08 * strength, 20, 6),
+    lg: shadow(color, 12, 0.14 * strength, 32, 12),
+  };
+}
 
 export const durations = {
   fast: 150,

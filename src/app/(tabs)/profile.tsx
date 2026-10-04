@@ -8,12 +8,14 @@ import { GradientHeader, Screen } from '@/components/layout';
 import { AppText, Button, Divider, ListRow, Surface, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { useCurrentUser, useSignOut, useUpdateProfile } from '@/features/auth/hooks';
+import { AppearanceSetting } from '@/features/profile/AppearanceSetting';
 import { ProfilePhoto } from '@/features/profile/ProfilePhoto';
 import { useRepositories } from '@/providers/RepositoriesProvider';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
   const user = useCurrentUser();
   const signOut = useSignOut();
   const update = useUpdateProfile();
@@ -46,10 +48,10 @@ export default function ProfileScreen() {
           <View style={styles.header}>
             <ProfilePhoto user={user} />
             <View style={styles.flex}>
-              <AppText variant="h2" color="brand">
+              <AppText variant="h2" color="headerText">
                 {user?.name}
               </AppText>
-              <AppText variant="body" color="brand">
+              <AppText variant="body" color="headerTextSecondary">
                 {user?.email}
               </AppText>
             </View>
@@ -79,6 +81,8 @@ export default function ProfileScreen() {
           onPress={() => update.mutate({ name: name.trim(), pixKey: pixKey.trim() || undefined })}
         />
       </Surface>
+
+      <AppearanceSetting />
 
       <Surface padded={false} style={styles.menu}>
         <ListRow
@@ -117,9 +121,7 @@ export default function ProfileScreen() {
       </Surface>
 
       <View style={styles.actions}>
-        {repositories.reset ? (
-          <Button label="Restaurar dados de exemplo" icon={RefreshCcw} variant="ghost" onPress={resetDemo} />
-        ) : null}
+        {repositories.reset ? <Button label="Restaurar dados de exemplo" icon={RefreshCcw} variant="ghost" onPress={resetDemo} /> : null}
         <Button
           label="Sair da conta"
           icon={LogOut}

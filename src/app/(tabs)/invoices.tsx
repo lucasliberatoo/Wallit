@@ -10,7 +10,7 @@ import { errorMessage, type InvoiceListItem } from '@/data';
 import { compareRefs, formatBRL, formatRef, type InvoiceRef, invoiceRefForDate } from '@/domain';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { useFamilyInvoices } from '@/features/invoices/hooks';
-import { colors, spacing } from '@/theme';
+import { makeStyles, spacing, useTheme } from '@/theme';
 import { formatShortDate, todayISO } from '@/utils/dates';
 
 type Filter = 'current' | 'pending' | 'past' | 'future';
@@ -41,6 +41,8 @@ function matches(item: InvoiceListItem, filter: Filter): boolean {
 }
 
 export default function InvoicesScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { current } = useCurrentFamily();
   const invoices = useFamilyInvoices(current?.family.id);
   const [filter, setFilter] = useState<Filter>('current');
@@ -53,10 +55,10 @@ export default function InvoicesScreen() {
       onRefresh={() => invoices.refetch()}
       header={
         <GradientHeader>
-          <AppText variant="h1" color="brand">
+          <AppText variant="h1" color="headerText">
             Faturas
           </AppText>
-          <AppText variant="body" color="brand">
+          <AppText variant="body" color="headerTextSecondary">
             {current?.family.name ?? 'Nenhuma família selecionada'}
           </AppText>
         </GradientHeader>
@@ -134,7 +136,7 @@ export default function InvoicesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: -spacing.sm },
   card: { gap: spacing.sm },
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -147,4 +149,4 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
-});
+}));

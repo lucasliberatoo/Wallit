@@ -1,10 +1,10 @@
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/brand/Logo';
 import { GradientHeader } from '@/components/layout';
 import { AppText } from '@/components/ui';
-import { colors, layout, radius, shadows, spacing } from '@/theme';
+import { layout, makeStyles, radius, spacing } from '@/theme';
 
 export interface AuthScaffoldProps {
   title: string;
@@ -15,17 +15,18 @@ export interface AuthScaffoldProps {
 
 /** Shared frame for login, sign-up and password recovery. */
 export function AuthScaffold({ title, subtitle, children, footer }: AuthScaffoldProps) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
         <GradientHeader>
           <View style={styles.brand}>
-            <Logo size={64} variant="ocean" />
-            <AppText variant="h1" color="brand">
+            <Logo size={64} variant="white" />
+            <AppText variant="h1" color="headerText">
               {title}
             </AppText>
-            <AppText variant="body" color="brand" style={styles.subtitle}>
+            <AppText variant="body" color="headerTextSecondary">
               {subtitle}
             </AppText>
           </View>
@@ -37,10 +38,9 @@ export function AuthScaffold({ title, subtitle, children, footer }: AuthScaffold
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors, { shadows }) => ({
   root: { flex: 1, backgroundColor: colors.background },
   brand: { gap: spacing.sm, paddingBottom: spacing.xxxl },
-  subtitle: { opacity: 0.85 },
   card: {
     marginTop: -spacing.xxxl,
     marginHorizontal: layout.screenPadding,
@@ -54,4 +54,4 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   footer: { alignItems: 'center', marginTop: spacing.xl, gap: spacing.sm, paddingHorizontal: layout.screenPadding },
-});
+}));
