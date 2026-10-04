@@ -79,7 +79,10 @@ export function hasHolderPower(card: Card, member: FamilyMember): boolean {
 export function cardManagerIds(store: Store, card: Card): ID[] {
   const holder = store.member(card.holderMemberId);
   if (holder.userId && holder.status === 'active') return [holder.id];
-  return store.activeMembers(card.familyId).filter((m) => m.role === 'owner' && m.userId).map((m) => m.id);
+  return store
+    .activeMembers(card.familyId)
+    .filter((m) => m.role === 'owner' && m.userId)
+    .map((m) => m.id);
 }
 
 /** Who confirms a purchase in a review: buyer and payers that use the app. */
@@ -222,7 +225,11 @@ export function withActor(store: Store, log: AuditLog): AuditLogView {
 }
 
 export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetails {
-  store.requireMembership(purchase.familyId);
+  const me = store.requireMembership(purchase.familyId);
+  const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
+  const reviewingInvoice = purchaseInstallments(store, purchase.id)
+    .map((installment) => store.find('invoices', installment.invoiceId) as Invoice | undefined)
+    .find((invoice) => invoice?.status === 'reviewing');
   return {
     purchase,
     category: store.db.categories.find((c) => c.id === purchase.categoryId) ?? null,
@@ -238,6 +245,9 @@ export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetai
       .sort((a, b) => b.at.localeCompare(a.at))
       .map((log) => withActor(store, log)),
     canEdit: canEditPurchase(store, purchase),
+    canManage: hasHolderPower(card, me),
+    me,
+    review: reviewingInvoice ? { invoiceId: reviewingInvoice.id, ...lineReview(store, reviewingInvoice, purchase, me.id) } : null,
     attachments: store.db.attachments
       .filter((a) => a.purchaseId === purchase.id && !a.deletedAt)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),

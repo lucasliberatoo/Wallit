@@ -56,7 +56,11 @@ function createHttpAuthRepository(api: ApiClient): AuthRepository {
     },
 
     signIn: (email, password) =>
-      startSession('/auth/sign-in/email', { email: email.trim().toLowerCase(), password }, () => new AppError('invalid_credentials', 'Email ou senha incorretos.')),
+      startSession(
+        '/auth/sign-in/email',
+        { email: email.trim().toLowerCase(), password },
+        () => new AppError('invalid_credentials', 'Email ou senha incorretos.'),
+      ),
 
     signUp: ({ name, email, password }) =>
       startSession('/auth/sign-up/email', { name: name.trim(), email: email.trim().toLowerCase(), password }, (code) =>

@@ -67,7 +67,9 @@ export function createPaymentRepository(store: Store): PaymentRepository {
           if (error === 'nothing_owed') {
             throw new AppError(
               'validation',
-              balance && balance.awaitingCents > 0 ? 'Já existe pagamento aguardando a titular confirmar.' : 'Não há valor pendente para esta pessoa.',
+              balance && balance.awaitingCents > 0
+                ? 'Já existe pagamento aguardando a titular confirmar.'
+                : 'Não há valor pendente para esta pessoa.',
             );
           }
           if (error) throw new AppError('validation', 'Informe um valor válido.');

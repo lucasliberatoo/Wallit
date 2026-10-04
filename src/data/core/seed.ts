@@ -63,7 +63,7 @@ export function seedDemoDatabase(store: Store): void {
   db.sessionUserId = users[0].id;
 
   const familyId = newId('fam');
-  db.families.push({ id: familyId, name: 'Família Silva', color: palette.orange500, createdBy: users[0].id, createdAt });
+  db.families.push({ id: familyId, name: 'Família Silva', color: palette.blue500, createdBy: users[0].id, createdAt });
 
   const member = (displayName: string, role: FamilyMember['role'], avatarColor: string, userId: ID | null = null): FamilyMember => {
     const m: FamilyMember = { id: newId('mem'), familyId, userId, displayName, role, avatarColor, status: 'active', joinedAt: createdAt };

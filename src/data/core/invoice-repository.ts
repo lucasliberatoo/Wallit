@@ -1,13 +1,4 @@
-import {
-  can,
-  canTransition,
-  type Card,
-  compareRefs,
-  formatBRL,
-  type Invoice,
-  INVOICE_STATUS_LABEL,
-  invoiceRefForDate,
-} from '../../domain';
+import { can, canTransition, type Card, compareRefs, formatBRL, type Invoice, INVOICE_STATUS_LABEL, invoiceRefForDate } from '../../domain';
 import { AppError } from '../errors';
 import type { InvoiceRepository } from '../repositories';
 import { invoiceLabel, invoiceLink } from './labels';
@@ -109,7 +100,10 @@ export function createInvoiceRepository(store: Store): InvoiceRepository {
           if (invoice.status === 'reviewing' && status === 'closed') {
             const disputed = invoiceDetails(store, invoice).reviewProgress.disputed;
             if (disputed > 0) {
-              throw new AppError('validation', `Responda ${disputed === 1 ? 'a contestação' : `as ${disputed} contestações`} antes de fechar.`);
+              throw new AppError(
+                'validation',
+                `Responda ${disputed === 1 ? 'a contestação' : `as ${disputed} contestações`} antes de fechar.`,
+              );
             }
           }
           const before = invoice.status;

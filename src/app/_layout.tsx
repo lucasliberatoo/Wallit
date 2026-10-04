@@ -72,6 +72,8 @@ function RootNavigator() {
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           <Stack.Screen name="purchase/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="invoice/payment" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="review/dispute" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="review/resolve" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         </Stack.Protected>
         <Stack.Protected guard={!isSignedIn}>
           <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />

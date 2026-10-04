@@ -1,9 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 
 import { PageHeader } from '@/components/layout';
 import { ErrorState, LoadingState } from '@/components/ui';
 import { errorMessage, type PurchaseDetails } from '@/data';
+import { useUploadPicked } from '@/features/attachments/hooks';
+import type { PickedFile } from '@/features/attachments/pick-attachment';
 import { FormError } from '@/features/auth/FormError';
+import { showError } from '@/utils/confirm';
 import { useFamilyCards } from '@/features/cards/hooks';
 import { useCategories } from '@/features/categories/hooks';
 import { useMembers } from '@/features/families/hooks';
@@ -38,6 +42,8 @@ function EditForm({
   categories: NonNullable<ReturnType<typeof useCategories>['data']>;
 }) {
   const update = useUpdatePurchase();
+  const uploads = useUploadPicked();
+  const [files, setFiles] = useState<PickedFile[]>([]);
   const { purchase } = details;
   const form = usePurchaseForm(
     initialPurchaseForm({
@@ -66,7 +72,10 @@ function EditForm({
         categories={categories}
         lockInstallments
         submitLabel="Salvar alterações"
-        submitting={update.isPending}
+        submitting={update.isPending || uploads.isPending}
+        files={files}
+        onFilesChange={setFiles}
+        existingAttachments={details.attachments.length}
         error={<FormError message={update.error ? errorMessage(update.error) : null} />}
         onSubmit={() => {
           const input = form.toInput(purchase.familyId);
@@ -84,7 +93,13 @@ function EditForm({
                 note: input.note ?? '',
               },
             },
-            { onSuccess: () => router.back() },
+            {
+              onSuccess: async () => {
+                const failed = await uploads.upload(purchase.id, files);
+                router.back();
+                if (failed > 0) showError('Compra salva', 'Alguns anexos não foram enviados. Tente de novo pela tela da compra.');
+              },
+            },
           );
         }}
       />

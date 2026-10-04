@@ -68,7 +68,8 @@ export function computeStatistics(entries: readonly SpendingEntry[], period: { f
 
   const last = months.at(-1);
   const previous = months.at(-2);
-  const lastMonthChange = last && previous && previous.totalCents > 0 ? (last.totalCents - previous.totalCents) / previous.totalCents : null;
+  const lastMonthChange =
+    last && previous && previous.totalCents > 0 ? (last.totalCents - previous.totalCents) / previous.totalCents : null;
 
   return {
     totalCents,

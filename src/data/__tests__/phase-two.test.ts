@@ -42,9 +42,9 @@ describe('payments confirmed by the holder', () => {
 
     // Maria can't mark more than what is left (her transfer is already waiting).
     await signInAs(MARIA);
-    await expect(
-      repos.payments.register({ invoiceId: collecting.invoice.id, memberId: maria.memberId, amountCents: 100 }),
-    ).rejects.toThrow('aguardando');
+    await expect(repos.payments.register({ invoiceId: collecting.invoice.id, memberId: maria.memberId, amountCents: 100 })).rejects.toThrow(
+      'aguardando',
+    );
 
     // The owner (holder has no account) confirms it.
     await signInAs(DEMO_ACCOUNT.email);
@@ -99,6 +99,10 @@ describe('invoice review (conferência) and disputes', () => {
 
     const mine = details.lines.filter((line) => line.review.awaitingMe);
     expect(mine.length).toBeGreaterThan(0);
+    // The purchase screen shows the same review state and lets the manager answer disputes.
+    const purchase = await repos.purchases.get(mine[0].purchase.id);
+    expect(purchase.review).toMatchObject({ invoiceId, awaitingMe: true });
+    expect(purchase.canManage).toBe(true);
     for (const line of mine) await repos.reviews.confirm(invoiceId, line.purchase.id);
     const afterConfirm = await repos.invoices.getDetails(invoiceId);
     expect(afterConfirm.lines.some((line) => line.review.awaitingMe)).toBe(false);
@@ -219,13 +223,23 @@ describe('attachments', () => {
   it('stores a receipt with the purchase and opens it', async () => {
     const { repos, familyId } = await setup();
     const [item] = await repos.purchases.search(familyId, { search: 'Amazon' });
-    const attachment = await repos.attachments.add({ purchaseId: item.purchase.id, name: 'cupom.png', mimeType: 'image/png', dataUrl: PNG });
+    const attachment = await repos.attachments.add({
+      purchaseId: item.purchase.id,
+      name: 'cupom.png',
+      mimeType: 'image/png',
+      dataUrl: PNG,
+    });
     expect(attachment.sizeBytes).toBeGreaterThan(0);
     expect((await repos.purchases.get(item.purchase.id)).attachments.map((a) => a.id)).toEqual([attachment.id]);
     expect((await repos.attachments.getData(attachment.id)).dataUrl).toBe(PNG);
 
     await expect(
-      repos.attachments.add({ purchaseId: item.purchase.id, name: 'x.exe', mimeType: 'application/x-msdownload', dataUrl: 'data:application/x-msdownload;base64,AA==' }),
+      repos.attachments.add({
+        purchaseId: item.purchase.id,
+        name: 'x.exe',
+        mimeType: 'application/x-msdownload',
+        dataUrl: 'data:application/x-msdownload;base64,AA==',
+      }),
     ).rejects.toBeInstanceOf(AppError);
 
     await repos.attachments.remove(attachment.id);

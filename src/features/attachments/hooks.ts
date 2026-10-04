@@ -27,3 +27,22 @@ export function useRemoveAttachment() {
   const invalidate = useInvalidateData();
   return useMutation({ mutationFn: (attachmentId: string) => attachments.remove(attachmentId), onSuccess: invalidate });
 }
+
+/** Uploads files picked in a form once the purchase exists. Returns how many failed. */
+export function useUploadPicked() {
+  const add = useAddAttachment();
+  return {
+    isPending: add.isPending,
+    upload: async (purchaseId: string, files: { name: string; mimeType: string; dataUrl: string }[]) => {
+      let failed = 0;
+      for (const file of files) {
+        try {
+          await add.mutateAsync({ purchaseId, ...file });
+        } catch {
+          failed += 1;
+        }
+      }
+      return failed;
+    },
+  };
+}

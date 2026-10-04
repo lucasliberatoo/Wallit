@@ -18,7 +18,8 @@ export interface MemberBalanceRowProps {
 
 export function MemberBalanceRow({ balance, isMe, canRegister, invoiceOpen, onRegister }: MemberBalanceRowProps) {
   const { colors } = useTheme();
-  const { member, owedCents, paidCents, pendingCents, status } = balance;
+  const { member, owedCents, paidCents, pendingCents, awaitingCents, status } = balance;
+  const toRegisterCents = pendingCents - awaitingCents;
   const progress = owedCents === 0 ? 0 : paidCents / owedCents;
   const accruing = invoiceOpen && status === 'pending';
   const ring = accruing ? colors.borderStrong : paymentStatusStyle(status, colors).color;
@@ -47,10 +48,17 @@ export function MemberBalanceRow({ balance, isMe, canRegister, invoiceOpen, onRe
         <View style={styles.bottom}>
           <ProgressBar progress={progress} height={6} />
           <View style={styles.actionsRow}>
-            <AppText variant="caption" color="textSecondary" style={styles.flex} numberOfLines={1}>
-              Pago {formatBRL(paidCents)}
-            </AppText>
-            {canRegister ? (
+            <View style={styles.flex}>
+              <AppText variant="caption" color="textSecondary" numberOfLines={1}>
+                Pago {formatBRL(paidCents)}
+              </AppText>
+              {awaitingCents > 0 ? (
+                <AppText variant="small" color="warning" numberOfLines={1}>
+                  {formatBRL(awaitingCents)} aguardando confirmação
+                </AppText>
+              ) : null}
+            </View>
+            {canRegister && toRegisterCents > 0 ? (
               <Button
                 label={isMe ? 'Informar' : 'Registrar'}
                 icon={HandCoins}

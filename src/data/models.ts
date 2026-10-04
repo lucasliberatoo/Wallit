@@ -141,6 +141,11 @@ export interface PurchaseDetails {
   installments: { installment: PurchaseInstallment; invoice: Invoice }[];
   history: AuditLogView[];
   canEdit: boolean;
+  /** Holder power over the card: answers disputes, removes any attachment. */
+  canManage: boolean;
+  me: FamilyMember;
+  /** Review state while one of its invoices is being reviewed. */
+  review: (LineReview & { invoiceId: ID }) | null;
   attachments: Attachment[];
   disputes: DisputeView[];
 }
