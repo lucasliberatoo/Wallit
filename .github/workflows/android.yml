@@ -1,0 +1,67 @@
+name: Android APK
+
+# Builds the Android app and, on main, publishes it as the latest GitHub
+# release. The download page links to releases/latest/download/wallit.apk.
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'assets/**', 'app.json', 'app.config.js', 'package.json', 'package-lock.json', '.github/workflows/android.yml']
+  pull_request:
+    paths: ['app.json', 'app.config.js', 'package.json', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_API_URL: https://wallit-seven.vercel.app/api
+      ANDROID_VERSION_CODE: ${{ github.run_number }}
+      NODE_ENV: production
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install
+        env:
+          CI: 1
+      # Sign with the project key when it is configured; otherwise the
+      # template's key keeps every build installable over the previous one.
+      - name: Use release keystore
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: env.KEYSTORE != ''
+        run: echo "$KEYSTORE" | base64 -d > android/app/debug.keystore
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a --no-daemon
+      - run: cp android/app/build/outputs/apk/release/app-release.apk wallit.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wallit-apk
+          path: wallit.apk
+      - name: Publish release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ github.run_number }}
+          name: Wallit Android ${{ github.run_number }}
+          body: Versão Android do Wallit. Baixe o wallit.apk no celular e instale.
+          files: wallit.apk
+          make_latest: true

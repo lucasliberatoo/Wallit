@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { History, KeyRound, LogOut, RefreshCcw, Shapes, ShieldCheck } from 'lucide-react-native';
+import { Download, History, KeyRound, LogOut, RefreshCcw, Shapes, ShieldCheck } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 
@@ -95,6 +95,17 @@ export default function ProfileScreen() {
           leading={<KeyRound size={20} color={colors.primary} />}
           onPress={() => router.push('/family/join')}
         />
+        {Platform.OS === 'web' ? (
+          <>
+            <Divider inset={spacing.lg + 32} />
+            <ListRow
+              title="Baixar o app"
+              subtitle="Android ou tela inicial do iPhone"
+              leading={<Download size={20} color={colors.primary} />}
+              onPress={() => router.push('/baixar')}
+            />
+          </>
+        ) : null}
         <Divider inset={spacing.lg + 32} />
         <ListRow
           title="Segurança"
