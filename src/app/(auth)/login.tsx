@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { LogIn, Sparkles } from 'lucide-react-native';
 import { Controller } from 'react-hook-form';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { AppText, Button, TextField } from '@/components/ui';
 import { DEMO_ACCOUNT, errorMessage } from '@/data';
@@ -23,12 +23,19 @@ export default function LoginScreen() {
       title="Bem-vindo de volta"
       subtitle="Quem compra registra. Quem deve acompanha."
       footer={
-        <AppText variant="body" color="textSecondary">
-          Ainda não tem conta?{' '}
-          <Link href="/signup" style={styles.link}>
-            Criar conta
-          </Link>
-        </AppText>
+        <View style={styles.footer}>
+          <AppText variant="body" color="textSecondary">
+            Ainda não tem conta?{' '}
+            <Link href="/signup" style={styles.link}>
+              Criar conta
+            </Link>
+          </AppText>
+          {Platform.OS === 'web' ? (
+            <Link href="/baixar" style={styles.link}>
+              Baixar o app no celular
+            </Link>
+          ) : null}
+        </View>
       }>
       <Controller
         control={form.control}
@@ -86,4 +93,5 @@ const styles = StyleSheet.create({
   link: { color: colors.primary, fontFamily: fontFamily.semibold },
   forgot: { alignSelf: 'flex-end', fontSize: 13 },
   actions: { gap: spacing.sm },
+  footer: { alignItems: 'center', gap: spacing.sm },
 });
