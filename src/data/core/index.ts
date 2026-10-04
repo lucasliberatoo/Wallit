@@ -34,6 +34,8 @@ export function createCoreRepositories(store: Store): Repositories {
     notifications: createNotificationRepository(store),
     statistics: createStatisticsRepository(store),
     attachments: createAttachmentRepository(store),
+    // Push needs a server; the offline demo only has in-app notifications.
+    push: { publicKey: async () => null, subscribe: async () => undefined, unsubscribe: async () => undefined },
     dashboard: createDashboardRepository(store),
   };
 }

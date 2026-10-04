@@ -53,6 +53,8 @@ writeFileSync(
   JSON.stringify(
     {
       version: 3,
+      // Due date reminders, every day at 9h in Brasília (12:00 UTC).
+      crons: [{ path: '/api/cron/daily', schedule: '0 12 * * *' }],
       routes: [
         { src: '^/api(?:/(.*))?$', dest: '/api?__path=$1' },
         { handle: 'filesystem' },

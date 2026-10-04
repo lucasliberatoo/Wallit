@@ -52,6 +52,7 @@ function createAuth() {
       additionalFields: {
         avatarColor: { type: 'string', required: false, input: false },
         pixKey: { type: 'string', required: false, input: false },
+        notificationPrefs: { type: 'json', required: false, input: false },
       },
     },
     session: { expiresIn: 60 * 60 * 24 * 60, updateAge: 60 * 60 * 24 },

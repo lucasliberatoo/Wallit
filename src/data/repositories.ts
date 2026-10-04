@@ -150,6 +150,19 @@ export interface DashboardRepository {
   activity(familyId: ID): Promise<AuditLogView[]>;
 }
 
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+/** Notifications on the device (Web Push for the installed web app). */
+export interface PushRepository {
+  /** `null` when this backend can't send push (offline demo). */
+  publicKey(): Promise<string | null>;
+  subscribe(subscription: PushSubscriptionInput): Promise<void>;
+  unsubscribe(endpoint: string): Promise<void>;
+}
+
 export interface Repositories {
   auth: AuthRepository;
   families: FamilyRepository;
@@ -164,5 +177,6 @@ export interface Repositories {
   notifications: NotificationRepository;
   statistics: StatisticsRepository;
   attachments: AttachmentRepository;
+  push: PushRepository;
   dashboard: DashboardRepository;
 }

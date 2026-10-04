@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, date, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
-import type { FieldChange } from '../../src/domain';
+import type { FieldChange, NotificationPrefs } from '../../src/domain';
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -18,6 +18,7 @@ export const user = pgTable('user', {
   image: text('image'),
   avatarColor: text('avatar_color').notNull().default('#155EEF'),
   pixKey: text('pix_key'),
+  notificationPrefs: jsonb('notification_prefs').$type<NotificationPrefs>(),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
 });
@@ -310,8 +311,134 @@ export const payments = pgTable(
       .notNull()
       .references(() => user.id),
     note: text('note'),
+    status: text('status').notNull().default('confirmed'),
+    reviewedBy: text('reviewed_by').references(() => user.id),
+    reviewedAt: timestamptz('reviewed_at'),
   },
-  (t) => [index('payments_family_idx').on(t.familyId), check('payments_amount_ck', sql`${t.amountCents} > 0`)],
+  (t) => [
+    index('payments_family_idx').on(t.familyId),
+    check('payments_amount_ck', sql`${t.amountCents} > 0`),
+    check('payments_status_ck', sql`${t.status} in ('pending', 'confirmed', 'rejected')`),
+  ],
+);
+
+export const purchaseReviews = pgTable(
+  'purchase_reviews',
+  {
+    id: text('id').primaryKey(),
+    familyId: text('family_id')
+      .notNull()
+      .references(() => families.id),
+    invoiceId: text('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    purchaseId: text('purchase_id')
+      .notNull()
+      .references(() => purchases.id),
+    memberId: text('member_id')
+      .notNull()
+      .references(() => familyMembers.id),
+    status: text('status').notNull(),
+    reason: text('reason'),
+    note: text('note'),
+    resolutionNote: text('resolution_note'),
+    resolvedBy: text('resolved_by').references(() => user.id),
+    createdAt: timestamptz('created_at').notNull(),
+    updatedAt: timestamptz('updated_at').notNull(),
+  },
+  (t) => [
+    index('purchase_reviews_family_idx').on(t.familyId),
+    uniqueIndex('purchase_reviews_member_uq').on(t.invoiceId, t.purchaseId, t.memberId),
+    check('purchase_reviews_status_ck', sql`${t.status} in ('confirmed', 'disputed', 'resolved')`),
+  ],
+);
+
+export const merchantAliases = pgTable(
+  'merchant_aliases',
+  {
+    id: text('id').primaryKey(),
+    familyId: text('family_id')
+      .notNull()
+      .references(() => families.id),
+    statementName: text('statement_name').notNull(),
+    merchant: text('merchant').notNull(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamptz('created_at').notNull(),
+  },
+  (t) => [uniqueIndex('merchant_aliases_name_uq').on(t.familyId, t.statementName)],
+);
+
+export const attachments = pgTable(
+  'attachments',
+  {
+    id: text('id').primaryKey(),
+    familyId: text('family_id')
+      .notNull()
+      .references(() => families.id),
+    purchaseId: text('purchase_id')
+      .notNull()
+      .references(() => purchases.id),
+    // No foreign key: answers are reset when a purchase changes, the file stays.
+    reviewId: text('review_id'),
+    name: text('name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamptz('created_at').notNull(),
+    deletedAt: timestamptz('deleted_at'),
+  },
+  (t) => [index('attachments_family_idx').on(t.familyId), check('attachments_size_ck', sql`${t.sizeBytes} >= 0`)],
+);
+
+/** File contents, apart from the metadata so loading a family stays light. */
+export const attachmentBlobs = pgTable('attachment_blobs', {
+  attachmentId: text('attachment_id')
+    .primaryKey()
+    .references(() => attachments.id),
+  dataUrl: text('data_url').notNull(),
+});
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: text('id').primaryKey(),
+    familyId: text('family_id')
+      .notNull()
+      .references(() => families.id),
+    recipientMemberId: text('recipient_member_id')
+      .notNull()
+      .references(() => familyMembers.id),
+    type: text('type').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    link: text('link'),
+    dedupeKey: text('dedupe_key'),
+    createdAt: timestamptz('created_at').notNull(),
+    readAt: timestamptz('read_at'),
+  },
+  (t) => [
+    index('notifications_family_idx').on(t.familyId, t.createdAt),
+    uniqueIndex('notifications_dedupe_uq').on(t.recipientMemberId, t.dedupeKey).where(sql`${t.dedupeKey} is not null`),
+  ],
+);
+
+/** Web Push subscriptions (installed web app), one per device and user. */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    endpoint: text('endpoint').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('push_subscriptions_user_idx').on(t.userId)],
 );
 
 export const auditLogs = pgTable(

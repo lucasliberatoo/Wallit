@@ -5,8 +5,10 @@ import { HTTPException } from 'hono/http-exception';
 
 import { AppError } from '../src/data/errors';
 import { getAuth } from './auth';
+import { runDailyReminders } from './cron';
 import { getDb } from './db/client';
 import { isOperation, runOperation } from './operations';
+import { removeSubscription, saveSubscription, sendPushes, vapidKeys } from './push';
 
 const STATUS_BY_CODE: Record<string, 400 | 401 | 403 | 404 | 409> = {
   forbidden: 403,
@@ -56,18 +58,59 @@ function describe(error: unknown): string {
 
 app.on(['GET', 'POST'], '/auth/*', (c) => getAuth().handler(c.req.raw));
 
+async function requireUserId(headers: Headers): Promise<string> {
+  const session = await getAuth().api.getSession({ headers });
+  if (!session) throw new AppError('unauthorized', 'Sua sessão expirou. Entre de novo.');
+  return session.user.id;
+}
+
 /** Every app operation: `{ method: "purchases.create", args: [...] }`. */
 app.post('/rpc', async (c) => {
-  const session = await getAuth().api.getSession({ headers: c.req.raw.headers });
-  if (!session) throw new AppError('unauthorized', 'Sua sessão expirou. Entre de novo.');
-
+  const userId = await requireUserId(c.req.raw.headers);
   const body = (await c.req.json().catch(() => null)) as { method?: unknown; args?: unknown } | null;
   if (!body || !isOperation(body.method)) throw new AppError('not_found', 'Operação desconhecida.');
   const args = Array.isArray(body.args) ? body.args : [];
   if (args.length > 3) throw new AppError('validation', 'Parâmetros inválidos.');
 
-  const result = await runOperation(getDb(), session.user.id, body.method, args);
+  const { result, pushes } = await runOperation(getDb(), userId, body.method, args);
+  // Sent before answering: a serverless function may stop right after the response.
+  await sendPushes(getDb(), pushes);
   return c.json({ result });
+});
+
+/** Web Push for the installed web app. */
+app.get('/push/key', (c) => c.json({ publicKey: vapidKeys().publicKey }));
+
+app.post('/push/subscribe', async (c) => {
+  const userId = await requireUserId(c.req.raw.headers);
+  const body = (await c.req.json().catch(() => null)) as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } } | null;
+  const endpoint = body?.endpoint;
+  const p256dh = body?.keys?.p256dh;
+  const auth = body?.keys?.auth;
+  if (typeof endpoint !== 'string' || !endpoint.startsWith('https://') || typeof p256dh !== 'string' || typeof auth !== 'string') {
+    throw new AppError('validation', 'Inscrição de notificação inválida.');
+  }
+  await saveSubscription(getDb(), userId, { endpoint, p256dh, auth });
+  return c.json({ ok: true });
+});
+
+app.post('/push/unsubscribe', async (c) => {
+  const userId = await requireUserId(c.req.raw.headers);
+  const body = (await c.req.json().catch(() => null)) as { endpoint?: unknown } | null;
+  if (typeof body?.endpoint === 'string') await removeSubscription(getDb(), userId, body.endpoint);
+  return c.json({ ok: true });
+});
+
+/**
+ * Daily reminders, called by Vercel Cron. When CRON_SECRET is set, Vercel
+ * sends it and other callers are refused; either way the job is idempotent.
+ */
+app.get('/cron/daily', async (c) => {
+  const secret = process.env.CRON_SECRET;
+  if (secret && c.req.header('authorization') !== `Bearer ${secret}`) {
+    throw new AppError('unauthorized', 'Não autorizado.');
+  }
+  return c.json(await runDailyReminders(getDb()));
 });
 
 app.onError((error, c) => {

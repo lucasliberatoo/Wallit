@@ -1,7 +1,7 @@
 import type { NotificationPrefs, User } from '../../domain';
 import { AppError } from '../errors';
 import type { Session } from '../models';
-import type { AuthRepository, Repositories } from '../repositories';
+import type { AuthRepository, PushRepository, Repositories } from '../repositories';
 import { ApiClient, type TokenStorage } from './client';
 
 interface AuthUser {
@@ -11,7 +11,18 @@ interface AuthUser {
   avatarColor?: string | null;
   pixKey?: string | null;
   image?: string | null;
-  notificationPrefs?: NotificationPrefs | null;
+  notificationPrefs?: NotificationPrefs | string | null;
+}
+
+/** JSON fields may come back as text from the auth endpoints. */
+function prefsOf(value: AuthUser['notificationPrefs']): NotificationPrefs | undefined {
+  if (!value) return undefined;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value) as NotificationPrefs;
+  } catch {
+    return undefined;
+  }
 }
 
 const toUser = (user: AuthUser): User => ({
@@ -21,7 +32,7 @@ const toUser = (user: AuthUser): User => ({
   avatarColor: user.avatarColor ?? '#155EEF',
   pixKey: user.pixKey ?? undefined,
   photo: user.image ?? undefined,
-  notificationPrefs: user.notificationPrefs ?? undefined,
+  notificationPrefs: prefsOf(user.notificationPrefs),
 });
 
 function createHttpAuthRepository(api: ApiClient): AuthRepository {
@@ -67,6 +78,21 @@ function createHttpAuthRepository(api: ApiClient): AuthRepository {
   };
 }
 
+function createHttpPushRepository(api: ApiClient): PushRepository {
+  const post = async (path: string, body: unknown) => {
+    const { status, data } = await api.request<{ error?: { message?: string } }>(path, { method: 'POST', body });
+    if (status >= 300) throw new AppError('internal', data?.error?.message ?? 'Não foi possível ativar as notificações.');
+  };
+  return {
+    async publicKey() {
+      const { status, data } = await api.request<{ publicKey?: string }>('/push/key');
+      return status < 300 && data?.publicKey ? data.publicKey : null;
+    },
+    subscribe: (subscription) => post('/push/subscribe', subscription),
+    unsubscribe: (endpoint) => post('/push/unsubscribe', { endpoint }),
+  };
+}
+
 /** Builds a repository whose every method is forwarded to the API as `repo.method`. */
 function remote<T extends object>(api: ApiClient, name: string): T {
   return new Proxy({} as T, {
@@ -91,6 +117,7 @@ export function createHttpRepositories(apiUrl: string, tokens: TokenStorage): Re
     notifications: remote(api, 'notifications'),
     statistics: remote(api, 'statistics'),
     attachments: remote(api, 'attachments'),
+    push: createHttpPushRepository(api),
     dashboard: remote(api, 'dashboard'),
   };
 }
