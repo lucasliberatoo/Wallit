@@ -30,3 +30,7 @@ jobs:
       - run: npm run test:api
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/wallit_test
+      - run: npm run vercel-build
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/wallit_test
+      - run: test -f .vercel/output/functions/api.func/index.js && test -f .vercel/output/static/index.html

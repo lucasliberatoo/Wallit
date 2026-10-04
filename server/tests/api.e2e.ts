@@ -18,6 +18,7 @@ import { refKey } from '../../src/domain';
 import { app } from '../app';
 import { closeDb, getDb } from '../db/client';
 import { seedDemo } from '../seed';
+import { restoreRewrittenUrl } from '../vercel';
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url) throw new Error('Set TEST_DATABASE_URL to a throwaway Postgres database.');
@@ -255,6 +256,16 @@ describe('API', () => {
       });
     await Promise.all([create('Padaria'), create('Banca'), create('Feira')]);
     assert.equal((await repos.purchases.search(familyId, {})).length, before + 3);
+  });
+
+  it('restores the original path after the Vercel rewrite', async () => {
+    const rewritten = restoreRewrittenUrl(new Request('https://wallit.test/api?__path=auth/get-session&x=1'));
+    assert.equal(rewritten.url, 'https://wallit.test/api/auth/get-session?x=1');
+    const untouched = new Request('https://wallit.test/api/health');
+    assert.equal(restoreRewrittenUrl(untouched), untouched);
+    const res = await app.fetch(restoreRewrittenUrl(new Request('https://wallit.test/api?__path=health')));
+    const body = (await res.json()) as { ok: boolean; checks: Record<string, string> };
+    assert.deepEqual(body, { ok: true, checks: { api: 'ok', database: 'ok', auth: 'ok' } });
   });
 
   it('signs out', async () => {

@@ -22,7 +22,7 @@ A UI chama hooks → repositórios (`src/data/repositories.ts`). As regras de ne
 - **API** (`src/data/http`): cada método vira `POST /api/rpc { method, args }`. Login e cadastro passam pelo Better Auth (`/api/auth/*`), com token bearer guardado no aparelho.
 
 ## Servidor (Vercel Functions + Neon)
-- `api/index.ts` expõe o app Hono (`server/app.ts`). Funções na região de São Paulo (`gru1`); o banco Neon deve ficar em São Paulo também.
+- O build (`scripts/build-vercel.mjs`) empacota o app Hono (`server/app.ts`) com todas as dependências num único arquivo CommonJS e publica pela Build Output API, porque a Vercel não carrega via `require()` bibliotecas publicadas só como ES modules (caso do Better Auth). Função na região de São Paulo (`gru1`); o banco Neon deve ficar em São Paulo também.
 - Cada chamada roda numa transação (`server/operations.ts`): carrega só as famílias de que a pessoa é membro ativo, trava essas famílias (`SELECT … FOR UPDATE`) se for escrita, executa a mesma regra do `core` e grava a diferença (`server/unit-of-work.ts`). Família de outra pessoa nunca é carregada, então não dá para ler nem alterar.
 - Só os métodos listados em `OPERATIONS` podem ser chamados.
 - O banco também protege as regras de dinheiro: CHECKs (valores > 0, dia de fechamento 1–31, até 48 parcelas), parcela única por compra e número, fatura única por cartão e mês, e um gatilho adiado que recusa no commit qualquer compra cuja divisão ou parcelas não somem o total (`server/db/migrations/0001_money_rules.sql`).
