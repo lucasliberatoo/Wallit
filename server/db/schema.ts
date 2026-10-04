@@ -97,6 +97,7 @@ export const familyMembers = pgTable(
     nickname: text('nickname'),
     role: text('role').notNull(),
     avatarColor: text('avatar_color').notNull(),
+    photo: text('photo'),
     status: text('status').notNull(),
     joinedAt: timestamptz('joined_at').notNull(),
   },

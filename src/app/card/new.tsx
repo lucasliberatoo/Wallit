@@ -84,7 +84,7 @@ export default function NewCardScreen() {
                 label={member.displayName}
                 selected={member.id === holderId}
                 onPress={() => setHolderId(member.id)}
-                leading={<Avatar name={member.displayName} color={member.avatarColor} size={22} />}
+                leading={<Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={22} />}
               />
             ))}
           </View>

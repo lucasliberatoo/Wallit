@@ -149,7 +149,7 @@ export function PurchaseForm({
                 label={member.displayName}
                 selected={state.buyerId === member.id}
                 onPress={() => dispatch({ type: 'setBuyer', value: member.id })}
-                leading={<Avatar name={member.displayName} color={member.avatarColor} size={22} />}
+                leading={<Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={22} />}
               />
             ))}
           </View>

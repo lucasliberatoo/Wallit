@@ -92,7 +92,7 @@ async function persistProfile(tx: Tx, before: Database, after: Database): Promis
   if (!old || !next || stableStringify(old) === stableStringify(next)) return;
   await tx
     .update(t.user)
-    .set({ name: next.name, avatarColor: next.avatarColor, pixKey: next.pixKey ?? null, updatedAt: new Date() })
+    .set({ name: next.name, avatarColor: next.avatarColor, pixKey: next.pixKey ?? null, image: next.photo ?? null, updatedAt: new Date() })
     .where(eq(t.user.id, userId));
 }
 

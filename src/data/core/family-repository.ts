@@ -47,6 +47,7 @@ export function createFamilyRepository(store: Store): FamilyRepository {
             displayName: user.name,
             role: 'owner',
             avatarColor: user.avatarColor,
+            photo: user.photo,
             status: 'active',
             joinedAt: nowISO(),
           });
@@ -171,6 +172,7 @@ export function createFamilyRepository(store: Store): FamilyRepository {
           const existing = store.db.members.find((m) => m.familyId === family.id && m.userId === user.id);
           if (existing) {
             existing.status = 'active';
+            existing.photo = user.photo;
           } else {
             store.db.members.push({
               id: newId('mem'),
@@ -179,6 +181,7 @@ export function createFamilyRepository(store: Store): FamilyRepository {
               displayName: user.name,
               role: 'member',
               avatarColor: user.avatarColor,
+              photo: user.photo,
               status: 'active',
               joinedAt: nowISO(),
             });

@@ -5,9 +5,10 @@ import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { Logo } from '@/components/brand/Logo';
 import { GradientHeader, Screen } from '@/components/layout';
-import { AppText, Avatar, Button, Divider, ListRow, Surface, TextField } from '@/components/ui';
+import { AppText, Button, Divider, ListRow, Surface, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { useCurrentUser, useSignOut, useUpdateProfile } from '@/features/auth/hooks';
+import { ProfilePhoto } from '@/features/profile/ProfilePhoto';
 import { useRepositories } from '@/providers/RepositoriesProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, spacing } from '@/theme';
@@ -43,7 +44,7 @@ export default function ProfileScreen() {
       header={
         <GradientHeader>
           <View style={styles.header}>
-            <Avatar name={user?.name ?? '?'} color={user?.avatarColor ?? colors.primary} size={72} />
+            <ProfilePhoto user={user} />
             <View style={styles.flex}>
               <AppText variant="h2" color="brand">
                 {user?.name}

@@ -15,7 +15,12 @@ export interface User {
   email: string;
   avatarColor: string;
   pixKey?: string;
+  /** Profile photo as a small JPEG data URL (see PROFILE_PHOTO_MAX_LENGTH). */
+  photo?: string;
 }
+
+/** A 256×256 JPEG fits comfortably; anything bigger is rejected. */
+export const PROFILE_PHOTO_MAX_LENGTH = 200_000;
 
 export interface Family {
   id: ID;
@@ -40,6 +45,8 @@ export interface FamilyMember {
   nickname?: string;
   role: Role;
   avatarColor: string;
+  /** Copied from the linked user's profile. */
+  photo?: string;
   status: MemberStatus;
   joinedAt: ISODateTime;
 }

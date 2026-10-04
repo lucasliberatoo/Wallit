@@ -239,6 +239,24 @@ describe('API', () => {
     assert.ok(members.some((m) => m.displayName === 'Lucas Silva'));
   });
 
+  it('saves the profile photo and shows it to the family', async () => {
+    const lucas = await signedIn();
+    const photo = 'data:image/jpeg;base64,' + 'A'.repeat(2000);
+    await lucas.repos.auth.updateProfile({ photo });
+    assert.equal((await lucas.repos.auth.getSession())?.user.photo, photo);
+    const maria = await signedIn('maria@wallit.app');
+    const members = await maria.repos.families.listMembers(maria.familyId);
+    assert.equal(members.find((m) => m.displayName === 'Lucas')?.photo, photo);
+
+    await rejects(lucas.repos.auth.updateProfile({ photo: 'https://example.com/x.png' }), 'validation');
+    await rejects(lucas.repos.auth.updateProfile({ photo: 'data:image/jpeg;base64,' + 'A'.repeat(300_000) }), 'validation');
+
+    await lucas.repos.auth.updateProfile({ photo: '' });
+    assert.equal((await lucas.repos.auth.getSession())?.user.photo, undefined);
+    const after = await maria.repos.families.listMembers(maria.familyId);
+    assert.equal(after.find((m) => m.displayName === 'Lucas')?.photo, undefined);
+  });
+
   it('does not lose writes when two purchases are saved at the same time', async () => {
     const { repos, familyId, byName, principal, category } = await signedIn();
     const before = (await repos.purchases.search(familyId, {})).length;

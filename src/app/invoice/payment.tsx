@@ -55,7 +55,7 @@ function PaymentForm({ invoice, balance }: { invoice: InvoiceDetails; balance: M
           />
         }>
         <Surface style={styles.who}>
-          <Avatar name={balance.member.displayName} color={balance.member.avatarColor} size={48} />
+          <Avatar name={balance.member.displayName} color={balance.member.avatarColor} photo={balance.member.photo} size={48} />
           <View style={styles.flex}>
             <AppText variant="bodyStrong">{balance.member.displayName}</AppText>
             <AppText variant="caption" color="textSecondary">

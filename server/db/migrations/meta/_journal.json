@@ -15,6 +15,13 @@
       "when": 1791076768156,
       "tag": "0001_money_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791079622456,
+      "tag": "0002_member_photo",
+      "breakpoints": true
     }
   ]
 }

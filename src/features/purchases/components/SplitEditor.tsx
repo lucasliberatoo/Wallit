@@ -47,7 +47,7 @@ export function SplitEditor({
               accessibilityState={{ checked: selected }}
               accessibilityLabel={`${member.displayName} paga`}
               style={[styles.person, selected && styles.personSelected]}>
-              <Avatar name={member.displayName} color={member.avatarColor} size={28} />
+              <Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={28} />
               <AppText variant="caption" color={selected ? 'brand' : 'textSecondary'}>
                 {member.displayName}
               </AppText>
@@ -64,7 +64,7 @@ export function SplitEditor({
             if (!member) return null;
             return (
               <Animated.View key={share.memberId} layout={LinearTransition} style={styles.amountRow}>
-                <Avatar name={member.displayName} color={member.avatarColor} size={32} />
+                <Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={32} />
                 <AppText variant="bodyStrong" style={styles.flex} numberOfLines={1}>
                   {member.displayName}
                 </AppText>
