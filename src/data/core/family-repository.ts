@@ -1,13 +1,13 @@
-import { can, type Family, type FamilyMember, ROLE_LABEL } from '@/domain';
-import { identityColors } from '@/theme/colors';
+import { can, type Family, type FamilyMember, ROLE_LABEL } from '../../domain';
+import { identityColors } from '../../theme/colors';
 import { AppError } from '../errors';
 import type { FamilySummary } from '../models';
 import type { FamilyRepository } from '../repositories';
-import { newId, nowISO, type MockStore } from './store';
-import type { MockUser } from './database';
+import { newId, nowISO, type Store } from './store';
+import type { StoredUser } from './database';
 import { seedDefaultCategories } from './seed-categories';
 
-export function createMockFamilyRepository(store: MockStore): FamilyRepository {
+export function createFamilyRepository(store: Store): FamilyRepository {
   const summary = (family: Family, me: FamilyMember): FamilySummary => ({
     family,
     me,
@@ -36,7 +36,7 @@ export function createMockFamilyRepository(store: MockStore): FamilyRepository {
     create: ({ name, color }) =>
       store.run(
         () => {
-          const user = store.require('users', store.currentUserId(), 'Usuário') as MockUser;
+          const user = store.require('users', store.currentUserId(), 'Usuário') as StoredUser;
           if (!name.trim()) throw new AppError('validation', 'Dê um nome para a família.');
           const family: Family = { id: newId('fam'), name: name.trim(), color, createdBy: user.id, createdAt: nowISO() };
           store.db.families.push(family);
@@ -166,7 +166,7 @@ export function createMockFamilyRepository(store: MockStore): FamilyRepository {
         () => {
           const invite = store.db.invites.find((i) => i.code === code.trim().toUpperCase());
           if (!invite) throw new AppError('invalid_invite', 'Convite inválido ou expirado.');
-          const user = store.require('users', store.currentUserId(), 'Usuário') as MockUser;
+          const user = store.require('users', store.currentUserId(), 'Usuário') as StoredUser;
           const family = store.require('families', invite.familyId, 'Família') as Family;
           const existing = store.db.members.find((m) => m.familyId === family.id && m.userId === user.id);
           if (existing) {

@@ -1,11 +1,11 @@
-import { can, type Card, invoiceRefForDate, isValidDayOfMonth, type Wallet } from '@/domain';
+import { can, type Card, invoiceRefForDate, isValidDayOfMonth, type Wallet } from '../../domain';
 import { AppError } from '../errors';
 import type { WalletSummary } from '../models';
 import type { CardRepository, WalletRepository } from '../repositories';
-import { newId, nowISO, type MockStore } from './store';
+import { newId, nowISO, type Store } from './store';
 import { cardSummary, todayISO } from './views';
 
-export function createMockWalletRepository(store: MockStore): WalletRepository {
+export function createWalletRepository(store: Store): WalletRepository {
   const walletSummary = (wallet: Wallet): WalletSummary => ({
     wallet,
     cards: store.db.cards
@@ -50,7 +50,7 @@ export function createMockWalletRepository(store: MockStore): WalletRepository {
   };
 }
 
-export function createMockCardRepository(store: MockStore): CardRepository {
+export function createCardRepository(store: Store): CardRepository {
   return {
     listByFamily: (familyId) =>
       store.run(() => {

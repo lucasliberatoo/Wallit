@@ -12,12 +12,12 @@ import {
   reaisToCents,
   type ShareInput,
   splitEqually,
-} from '@/domain';
-import { palette } from '@/theme/colors';
-import type { MockUser } from './database';
+} from '../../domain';
+import { palette } from '../../theme/colors';
+import type { StoredUser } from './database';
 import { insertPurchase, updatePurchaseRecord } from './purchase-core';
 import { seedDefaultCategories } from './seed-categories';
-import { newId, type MockStore } from './store';
+import { newId, type Store } from './store';
 import { invoiceDetails, todayISO } from './views';
 
 export const DEMO_ACCOUNT = { email: 'lucas@wallit.app', password: 'wallit123' };
@@ -42,11 +42,11 @@ function dateInPeriod(ref: InvoiceRef, closingDay: number, dayOffset: number): s
  * Família Silva: realistic data to explore every flow. Dates are relative to
  * today, so the current invoice always has fresh purchases.
  */
-export function seedMockDatabase(store: MockStore): void {
+export function seedDemoDatabase(store: Store): void {
   const db = store.db;
   const createdAt = new Date(Date.now() - 1000 * 60 * 60 * 24 * 200).toISOString();
 
-  const users: MockUser[] = [
+  const users: StoredUser[] = [
     {
       id: newId('usr'),
       name: 'Lucas',

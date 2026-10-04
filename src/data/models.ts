@@ -20,7 +20,7 @@ import type {
   ShareInput,
   User,
   Wallet,
-} from '@/domain';
+} from '../domain';
 
 /** Audit entry with the author's name resolved for display. */
 export interface AuditLogView extends AuditLog {

@@ -1,16 +1,16 @@
-import type { Purchase } from '@/domain';
+import type { Purchase } from '../../domain';
 import { AppError } from '../errors';
 import type { CreatePurchaseInput } from '../models';
 import type { PurchaseRepository } from '../repositories';
 import { insertPurchase, updatePurchaseRecord } from './purchase-core';
-import type { MockStore } from './store';
+import type { Store } from './store';
 import { canEditPurchase, purchaseDetails, purchaseListItem, purchaseShares } from './views';
 
 function normalize(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-export function createMockPurchaseRepository(store: MockStore): PurchaseRepository {
+export function createPurchaseRepository(store: Store): PurchaseRepository {
   const requireEditable = (purchaseId: string) => {
     const purchase = store.require('purchases', purchaseId, 'Compra') as Purchase;
     if (!canEditPurchase(store, purchase)) {

@@ -14,7 +14,7 @@ import {
   isInvoiceLocked,
   type Purchase,
   type PurchaseInstallment,
-} from '@/domain';
+} from '../../domain';
 import type {
   AuditLogView,
   CardSummary,
@@ -25,7 +25,7 @@ import type {
   PurchaseListItem,
   ShareView,
 } from '../models';
-import type { MockStore } from './store';
+import type { Store } from './store';
 
 /** Today's date in São Paulo-agnostic local form (YYYY-MM-DD). */
 export function todayISO(): string {
@@ -35,18 +35,18 @@ export function todayISO(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-export function purchaseShares(store: MockStore, purchaseId: ID): ShareView[] {
+export function purchaseShares(store: Store, purchaseId: ID): ShareView[] {
   return store.db.shares
     .filter((share) => share.purchaseId === purchaseId)
     .map((share) => ({ member: store.member(share.memberId), amountCents: share.amountCents }));
 }
 
-function purchaseInstallments(store: MockStore, purchaseId: ID): PurchaseInstallment[] {
+function purchaseInstallments(store: Store, purchaseId: ID): PurchaseInstallment[] {
   return store.db.installments.filter((installment) => installment.purchaseId === purchaseId).sort((a, b) => a.number - b.number);
 }
 
 /** Each member's part of one installment, derived from the purchase shares. */
-export function installmentShares(store: MockStore, installment: PurchaseInstallment): ShareView[] {
+export function installmentShares(store: Store, installment: PurchaseInstallment): ShareView[] {
   const shares = purchaseShares(store, installment.purchaseId);
   const amounts = purchaseInstallments(store, installment.purchaseId).map((i) => i.amountCents);
   const matrix = allocateSharesToInstallments(
@@ -57,12 +57,12 @@ export function installmentShares(store: MockStore, installment: PurchaseInstall
   return shares.map((share, index) => ({ member: share.member, amountCents: row[index] })).filter((share) => share.amountCents > 0);
 }
 
-function activePurchase(store: MockStore, purchaseId: ID): Purchase | undefined {
+function activePurchase(store: Store, purchaseId: ID): Purchase | undefined {
   const purchase = store.find('purchases', purchaseId) as Purchase | undefined;
   return purchase && purchase.status === 'active' ? purchase : undefined;
 }
 
-export function invoiceLines(store: MockStore, invoice: Invoice): InvoiceLine[] {
+export function invoiceLines(store: Store, invoice: Invoice): InvoiceLine[] {
   return store.db.installments
     .filter((installment) => installment.invoiceId === invoice.id)
     .flatMap((installment) => {
@@ -81,7 +81,7 @@ export function invoiceLines(store: MockStore, invoice: Invoice): InvoiceLine[] 
     .sort((a, b) => b.purchase.date.localeCompare(a.purchase.date));
 }
 
-function balancesFor(store: MockStore, invoice: Invoice, card: Card, lines: InvoiceLine[]) {
+function balancesFor(store: Store, invoice: Invoice, card: Card, lines: InvoiceLine[]) {
   const debts: DebtLine[] = lines.flatMap((line) =>
     line.shares.map((share) => ({ memberId: share.member.id, amountCents: share.amountCents })),
   );
@@ -96,7 +96,7 @@ function balancesFor(store: MockStore, invoice: Invoice, card: Card, lines: Invo
   return { balances, payments, totals: computeInvoiceTotals(balances) };
 }
 
-export function invoiceDetails(store: MockStore, invoice: Invoice): InvoiceDetails {
+export function invoiceDetails(store: Store, invoice: Invoice): InvoiceDetails {
   const me = store.requireMembership(invoice.familyId);
   const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
   const lines = invoiceLines(store, invoice);
@@ -113,17 +113,17 @@ export function invoiceDetails(store: MockStore, invoice: Invoice): InvoiceDetai
   };
 }
 
-export function invoiceListItem(store: MockStore, invoice: Invoice, me: FamilyMember): InvoiceListItem {
+export function invoiceListItem(store: Store, invoice: Invoice, me: FamilyMember): InvoiceListItem {
   const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
   const { balances, totals } = balancesFor(store, invoice, card, invoiceLines(store, invoice));
   return { invoice, card, totals, myBalance: balances.find((b) => b.memberId === me.id) ?? null };
 }
 
-export function currentInvoiceFor(store: MockStore, card: Card): Invoice | null {
+export function currentInvoiceFor(store: Store, card: Card): Invoice | null {
   return store.findInvoice(card.id, invoiceRefForDate(todayISO(), card.closingDay)) ?? null;
 }
 
-export function cardSummary(store: MockStore, card: Card): CardSummary {
+export function cardSummary(store: Store, card: Card): CardSummary {
   const currentInvoice = currentInvoiceFor(store, card);
   const totals = currentInvoice
     ? balancesFor(store, currentInvoice, card, invoiceLines(store, currentInvoice)).totals
@@ -135,7 +135,7 @@ export function sortInvoicesDesc(invoices: Invoice[]): Invoice[] {
   return [...invoices].sort((a, b) => compareRefs(b.ref, a.ref));
 }
 
-export function purchaseListItem(store: MockStore, purchase: Purchase, installment?: PurchaseInstallment): PurchaseListItem {
+export function purchaseListItem(store: Store, purchase: Purchase, installment?: PurchaseInstallment): PurchaseListItem {
   return {
     purchase,
     category: store.db.categories.find((c) => c.id === purchase.categoryId) ?? null,
@@ -147,7 +147,7 @@ export function purchaseListItem(store: MockStore, purchase: Purchase, installme
 }
 
 /** Rule 10 + section 18: editable while invoices are open; afterwards only holder/owner. */
-export function canEditPurchase(store: MockStore, purchase: Purchase): boolean {
+export function canEditPurchase(store: Store, purchase: Purchase): boolean {
   if (purchase.status !== 'active') return false;
   const me = store.requireMembership(purchase.familyId);
   const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
@@ -160,12 +160,12 @@ export function canEditPurchase(store: MockStore, purchase: Purchase): boolean {
   return can(me.role, 'purchase.edit', { isCardHolder });
 }
 
-export function withActor(store: MockStore, log: AuditLog): AuditLogView {
+export function withActor(store: Store, log: AuditLog): AuditLogView {
   const user = store.db.users.find((u) => u.id === log.actorUserId);
   return { ...log, actorName: user?.name ?? 'Alguém' };
 }
 
-export function purchaseDetails(store: MockStore, purchase: Purchase): PurchaseDetails {
+export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetails {
   store.requireMembership(purchase.familyId);
   return {
     purchase,
