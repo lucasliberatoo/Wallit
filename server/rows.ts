@@ -65,6 +65,7 @@ const members: Mapper<FamilyMember, typeof t.familyMembers.$inferInsert> = {
     nickname: optional(r.nickname),
     role: r.role as FamilyMember['role'],
     avatarColor: r.avatarColor,
+    photo: optional(r.photo),
     status: r.status as FamilyMember['status'],
     joinedAt: iso(r.joinedAt as Date),
   }),
@@ -76,6 +77,7 @@ const members: Mapper<FamilyMember, typeof t.familyMembers.$inferInsert> = {
     nickname: m.nickname ?? null,
     role: m.role,
     avatarColor: m.avatarColor,
+    photo: m.photo ?? null,
     status: m.status,
     joinedAt: new Date(m.joinedAt),
   }),
@@ -317,7 +319,7 @@ const auditLogs: Mapper<AuditLog, typeof t.auditLogs.$inferInsert> = {
 };
 
 export function userFromRow(r: typeof t.user.$inferSelect): StoredUser {
-  return { id: r.id, name: r.name, email: r.email, avatarColor: r.avatarColor, pixKey: optional(r.pixKey) };
+  return { id: r.id, name: r.name, email: r.email, avatarColor: r.avatarColor, pixKey: optional(r.pixKey), photo: optional(r.image) };
 }
 
 type FamilyCollection = Exclude<Collection, 'users'>;

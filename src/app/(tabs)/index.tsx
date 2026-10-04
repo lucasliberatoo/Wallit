@@ -33,7 +33,7 @@ export default function HomeScreen() {
   const header = (
     <GradientHeader overlap={current && home.data ? <OwedCard summary={home.data} /> : undefined}>
       <View style={styles.topRow}>
-        <Avatar name={user?.name ?? '?'} color={user?.avatarColor ?? colors.primary} size={40} />
+        <Avatar name={user?.name ?? '?'} color={user?.avatarColor ?? colors.primary} photo={user?.photo} size={40} />
         <View style={styles.greeting}>
           <AppText variant="h2" color="brand">
             Olá, {firstName}!

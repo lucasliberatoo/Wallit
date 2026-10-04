@@ -79,7 +79,7 @@ export default function MembersScreen() {
             <View key={member.id}>
               {index > 0 && <Divider inset={56} />}
               <View style={styles.row}>
-                <Avatar name={member.displayName} color={member.avatarColor} size={44} />
+                <Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={44} />
                 <View style={styles.flex}>
                   <AppText variant="bodyStrong">
                     {member.displayName}

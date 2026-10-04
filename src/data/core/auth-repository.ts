@@ -1,3 +1,4 @@
+import { PROFILE_PHOTO_MAX_LENGTH } from '../../domain';
 import { identityColors } from '../../theme/colors';
 import { AppError } from '../errors';
 import type { AuthRepository } from '../repositories';
@@ -68,14 +69,20 @@ export function createAuthRepository(store: Store): AuthRepository {
       store.run(
         () => {
           const user = store.require('users', store.currentUserId(), 'Usuário') as StoredUser;
-          Object.assign(user, changes);
-          if (changes.name) {
-            store.db.members
-              .filter((m) => m.userId === user.id)
-              .forEach((m) => {
-                m.displayName = changes.name!;
-              });
+          const { photo, ...rest } = changes;
+          if (photo !== undefined) {
+            if (photo && (!photo.startsWith('data:image/') || photo.length > PROFILE_PHOTO_MAX_LENGTH)) {
+              throw new AppError('validation', 'Essa foto não pôde ser usada. Escolha outra imagem.');
+            }
+            user.photo = photo || undefined;
           }
+          Object.assign(user, rest);
+          store.db.members
+            .filter((m) => m.userId === user.id)
+            .forEach((m) => {
+              if (changes.name) m.displayName = changes.name;
+              if (photo !== undefined) m.photo = user.photo;
+            });
           return publicUser(user);
         },
         { write: true },

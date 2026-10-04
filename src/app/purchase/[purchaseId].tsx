@@ -115,7 +115,7 @@ export default function PurchaseScreen() {
                 <ListRow
                   title={share.member.displayName}
                   subtitle={`Paga ${Math.round((share.amountCents / p.totalCents) * 100)}%`}
-                  leading={<Avatar name={share.member.displayName} color={share.member.avatarColor} size={32} />}
+                  leading={<Avatar name={share.member.displayName} color={share.member.avatarColor} photo={share.member.photo} size={32} />}
                   trailing={<AppText variant="money">{formatBRL(share.amountCents)}</AppText>}
                 />
               </View>

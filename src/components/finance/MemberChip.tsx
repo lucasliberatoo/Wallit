@@ -6,7 +6,7 @@ import { spacing } from '@/theme';
 import { PAYMENT_STATUS } from './StatusBadges';
 
 export interface MemberChipProps {
-  member: Pick<FamilyMember, 'displayName' | 'avatarColor' | 'nickname'>;
+  member: Pick<FamilyMember, 'displayName' | 'avatarColor' | 'nickname' | 'photo'>;
   status?: MemberPaymentStatus;
   caption?: string;
   isMe?: boolean;
@@ -17,7 +17,7 @@ export function MemberChip({ member, status, caption, isMe }: MemberChipProps) {
   const ring = status ? PAYMENT_STATUS[status].color : undefined;
   return (
     <View style={styles.item} accessible accessibilityLabel={`${member.displayName}${status ? `, ${PAYMENT_STATUS[status].label}` : ''}`}>
-      <Avatar name={member.displayName} color={member.avatarColor} size={56} ringColor={ring} />
+      <Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={56} ringColor={ring} />
       <AppText variant="caption" numberOfLines={1}>
         {isMe ? 'Você' : member.displayName}
       </AppText>

@@ -24,7 +24,7 @@ export function MemberBalanceRow({ balance, isMe, canRegister, invoiceOpen, onRe
   return (
     <View style={styles.row}>
       <View style={styles.top}>
-        <Avatar name={member.displayName} color={member.avatarColor} size={44} ringColor={ring} />
+        <Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={44} ringColor={ring} />
         <View style={styles.flex}>
           <AppText variant="bodyStrong">{isMe ? `${member.displayName} (você)` : member.displayName}</AppText>
           {accruing ? (

@@ -31,7 +31,8 @@ export interface AuthRepository {
   signUp(input: SignUpInput): Promise<Session>;
   signOut(): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
-  updateProfile(changes: Partial<Pick<User, 'name' | 'pixKey' | 'avatarColor'>>): Promise<User>;
+  /** `photo: ''` removes the photo. */
+  updateProfile(changes: Partial<Pick<User, 'name' | 'pixKey' | 'avatarColor' | 'photo'>>): Promise<User>;
 }
 
 export interface FamilyRepository {

@@ -10,6 +10,7 @@ interface AuthUser {
   email: string;
   avatarColor?: string | null;
   pixKey?: string | null;
+  image?: string | null;
 }
 
 const toUser = (user: AuthUser): User => ({
@@ -18,6 +19,7 @@ const toUser = (user: AuthUser): User => ({
   email: user.email,
   avatarColor: user.avatarColor ?? '#155EEF',
   pixKey: user.pixKey ?? undefined,
+  photo: user.image ?? undefined,
 });
 
 function createHttpAuthRepository(api: ApiClient): AuthRepository {
