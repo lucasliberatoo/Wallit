@@ -54,13 +54,15 @@ export default function HomeScreen() {
   const header = (
     <GradientHeader overlap={current && home.data ? <OwedCard summary={home.data} /> : undefined}>
       <View style={styles.topRow}>
-        <Avatar
-          name={user?.name ?? '?'}
-          color={user?.avatarColor ?? colors.primary}
-          photo={user?.photo}
-          size={44}
-          ringColor={colors.headerText}
-        />
+        <PressableScale onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Abrir seu perfil">
+          <Avatar
+            name={user?.name ?? '?'}
+            color={user?.avatarColor ?? colors.primary}
+            photo={user?.photo}
+            size={44}
+            ringColor={colors.headerText}
+          />
+        </PressableScale>
         <View style={styles.greeting}>
           <AppText variant="h2" color="headerText">
             Olá, {firstName}!
