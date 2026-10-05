@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import {
   ArrowRight,
   Bell,
@@ -30,6 +31,7 @@ import { useMoneyFormatter } from '@/lib/money-visibility';
 import { usePreferencesStore } from '@/stores/preferences-store';
 import { fontFamily, makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatLongDate } from '@/utils/dates';
+import { updateWidget } from '@/widget/sync';
 
 export default function HomeScreen() {
   const formatBRL = useMoneyFormatter();
@@ -41,6 +43,13 @@ export default function HomeScreen() {
   const unread = useUnreadCount();
   const unreadCount = unread.data ?? 0;
   const firstName = user?.name.split(' ')[0] ?? '';
+  const hideValues = usePreferencesStore((state) => state.hideValues);
+  const familyName = current?.family.name ?? null;
+
+  // The Android widget shows the same numbers as this screen.
+  useEffect(() => {
+    if (familyName && home.data) updateWidget(familyName, home.data, hideValues).catch(() => undefined);
+  }, [familyName, home.data, hideValues]);
 
   const header = (
     <GradientHeader overlap={current && home.data ? <OwedCard summary={home.data} /> : undefined}>

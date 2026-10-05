@@ -8,6 +8,7 @@ import { webBaseUrl } from '@/lib/invite-link';
 import { queryKeys } from '@/lib/query-keys';
 import { useRepositories } from '@/providers/RepositoriesProvider';
 import { useSelectionStore } from '@/stores/selection-store';
+import { updateWidget } from '@/widget/sync';
 
 export function useSession() {
   const { auth } = useRepositories();
@@ -47,6 +48,7 @@ export function useSignOut() {
   return useSessionMutation(async () => {
     await auth.signOut();
     setFamilyId(null);
+    await updateWidget(null, null, false).catch(() => undefined);
   });
 }
 
