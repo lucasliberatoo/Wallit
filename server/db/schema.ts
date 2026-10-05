@@ -80,6 +80,7 @@ export const families = pgTable('families', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   color: text('color').notNull(),
+  balancesVisibility: text('balances_visibility').notNull().default('everyone'),
   createdBy: text('created_by')
     .notNull()
     .references(() => user.id),

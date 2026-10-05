@@ -68,6 +68,8 @@ export interface FamilyRepository {
   leave(familyId: ID): Promise<void>;
   createInvite(familyId: ID): Promise<{ code: string }>;
   joinByCode(code: string): Promise<Family>;
+  /** Owner only. */
+  updateSettings(familyId: ID, changes: Partial<Pick<Family, 'name' | 'color' | 'balancesVisibility'>>): Promise<Family>;
 }
 
 export interface WalletRepository {

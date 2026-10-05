@@ -7,6 +7,7 @@ import {
   computeInvoiceTotals,
   computeMemberBalances,
   type DebtLine,
+  type Family,
   type FamilyMember,
   type ID,
   type Invoice,
@@ -169,6 +170,28 @@ export function invoiceDetails(store: Store, invoice: Invoice): InvoiceDetails {
     reviewProgress: reviewProgress(lines.map((line) => line.review)),
     canManage: hasHolderPower(card, me),
     holderPixKey: holderUser?.pixKey ?? null,
+  };
+}
+
+/**
+ * Family setting "only managers see how much each person owes": members who
+ * don't manage the card see just their own balance and payments.
+ */
+export function canSeeAllBalances(store: Store, familyId: ID, card: Card | null, me: FamilyMember): boolean {
+  const family = store.find('families', familyId) as Family | undefined;
+  if ((family?.balancesVisibility ?? 'everyone') === 'everyone') return true;
+  if (me.role === 'owner') return true;
+  return card ? hasHolderPower(card, me) : false;
+}
+
+export function visibleInvoiceDetails(store: Store, details: InvoiceDetails): InvoiceDetails {
+  if (canSeeAllBalances(store, details.invoice.familyId, details.card, details.me)) return details;
+  const meId = details.me.id;
+  return {
+    ...details,
+    balances: details.balances.filter((b) => b.memberId === meId),
+    payments: details.payments.filter((p) => p.memberId === meId),
+    balancesRestricted: true,
   };
 }
 

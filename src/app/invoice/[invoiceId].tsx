@@ -304,6 +304,11 @@ export default function InvoiceScreen() {
                 </View>
               ))}
             </Surface>
+            {data.balancesRestricted ? (
+              <AppText variant="small" color="textMuted">
+                Nesta família, só o dono e quem é titular veem a parte de cada pessoa.
+              </AppText>
+            ) : null}
             {data.holder.id === data.me.id ? null : (
               <View style={styles.pixHint}>
                 <Copy size={14} color={colors.textMuted} />

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { can, ROLE_LABEL, sumCents } from '@/domain';
+import { BalancesVisibilitySetting } from '@/features/families/BalancesVisibilitySetting';
 import { useFamily, useLeaveFamily, useMembers } from '@/features/families/hooks';
 import { useWallets } from '@/features/wallets/hooks';
 import { makeStyles, spacing, useTheme } from '@/theme';
@@ -108,6 +109,8 @@ export default function FamilyScreen() {
             <Button label="Nova carteira" icon={Plus} variant="ghost" onPress={() => router.push(`/wallet/new?familyId=${familyId}`)} />
           ) : null}
         </View>
+
+        {canManage ? <BalancesVisibilitySetting family={family.data.family} /> : null}
 
         <Surface padded={false} style={styles.menu}>
           <ListRow

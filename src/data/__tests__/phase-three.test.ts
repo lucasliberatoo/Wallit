@@ -49,3 +49,22 @@ describe('shared purchases in installments', () => {
     }
   });
 });
+
+describe('who sees how much each person owes', () => {
+  it('lets the owner hide other people’s balances from members', async () => {
+    const { repos, familyId, cards } = await setup();
+    const invoiceId = cards[0].currentInvoice!.id;
+    const all = await repos.invoices.getDetails(invoiceId);
+    expect(all.balances.length).toBeGreaterThan(1);
+
+    await repos.families.updateSettings(familyId, { balancesVisibility: 'managers' });
+    await repos.auth.signOut();
+    await repos.auth.signIn('maria@wallit.app', DEMO_ACCOUNT.password);
+
+    const mine = await repos.invoices.getDetails(invoiceId);
+    expect(mine.balancesRestricted).toBe(true);
+    expect(mine.balances.map((b) => b.member.displayName)).toEqual(['Maria']);
+    expect(mine.payments.every((p) => p.member.displayName === 'Maria')).toBe(true);
+    await expect(repos.families.updateSettings(familyId, { balancesVisibility: 'everyone' })).rejects.toThrow();
+  });
+});

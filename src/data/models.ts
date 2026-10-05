@@ -109,6 +109,8 @@ export interface InvoiceDetails {
   canManage: boolean;
   /** Where members send their part ("Copiar chave PIX"). */
   holderPixKey: string | null;
+  /** The family hides other people's balances from this user. */
+  balancesRestricted?: boolean;
 }
 
 export interface PaymentView extends Payment {

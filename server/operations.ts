@@ -25,6 +25,7 @@ export const OPERATIONS = {
   'families.leave': 'write',
   'families.createInvite': 'write',
   'families.joinByCode': 'write',
+  'families.updateSettings': 'write',
   'wallets.list': 'read',
   'wallets.get': 'read',
   'wallets.create': 'write',

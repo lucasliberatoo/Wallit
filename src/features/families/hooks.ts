@@ -103,3 +103,13 @@ export function useCreateInvite() {
   const { families } = useRepositories();
   return useMutation({ mutationFn: (familyId: string) => families.createInvite(familyId) });
 }
+
+export function useUpdateFamilySettings() {
+  const { families } = useRepositories();
+  const invalidate = useInvalidateData();
+  return useMutation({
+    mutationFn: ({ familyId, changes }: { familyId: string; changes: Parameters<typeof families.updateSettings>[1] }) =>
+      families.updateSettings(familyId, changes),
+    onSuccess: invalidate,
+  });
+}

@@ -162,6 +162,36 @@ export function createFamilyRepository(store: Store): FamilyRepository {
         { write: true },
       ),
 
+    updateSettings: (familyId, changes) =>
+      store.run(
+        () => {
+          requireManager(familyId);
+          const family = store.require('families', familyId, 'Família') as Family;
+          if (changes.name !== undefined) {
+            const name = changes.name.trim();
+            if (!name) throw new AppError('validation', 'Dê um nome para a família.');
+            family.name = name;
+          }
+          if (changes.color !== undefined) family.color = changes.color;
+          if (changes.balancesVisibility !== undefined) {
+            if (changes.balancesVisibility !== 'everyone' && changes.balancesVisibility !== 'managers') {
+              throw new AppError('validation', 'Opção inválida.');
+            }
+            family.balancesVisibility = changes.balancesVisibility;
+          }
+          store.audit({
+            familyId,
+            entity: 'family',
+            entityId: familyId,
+            action: 'updated',
+            summary: 'Configurações da família alteradas',
+            changes: [],
+          });
+          return family;
+        },
+        { write: true },
+      ),
+
     joinByCode: (code) =>
       store.run(
         () => {
