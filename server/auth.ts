@@ -7,6 +7,7 @@ import { bearer } from 'better-auth/plugins';
 import { identityColors } from '../src/theme/colors';
 import { databaseUrl, getDb } from './db/client';
 import * as schema from './db/schema';
+import { passwordResetEmail, sendMail } from './mail';
 
 /**
  * BETTER_AUTH_SECRET signs sessions. When it isn't configured we derive one
@@ -30,6 +31,22 @@ function trustedOrigins(): string[] {
   return [...hosts.map((host) => `https://${host}`), ...extra, 'http://localhost:8081', 'wallit://'];
 }
 
+/** "Entrar com Google" is enabled once GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set. */
+export function googleConfigured(): boolean {
+  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+}
+
+function googleProvider() {
+  if (!googleConfigured()) return undefined;
+  return {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      prompt: 'select_account' as const,
+    },
+  };
+}
+
 function createAuth() {
   return betterAuth({
     basePath: '/api/auth',
@@ -43,11 +60,12 @@ function createAuth() {
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 6,
-      // No email provider yet: the request is accepted and logged.
-      sendResetPassword: async ({ user }) => {
-        console.info(`[auth] password reset requested for ${user.id}; email sending is not configured yet`);
+      resetPasswordTokenExpiresIn: 60 * 60,
+      sendResetPassword: async ({ user, url }) => {
+        await sendMail({ to: user.email, ...passwordResetEmail(user.name, url) });
       },
     },
+    socialProviders: googleProvider(),
     user: {
       additionalFields: {
         avatarColor: { type: 'string', required: false, input: false },
@@ -55,6 +73,8 @@ function createAuth() {
         notificationPrefs: { type: 'json', required: false, input: false },
       },
     },
+    // Google confirms the email, so signing in with it reaches the existing account.
+    account: { accountLinking: { enabled: true, trustedProviders: ['google'] } },
     session: { expiresIn: 60 * 60 * 24 * 60, updateAge: 60 * 60 * 24 },
     databaseHooks: {
       user: {

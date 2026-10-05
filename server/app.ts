@@ -4,9 +4,10 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 
 import { AppError } from '../src/data/errors';
-import { getAuth } from './auth';
+import { getAuth, googleConfigured } from './auth';
 import { runDailyReminders } from './cron';
 import { getDb } from './db/client';
+import { emailConfigured } from './mail';
 import { isOperation, runOperation } from './operations';
 import { removeSubscription, saveSubscription, sendPushes, vapidKeys } from './push';
 
@@ -55,6 +56,9 @@ function describe(error: unknown): string {
   // Never echo connection strings.
   return message.replace(/postgres(ql)?:\/\/\S+/g, 'postgres://***');
 }
+
+/** Which sign-in options this deployment has configured. */
+app.get('/auth-options', (c) => c.json({ google: googleConfigured(), passwordResetEmail: emailConfigured() }));
 
 app.on(['GET', 'POST'], '/auth/*', (c) => getAuth().handler(c.req.raw));
 

@@ -7,7 +7,7 @@ import { AppText, Button, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
 import { FormError } from '@/features/auth/FormError';
-import { useRequestPasswordReset } from '@/features/auth/hooks';
+import { useAuthOptions, useRequestPasswordReset } from '@/features/auth/hooks';
 import { resetSchema } from '@/features/auth/schemas';
 import { useZodForm } from '@/lib/form';
 import { fontFamily, makeStyles, spacing, useTheme } from '@/theme';
@@ -16,6 +16,8 @@ export default function ForgotPasswordScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const reset = useRequestPasswordReset();
+  const options = useAuthOptions();
+  const emailOff = options.data && !options.data.passwordResetEmail;
   const form = useZodForm(resetSchema, { defaultValues: { email: '' } });
   const submit = form.handleSubmit((values) => reset.mutate(values.email));
 
@@ -54,6 +56,11 @@ export default function ForgotPasswordScreen() {
               />
             )}
           />
+          {emailOff ? (
+            <AppText variant="caption" color="textSecondary">
+              O envio de emails ainda não foi ligado neste servidor, então o link pode não chegar.
+            </AppText>
+          ) : null}
           <FormError message={reset.error ? errorMessage(reset.error) : null} />
           <Button label="Enviar link" icon={Send} size="lg" onPress={submit} loading={reset.isPending} />
         </>

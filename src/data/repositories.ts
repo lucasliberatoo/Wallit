@@ -47,12 +47,27 @@ import type {
  * interfaces (through hooks), so the backend can be swapped (mock in memory,
  * HTTP API on Vercel, ...) without touching the UI.
  */
+export interface AuthOptions {
+  google: boolean;
+  passwordResetEmail: boolean;
+}
+
 export interface AuthRepository {
   getSession(): Promise<Session | null>;
   signIn(email: string, password: string): Promise<Session>;
   signUp(input: SignUpInput): Promise<Session>;
   signOut(): Promise<void>;
-  requestPasswordReset(email: string): Promise<void>;
+  /** `redirectTo` is the page that receives `?token=` from the email link. */
+  requestPasswordReset(email: string, redirectTo?: string): Promise<void>;
+  resetPassword(token: string, newPassword: string): Promise<void>;
+  /** What this backend offers besides email and password. */
+  options(): Promise<AuthOptions>;
+  /** Google sign-in page; it comes back to `callbackURL` with a browser session. */
+  googleSignInUrl(callbackURL: string, errorCallbackURL: string): Promise<string>;
+  /** Turns the browser session left by Google into the app session; returns its token. */
+  completeBrowserSignIn(): Promise<{ session: Session; token: string }>;
+  /** Starts the app session from a token handed over by the browser (installed app). */
+  signInWithToken(token: string): Promise<Session>;
   /** `photo: ''` removes the photo. */
   updateProfile(changes: Partial<Pick<User, 'name' | 'pixKey' | 'avatarColor' | 'photo' | 'notificationPrefs'>>): Promise<User>;
 }

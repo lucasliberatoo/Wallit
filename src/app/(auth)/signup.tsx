@@ -6,7 +6,8 @@ import { AppText, Button, TextField } from '@/components/ui';
 import { errorMessage } from '@/data';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
 import { FormError } from '@/features/auth/FormError';
-import { useSignUp } from '@/features/auth/hooks';
+import { GoogleButton } from '@/features/auth/GoogleButton';
+import { useAuthOptions, useGoogleSignIn, useSignUp } from '@/features/auth/hooks';
 import { signUpSchema } from '@/features/auth/schemas';
 import { useZodForm } from '@/lib/form';
 import { fontFamily, makeStyles } from '@/theme';
@@ -14,6 +15,8 @@ import { fontFamily, makeStyles } from '@/theme';
 export default function SignUpScreen() {
   const styles = useStyles();
   const signUp = useSignUp();
+  const google = useGoogleSignIn();
+  const options = useAuthOptions();
   const form = useZodForm(signUpSchema, { defaultValues: { name: '', email: '', password: '' } });
   const submit = form.handleSubmit((values) => signUp.mutate(values));
 
@@ -78,8 +81,11 @@ export default function SignUpScreen() {
           />
         )}
       />
-      <FormError message={signUp.error ? errorMessage(signUp.error) : null} />
+      <FormError message={signUp.error ? errorMessage(signUp.error) : google.error ? errorMessage(google.error) : null} />
       <Button label="Criar conta" icon={UserPlus} size="lg" onPress={submit} loading={signUp.isPending} />
+      {options.data?.google ? (
+        <GoogleButton onPress={() => google.mutate()} loading={google.isPending} disabled={signUp.isPending} />
+      ) : null}
     </AuthScaffold>
   );
 }

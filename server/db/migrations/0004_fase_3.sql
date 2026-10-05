@@ -1,0 +1,1 @@
+ALTER TABLE "families" ADD COLUMN "balances_visibility" text DEFAULT 'everyone' NOT NULL;
