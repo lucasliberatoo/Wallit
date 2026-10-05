@@ -195,6 +195,7 @@ export function PurchaseForm({
             onChangeAmount={(memberId, value) => dispatch({ type: 'setShareAmount', memberId, value })}
             onSplitEqually={() => dispatch({ type: 'splitEqually' })}
             onFillRemaining={(memberId) => dispatch({ type: 'fillRemaining', memberId })}
+            installmentCount={state.installmentCount}
           />
         </FieldBlock>
 

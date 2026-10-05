@@ -180,9 +180,24 @@ export default function PurchaseScreen() {
                 <Divider inset={spacing.lg + 32} />
                 <ListRow
                   title={share.member.displayName}
-                  subtitle={`Paga ${Math.round((share.amountCents / p.totalCents) * 100)}%`}
+                  subtitle={
+                    p.installmentCount > 1
+                      ? `Paga ${Math.round((share.amountCents / p.totalCents) * 100)}% · total ${formatBRL(share.amountCents)}`
+                      : `Paga ${Math.round((share.amountCents / p.totalCents) * 100)}%`
+                  }
                   leading={<Avatar name={share.member.displayName} color={share.member.avatarColor} photo={share.member.photo} size={32} />}
-                  trailing={<AppText variant="money">{formatBRL(share.amountCents)}</AppText>}
+                  trailing={
+                    p.installmentCount > 1 ? (
+                      <View style={styles.perInstallment}>
+                        <AppText variant="money">{formatBRL(Math.floor(share.amountCents / p.installmentCount))}</AppText>
+                        <AppText variant="small" color="textMuted">
+                          por parcela
+                        </AppText>
+                      </View>
+                    ) : (
+                      <AppText variant="money">{formatBRL(share.amountCents)}</AppText>
+                    )
+                  }
                 />
               </View>
             ))}
@@ -294,6 +309,7 @@ const useStyles = makeStyles((colors) => ({
   invoiceLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1, gap: 2 },
   review: { gap: spacing.md },
+  perInstallment: { alignItems: 'flex-end' },
   reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   reviewActions: { flexDirection: 'row', gap: spacing.sm },
   flexButton: { flex: 1 },

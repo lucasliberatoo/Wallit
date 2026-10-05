@@ -127,9 +127,9 @@ export default function HomeScreen() {
             <Tile
               icon={Layers}
               tint={colors.accent}
-              title="Parcelas ativas"
+              title="Suas parcelas"
               value={`${home.data.activeInstallments.count} ${home.data.activeInstallments.count === 1 ? 'compra' : 'compras'}`}
-              caption={`${formatBRL(home.data.activeInstallments.remainingCents)} a vencer`}
+              caption={`${formatBRL(home.data.activeInstallments.remainingCents)} da sua parte a vencer`}
               onPress={() => router.push('/history?installments=1')}
             />
           </View>

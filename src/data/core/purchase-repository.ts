@@ -33,7 +33,10 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
               memberIds: [share.member.id],
               type: 'purchase_added',
               title: 'Nova compra para você',
-              body: `${purchase.merchant}: ${formatBRL(purchase.totalCents)}. Sua parte: ${formatBRL(share.amountCents)}.`,
+              body:
+                purchase.installmentCount > 1
+                  ? `${purchase.merchant}: ${purchase.installmentCount}x. Sua parte: ${purchase.installmentCount}x de ${formatBRL(Math.floor(share.amountCents / purchase.installmentCount))} (total ${formatBRL(share.amountCents)}).`
+                  : `${purchase.merchant}: ${formatBRL(purchase.totalCents)}. Sua parte: ${formatBRL(share.amountCents)}.`,
               link: purchaseLink(purchase.id),
             });
           }
