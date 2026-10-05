@@ -19,6 +19,14 @@ import { FieldBlock } from './FieldBlock';
 import { InstallmentStepper } from './InstallmentStepper';
 import { SplitEditor } from './SplitEditor';
 
+/** 05102026 -> 05/10/2026 while typing. */
+function maskDate(text: string): string {
+  const digits = text.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 export interface PurchaseFormProps {
   form: ReturnType<typeof usePurchaseForm>;
   familyId: string;
@@ -78,6 +86,7 @@ export function PurchaseForm({
     }
   };
   const [customDate, setCustomDate] = useState('');
+  const [pickingDate, setPickingDate] = useState(false);
   const recent = usePurchaseSearch(familyId, {});
 
   const suggestions = useMemo(() => {
@@ -227,32 +236,51 @@ export function PurchaseForm({
           <View style={styles.wrap}>
             <Chip
               label="Hoje"
-              selected={state.date === today}
-              onPress={() => dispatch({ type: 'setField', field: 'date', value: today })}
+              selected={state.date === today && !pickingDate}
+              onPress={() => {
+                setPickingDate(false);
+                dispatch({ type: 'setField', field: 'date', value: today });
+              }}
             />
             <Chip
               label="Ontem"
-              selected={state.date === yesterday}
-              onPress={() => dispatch({ type: 'setField', field: 'date', value: yesterday })}
+              selected={state.date === yesterday && !pickingDate}
+              onPress={() => {
+                setPickingDate(false);
+                dispatch({ type: 'setField', field: 'date', value: yesterday });
+              }}
             />
             <Chip
               label={isCustomDate ? formatDate(state.date) : 'Outra data'}
-              selected={isCustomDate}
-              onPress={() => setCustomDate(isCustomDate ? formatDate(state.date) : '')}
+              selected={isCustomDate || pickingDate}
+              onPress={() => {
+                setPickingDate(true);
+                setCustomDate(isCustomDate ? formatDate(state.date) : '');
+              }}
             />
           </View>
-          {customDate !== '' || isCustomDate ? (
+          {pickingDate || isCustomDate ? (
             <TextField
               label="Data da compra"
               placeholder="DD/MM/AAAA"
-              keyboardType="numbers-and-punctuation"
-              value={customDate}
+              keyboardType="number-pad"
+              autoFocus={pickingDate && !isCustomDate}
+              value={customDate || (isCustomDate ? formatDate(state.date) : '')}
               onChangeText={(text) => {
-                setCustomDate(text);
-                const parsed = parseBRDate(text);
-                if (parsed) dispatch({ type: 'setField', field: 'date', value: parsed });
+                const masked = maskDate(text);
+                setCustomDate(masked);
+                // Only a full date counts: "05/10/20" would otherwise become 2020 mid-typing.
+                const parsed = masked.length === 10 ? parseBRDate(masked) : null;
+                if (parsed && parsed <= today) dispatch({ type: 'setField', field: 'date', value: parsed });
               }}
-              error={customDate.length >= 5 && !parseBRDate(customDate) ? 'Data inválida' : undefined}
+              error={
+                customDate.length === 10 && !parseBRDate(customDate)
+                  ? 'Data inválida'
+                  : customDate.length === 10 && parseBRDate(customDate)! > today
+                    ? 'A data não pode ser no futuro'
+                    : undefined
+              }
+              hint="Digite só os números, as barras entram sozinhas."
               maxLength={10}
             />
           ) : null}
