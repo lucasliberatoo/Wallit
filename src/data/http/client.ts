@@ -35,7 +35,10 @@ export class ApiClient {
     }
   }
 
-  async request<T>(path: string, init: { method?: 'GET' | 'POST'; body?: unknown; cookies?: boolean } = {}): Promise<{ status: number; data: T }> {
+  async request<T>(
+    path: string,
+    init: { method?: 'GET' | 'POST'; body?: unknown; cookies?: boolean } = {},
+  ): Promise<{ status: number; data: T }> {
     const token = await this.getToken();
     let response: Response;
     try {

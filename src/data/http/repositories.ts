@@ -117,7 +117,8 @@ function createHttpAuthRepository(api: ApiClient): AuthRepository {
       const { status, data } = await api.request<{ user: AuthUser; session: { token: string } } | null>('/auth/get-session', {
         cookies: true,
       });
-      if (status >= 300 || !data?.session?.token) throw new AppError('unauthorized', 'Não foi possível entrar com o Google. Tente de novo.');
+      if (status >= 300 || !data?.session?.token)
+        throw new AppError('unauthorized', 'Não foi possível entrar com o Google. Tente de novo.');
       await api.setToken(data.session.token);
       return { session: { user: toUser(data.user) }, token: data.session.token };
     },

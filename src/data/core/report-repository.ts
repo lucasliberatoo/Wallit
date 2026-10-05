@@ -19,7 +19,15 @@ export function createReportRepository(store: Store): ReportRepository {
         const person = (memberId: string) => {
           let row = people.get(memberId);
           if (!row) {
-            row = { member: store.member(memberId), spentCents: 0, paidCents: 0, awaitingCents: 0, pendingCents: 0, boughtCents: 0, holderOf: [] };
+            row = {
+              member: store.member(memberId),
+              spentCents: 0,
+              paidCents: 0,
+              awaitingCents: 0,
+              pendingCents: 0,
+              boughtCents: 0,
+              holderOf: [],
+            };
             people.set(memberId, row);
           }
           return row;
@@ -60,7 +68,11 @@ export function createReportRepository(store: Store): ReportRepository {
               categoryName: line.category?.name ?? null,
               installment: line.purchase.installmentCount > 1 ? `${line.installment.number}/${line.purchase.installmentCount}` : null,
               amountCents: line.installment.amountCents,
-              shares: line.shares.map((share) => ({ memberId: share.member.id, name: share.member.displayName, amountCents: share.amountCents })),
+              shares: line.shares.map((share) => ({
+                memberId: share.member.id,
+                name: share.member.displayName,
+                amountCents: share.amountCents,
+              })),
             });
           }
         }

@@ -8,7 +8,11 @@ import { reportCsv, reportFileName, reportHtml, reportText } from './report-form
 
 async function shareFile(uri: string, mimeType: string, title: string) {
   if (!(await Sharing.isAvailableAsync())) throw new AppError('validation', 'Não há app para compartilhar este arquivo.');
-  await Sharing.shareAsync(uri, { mimeType, dialogTitle: title, UTI: mimeType === 'application/pdf' ? 'com.adobe.pdf' : 'public.comma-separated-values-text' });
+  await Sharing.shareAsync(uri, {
+    mimeType,
+    dialogTitle: title,
+    UTI: mimeType === 'application/pdf' ? 'com.adobe.pdf' : 'public.comma-separated-values-text',
+  });
 }
 
 /** PDF: shared from the phone (WhatsApp, Drive…); on the web the print dialog offers "Salvar como PDF". */

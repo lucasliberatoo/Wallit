@@ -65,7 +65,13 @@ export function reportCsv(report: MonthlyReport): string {
     ['Total', csvMoney(report.totals.spentCents), csvMoney(report.totals.paidCents), '', csvMoney(report.totals.pendingCents)],
     [],
     ['Cartão', 'Titular', 'Vencimento', 'Situação', 'Total (R$)'],
-    ...report.invoices.map((i) => [i.cardName, i.holderName, formatDate(i.dueDate), INVOICE_STATUS_LABEL[i.status], csvMoney(i.totalCents)]),
+    ...report.invoices.map((i) => [
+      i.cardName,
+      i.holderName,
+      formatDate(i.dueDate),
+      INVOICE_STATUS_LABEL[i.status],
+      csvMoney(i.totalCents),
+    ]),
     [],
     ['Data', 'Estabelecimento', 'Cartão', 'Quem comprou', 'Categoria', 'Parcela', 'Valor (R$)', 'Divisão'],
     ...report.lines.map((l) => [

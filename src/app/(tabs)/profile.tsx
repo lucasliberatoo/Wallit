@@ -1,5 +1,17 @@
 import { router } from 'expo-router';
-import { Bell, ChartColumn, Download, FileText, History, KeyRound, LogOut, RefreshCcw, Shapes, ShieldCheck, Tags } from 'lucide-react-native';
+import {
+  Bell,
+  ChartColumn,
+  Download,
+  FileText,
+  History,
+  KeyRound,
+  LogOut,
+  RefreshCcw,
+  Shapes,
+  ShieldCheck,
+  Tags,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 
