@@ -40,6 +40,7 @@ export const OPERATIONS = {
   'purchases.create': 'write',
   'purchases.update': 'write',
   'purchases.cancel': 'write',
+  'purchases.anticipate': 'write',
   'purchases.get': 'read',
   'purchases.search': 'read',
   'categories.list': 'read',

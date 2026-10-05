@@ -68,3 +68,35 @@ describe('who sees how much each person owes', () => {
     await expect(repos.families.updateSettings(familyId, { balancesVisibility: 'everyone' })).rejects.toThrow();
   });
 });
+
+describe('anticipating installments', () => {
+  it('moves the last installments into the open invoice and pays the purchase off', async () => {
+    const { repos, familyId, cards, byName, category } = await setup();
+    const lucas = byName('Lucas');
+    const card = cards[0].card;
+    const created = await repos.purchases.create({
+      familyId,
+      cardId: card.id,
+      merchant: 'Sofá',
+      totalCents: 120000,
+      date: new Date().toISOString().slice(0, 10),
+      categoryId: category.id,
+      buyerMemberId: lucas.id,
+      installmentCount: 6,
+      shares: [{ memberId: lucas.id, amountCents: 120000 }],
+    });
+    expect(created.anticipation?.available).toBeGreaterThanOrEqual(5);
+    const target = created.anticipation!.targetRef;
+
+    const after = await repos.purchases.anticipate(created.purchase.id, 2);
+    const inTarget = after.installments.filter(({ invoice }) => invoice.ref.year === target.year && invoice.ref.month === target.month);
+    expect(inTarget.map(({ installment }) => installment.number).sort()).toEqual(expect.arrayContaining([5, 6]));
+    expect(after.history[0].summary).toContain('2 parcelas antecipadas');
+
+    const rest = after.anticipation!.available;
+    const paidOff = await repos.purchases.anticipate(created.purchase.id, rest);
+    expect(paidOff.anticipation).toBeNull();
+    expect(paidOff.history[0].summary).toContain('compra quitada');
+    await expect(repos.purchases.anticipate(created.purchase.id, 1)).rejects.toThrow('Não há parcelas');
+  });
+});

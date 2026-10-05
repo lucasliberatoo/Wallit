@@ -96,6 +96,11 @@ export interface PurchaseRepository {
   create(input: CreatePurchaseInput): Promise<PurchaseDetails>;
   update(purchaseId: ID, changes: UpdatePurchaseInput): Promise<PurchaseDetails>;
   cancel(purchaseId: ID): Promise<void>;
+  /**
+   * Brings the last `count` future installments into the card's open invoice
+   * (bank "antecipação"). Moving all of them pays the purchase off early.
+   */
+  anticipate(purchaseId: ID, count: number): Promise<PurchaseDetails>;
   get(purchaseId: ID): Promise<PurchaseDetails>;
   search(familyId: ID, filters: HistoryFilters): Promise<PurchaseListItem[]>;
 }

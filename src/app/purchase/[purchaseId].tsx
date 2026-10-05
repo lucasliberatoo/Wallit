@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CircleCheck, History, Pencil, ShoppingBag, ThumbsUp, Trash2, UserRound, X } from 'lucide-react-native';
+import { CircleCheck, FastForward, History, Pencil, ShoppingBag, ThumbsUp, Trash2, UserRound, X } from 'lucide-react-native';
 import { View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
@@ -219,6 +219,14 @@ export default function PurchaseScreen() {
                   ? 'Última parcela'
                   : `Restam ${progress.remainingCount} parcelas · ${formatBRL(progress.remainingCents)}`}
               </AppText>
+              {data.anticipation ? (
+                <Button
+                  label={`Antecipar ou quitar (${data.anticipation.available} ${data.anticipation.available === 1 ? 'parcela futura' : 'parcelas futuras'})`}
+                  icon={FastForward}
+                  variant="secondary"
+                  onPress={() => router.push(`/purchase/anticipate?purchaseId=${purchaseId}`)}
+                />
+              ) : null}
               <Divider />
               {data.installments.map(({ installment, invoice }) => (
                 <ListRow

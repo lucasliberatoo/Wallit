@@ -147,12 +147,13 @@ export default function InvoiceScreen() {
           holderName={data.holder.displayName}
         />
 
-        {myBalance && myBalance.status !== 'holder' && myBalance.pendingCents > 0 && data.invoice.status !== 'open' ? (
+        {myBalance && myBalance.status !== 'holder' && myBalance.pendingCents > 0 ? (
           <PixCard
             holderName={data.holder.displayName}
             pixKey={data.holderPixKey}
             toSendCents={myBalance.pendingCents - myBalance.awaitingCents}
             awaitingCents={myBalance.awaitingCents}
+            advance={data.invoice.status === 'open' || data.invoice.status === 'reviewing'}
             onInform={() => router.push(`/invoice/payment?invoiceId=${invoiceId}&memberId=${data.me.id}`)}
           />
         ) : null}

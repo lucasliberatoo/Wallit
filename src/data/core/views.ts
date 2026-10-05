@@ -31,6 +31,7 @@ import type {
   PurchaseListItem,
   ShareView,
 } from '../models';
+import { anticipatableInstallments, anticipationTargetRef } from './anticipation';
 import type { Store } from './store';
 
 /** Today's date in São Paulo-agnostic local form (YYYY-MM-DD). */
@@ -247,6 +248,19 @@ export function withActor(store: Store, log: AuditLog): AuditLogView {
   return { ...log, actorName: user?.name ?? 'Alguém' };
 }
 
+function anticipationInfo(store: Store, purchase: Purchase, card: Card, me: FamilyMember): PurchaseDetails['anticipation'] {
+  if (purchase.status !== 'active' || purchase.installmentCount < 2) return null;
+  if (!canEditPurchase(store, purchase) && !hasHolderPower(card, me)) return null;
+  const targetRef = anticipationTargetRef(store, card);
+  const installments = anticipatableInstallments(store, purchase, targetRef);
+  if (installments.length === 0) return null;
+  return {
+    available: installments.length,
+    availableCents: installments.reduce((sum, installment) => sum + installment.amountCents, 0),
+    targetRef,
+  };
+}
+
 export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetails {
   const me = store.requireMembership(purchase.familyId);
   const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
@@ -270,6 +284,7 @@ export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetai
     canEdit: canEditPurchase(store, purchase),
     canManage: hasHolderPower(card, me),
     me,
+    anticipation: anticipationInfo(store, purchase, card, me),
     review: reviewingInvoice ? { invoiceId: reviewingInvoice.id, ...lineReview(store, reviewingInvoice, purchase, me.id) } : null,
     attachments: store.db.attachments
       .filter((a) => a.purchaseId === purchase.id && !a.deletedAt)

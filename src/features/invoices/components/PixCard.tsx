@@ -14,11 +14,13 @@ export interface PixCardProps {
   /** What is left to send, not counting payments waiting for confirmation. */
   toSendCents: Cents;
   awaitingCents: Cents;
+  /** The invoice hasn't closed yet: paying now is an advance. */
+  advance?: boolean;
   onInform: () => void;
 }
 
 /** "Sua parte": how much to send to the holder, with the PIX key to copy. */
-export function PixCard({ holderName, pixKey, toSendCents, awaitingCents, onInform }: PixCardProps) {
+export function PixCard({ holderName, pixKey, toSendCents, awaitingCents, advance, onInform }: PixCardProps) {
   const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
@@ -35,7 +37,7 @@ export function PixCard({ holderName, pixKey, toSendCents, awaitingCents, onInfo
     <Surface style={styles.card}>
       <View style={styles.text}>
         <AppText variant="caption" color="textSecondary">
-          Sua parte
+          {advance ? 'Sua parte até agora' : 'Sua parte'}
         </AppText>
         {toSendCents > 0 ? (
           <AppText variant="h3">
@@ -81,7 +83,12 @@ export function PixCard({ holderName, pixKey, toSendCents, awaitingCents, onInfo
               {holderName} ainda não cadastrou a chave PIX no perfil.
             </AppText>
           )}
-          <Button label="Já paguei, avisar" icon={Send} variant="accent" onPress={onInform} />
+          {advance ? (
+            <AppText variant="small" color="textMuted">
+              A fatura ainda está aberta. Pagar agora adianta a sua parte; se entrar compra nova, a diferença aparece depois.
+            </AppText>
+          ) : null}
+          <Button label={advance ? 'Pagar adiantado' : 'Já paguei, avisar'} icon={Send} variant="accent" onPress={onInform} />
         </>
       ) : null}
     </Surface>
