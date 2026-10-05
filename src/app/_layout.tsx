@@ -7,7 +7,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
+import { router, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -17,6 +17,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useSession } from '@/features/auth/hooks';
 import { createQueryClient } from '@/lib/query-client';
 import { RepositoriesProvider } from '@/providers/RepositoriesProvider';
+import { usePendingInviteStore } from '@/stores/pending-invite-store';
 import { navigationTheme, ThemeProvider, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -61,6 +62,16 @@ function RootNavigator() {
   useEffect(() => {
     if (!session.isLoading) SplashScreen.hideAsync().catch(() => undefined);
   }, [session.isLoading]);
+
+  // An invite link opened before signing in continues right after login/sign-up.
+  const pendingInvite = usePendingInviteStore((state) => state.code);
+  const clearInvite = usePendingInviteStore((state) => state.setCode);
+  useEffect(() => {
+    if (!isSignedIn || !pendingInvite) return;
+    clearInvite(null);
+    const timer = setTimeout(() => router.push(`/family/join?code=${encodeURIComponent(pendingInvite)}`), 0);
+    return () => clearTimeout(timer);
+  }, [isSignedIn, pendingInvite, clearInvite]);
 
   if (session.isLoading) return null;
 

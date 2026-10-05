@@ -21,6 +21,7 @@ import {
 import { errorMessage } from '@/data';
 import { can, ROLE_LABEL, type Role } from '@/domain';
 import { FormError } from '@/features/auth/FormError';
+import { InviteShare } from '@/features/families/InviteShare';
 import { useAddMember, useCreateInvite, useFamily, useMembers, useRemoveMember, useUpdateMemberRole } from '@/features/families/hooks';
 import { makeStyles, spacing, useTheme } from '@/theme';
 
@@ -139,10 +140,10 @@ export default function MembersScreen() {
             <Surface style={styles.section}>
               <View style={styles.inviteHeader}>
                 <KeyRound size={20} color={colors.accent} />
-                <AppText variant="h3">Convidar com código</AppText>
+                <AppText variant="h3">Convidar por link ou código</AppText>
               </View>
               <AppText variant="caption" color="textSecondary">
-                Quem já tem conta no Wallit entra na família digitando este código.
+                Envie o link pelo WhatsApp. Quem abrir entra na família depois de entrar ou criar a conta. O código também funciona.
               </AppText>
               {invite.data ? (
                 <View style={styles.code}>
@@ -152,8 +153,9 @@ export default function MembersScreen() {
                   <Copy size={18} color={colors.textMuted} />
                 </View>
               ) : null}
+              {invite.data ? <InviteShare familyName={family.data.family.name} code={invite.data.code} /> : null}
               <Button
-                label={invite.data ? 'Gerar outro código' : 'Gerar código'}
+                label={invite.data ? 'Gerar outro convite' : 'Gerar convite'}
                 variant="secondary"
                 onPress={() => invite.mutate(familyId)}
                 loading={invite.isPending}
