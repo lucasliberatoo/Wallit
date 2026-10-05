@@ -29,6 +29,7 @@ import type {
   HomeSummary,
   InvoiceDetails,
   InvoiceListItem,
+  MonthlyReport,
   MerchantAlias,
   NotificationView,
   PurchaseDetails,
@@ -161,6 +162,11 @@ export interface StatisticsRepository {
   get(familyId: ID, filters: StatisticsFilters): Promise<StatisticsView>;
 }
 
+export interface ReportRepository {
+  /** Every card's invoice of `ref` in the family, per person. */
+  monthly(familyId: ID, ref: InvoiceRef): Promise<MonthlyReport>;
+}
+
 export interface AttachmentRepository {
   add(input: AddAttachmentInput): Promise<Attachment>;
   remove(attachmentId: ID): Promise<void>;
@@ -198,6 +204,7 @@ export interface Repositories {
   aliases: AliasRepository;
   notifications: NotificationRepository;
   statistics: StatisticsRepository;
+  reports: ReportRepository;
   attachments: AttachmentRepository;
   push: PushRepository;
   dashboard: DashboardRepository;

@@ -172,6 +172,7 @@ export function createHttpRepositories(apiUrl: string, tokens: TokenStorage): Re
     aliases: remote(api, 'aliases'),
     notifications: remote(api, 'notifications'),
     statistics: remote(api, 'statistics'),
+    reports: remote(api, 'reports'),
     attachments: remote(api, 'attachments'),
     push: createHttpPushRepository(api),
     dashboard: remote(api, 'dashboard'),

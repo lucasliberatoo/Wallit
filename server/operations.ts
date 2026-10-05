@@ -61,6 +61,7 @@ export const OPERATIONS = {
   'notifications.unreadCount': 'read',
   'notifications.markRead': 'write',
   'statistics.get': 'read',
+  'reports.monthly': 'read',
   'attachments.add': 'write',
   'attachments.remove': 'write',
   'attachments.getData': 'read',

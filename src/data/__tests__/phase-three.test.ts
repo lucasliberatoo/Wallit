@@ -1,3 +1,4 @@
+import { reportCsv, reportText } from '../../features/reports/report-format';
 import { createMockRepositories, DEMO_ACCOUNT } from '../mock';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -96,7 +97,32 @@ describe('anticipating installments', () => {
     const rest = after.anticipation!.available;
     const paidOff = await repos.purchases.anticipate(created.purchase.id, rest);
     expect(paidOff.anticipation).toBeNull();
-    expect(paidOff.history[0].summary).toContain('compra quitada');
+    // Both audits can share a millisecond, so their order in the history isn't fixed.
+    expect(paidOff.history.some((log) => log.summary.includes('compra quitada'))).toBe(true);
     await expect(repos.purchases.anticipate(created.purchase.id, 1)).rejects.toThrow('Não há parcelas');
+  });
+});
+
+describe('monthly report', () => {
+  it('sums what each person spent and paid across the month’s invoices', async () => {
+    const { repos, familyId, cards } = await setup();
+    const invoice = cards[0].currentInvoice!;
+    const report = await repos.reports.monthly(familyId, invoice.ref);
+    expect(report.invoices.length).toBeGreaterThan(0);
+    const spent = report.people.reduce((sum, p) => sum + p.spentCents, 0);
+    expect(spent).toBe(report.invoices.reduce((sum, i) => sum + i.totalCents, 0));
+    for (const person of report.people) {
+      expect(person.paidCents + person.pendingCents).toBe(person.spentCents);
+    }
+
+    expect(reportCsv(report).split('\r\n')[2]).toContain('Pessoa;Gastou (R$);Pagou (R$)');
+    expect(reportText(report)).toContain(report.people[0].member.displayName);
+
+    await repos.families.updateSettings(familyId, { balancesVisibility: 'managers' });
+    await repos.auth.signOut();
+    await repos.auth.signIn('maria@wallit.app', DEMO_ACCOUNT.password);
+    const mine = await repos.reports.monthly(familyId, invoice.ref);
+    expect(mine.restricted).toBe(true);
+    expect(mine.people.map((p) => p.member.displayName)).toEqual(['Maria']);
   });
 });

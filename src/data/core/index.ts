@@ -9,6 +9,7 @@ import { createCategoryRepository, createDashboardRepository } from './misc-repo
 import { createNotificationRepository } from './notification-repository';
 import { createPaymentRepository } from './payment-repository';
 import { createPurchaseRepository } from './purchase-repository';
+import { createReportRepository } from './report-repository';
 import { createReviewRepository } from './review-repository';
 import { createStatisticsRepository } from './statistics-repository';
 import type { Store } from './store';
@@ -33,6 +34,7 @@ export function createCoreRepositories(store: Store): Repositories {
     aliases: createAliasRepository(store),
     notifications: createNotificationRepository(store),
     statistics: createStatisticsRepository(store),
+    reports: createReportRepository(store),
     attachments: createAttachmentRepository(store),
     // Push needs a server; the offline demo only has in-app notifications.
     push: { publicKey: async () => null, subscribe: async () => undefined, unsubscribe: async () => undefined },

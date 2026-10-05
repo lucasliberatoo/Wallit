@@ -279,6 +279,7 @@ export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetai
     })),
     history: store.db.auditLogs
       .filter((log) => log.entity === 'purchase' && log.entityId === purchase.id)
+      .reverse() // newest first even when two entries share a millisecond
       .sort((a, b) => b.at.localeCompare(a.at))
       .map((log) => withActor(store, log)),
     canEdit: canEditPurchase(store, purchase),

@@ -12,6 +12,7 @@ import type {
   ID,
   Invoice,
   InvoiceRef,
+  InvoiceStatus,
   InvoiceTotals,
   ISODate,
   LineReviewStatus,
@@ -279,3 +280,52 @@ export interface RegisterPaymentInput {
 }
 
 export type { InvoiceRef };
+
+/** One person in the monthly report (all cards of the family, one invoice month). */
+export interface ReportPerson {
+  member: FamilyMember;
+  /** Their part of every installment in the month's invoices. */
+  spentCents: Cents;
+  /** Confirmed transfers, plus their own part on the cards they hold. */
+  paidCents: Cents;
+  /** Sent but not confirmed by the holder yet. */
+  awaitingCents: Cents;
+  pendingCents: Cents;
+  /** Total of the installments they bought (for anyone). */
+  boughtCents: Cents;
+  /** Cards this person holds (they pay the bank). */
+  holderOf: string[];
+}
+
+export interface ReportInvoice {
+  invoiceId: ID;
+  cardName: string;
+  holderName: string;
+  dueDate: ISODate;
+  status: InvoiceStatus;
+  totalCents: Cents;
+}
+
+export interface ReportLine {
+  date: ISODate;
+  merchant: string;
+  cardName: string;
+  buyerName: string;
+  categoryName: string | null;
+  /** "2/3" for installments. */
+  installment: string | null;
+  amountCents: Cents;
+  shares: { memberId: ID; name: string; amountCents: Cents }[];
+}
+
+export interface MonthlyReport {
+  familyName: string;
+  ref: InvoiceRef;
+  generatedAt: string;
+  people: ReportPerson[];
+  invoices: ReportInvoice[];
+  lines: ReportLine[];
+  totals: { spentCents: Cents; paidCents: Cents; pendingCents: Cents };
+  /** The family hides other people's balances from this user: only their own row. */
+  restricted: boolean;
+}

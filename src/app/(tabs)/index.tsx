@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
+  FileText,
   HandCoins,
   Layers,
   SearchCheck,
@@ -177,6 +178,15 @@ export default function HomeScreen() {
             title="Estatísticas"
             caption="Para onde vai o dinheiro da família"
             onPress={() => router.push('/statistics')}
+          />
+
+          <ActionCard
+            icon={FileText}
+            tint={colors.accent}
+            background={colors.primarySoft}
+            title="Relatório do mês"
+            caption="PDF ou planilha para mandar no grupo"
+            onPress={() => router.push('/report')}
           />
 
           <RecentPurchases familyId={current.family.id} meId={home.data.me.id} />

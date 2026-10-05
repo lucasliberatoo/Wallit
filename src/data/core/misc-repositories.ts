@@ -173,6 +173,7 @@ export function createDashboardRepository(store: Store): DashboardRepository {
         store.requireMembership(familyId);
         return store.db.auditLogs
           .filter((log) => log.familyId === familyId)
+          .reverse() // newest first even when two entries share a millisecond
           .sort((a, b) => b.at.localeCompare(a.at))
           .slice(0, 100)
           .map((log) => withActor(store, log));
