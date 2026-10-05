@@ -36,6 +36,8 @@ export interface PurchaseFormProps {
   onFilesChange: (files: PickedFile[]) => void;
   /** Attachments the purchase already has (edit). */
   existingAttachments?: number;
+  /** Shown above the amount (family choice in a new purchase). */
+  top?: React.ReactNode;
 }
 
 export function PurchaseForm({
@@ -52,6 +54,7 @@ export function PurchaseForm({
   files,
   onFilesChange,
   existingAttachments = 0,
+  top,
 }: PurchaseFormProps) {
   const { colors } = useTheme();
   const { state, dispatch, split, canSave, missing, installmentValue } = form;
@@ -114,6 +117,7 @@ export function PurchaseForm({
             />
           </View>
         }>
+        {top}
         <View style={styles.hero}>
           <AppText variant="caption" color="textSecondary">
             Valor da compra
