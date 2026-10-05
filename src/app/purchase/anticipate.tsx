@@ -55,7 +55,7 @@ function AnticipateForm({
           />
         }>
         <AppText variant="body" color="textSecondary">
-          Use quando a titular antecipar parcelas no app do banco. As últimas parcelas passam para a fatura de{' '}
+          Use quando o titular do cartão antecipar parcelas no app do banco. As últimas parcelas passam para a fatura de{' '}
           {formatRef(anticipation.targetRef)}, e cada pessoa paga a sua parte nela.
         </AppText>
 

@@ -150,7 +150,10 @@ function ReportBody({ report }: { report: MonthlyReport }) {
                 <View style={styles.flex}>
                   <AppText variant="bodyStrong">{person.member.displayName}</AppText>
                   <AppText variant="caption" color="textSecondary">
-                    Gastou {formatBRL(person.spentCents)} · pagou {formatBRL(person.paidCents)}
+                    Gastou {formatBRL(person.spentCents)}
+                  </AppText>
+                  <AppText variant="caption" color="textSecondary">
+                    Pagou {formatBRL(person.paidCents)}
                   </AppText>
                   {person.holderOf.length > 0 ? (
                     <AppText variant="small" color="textMuted">
