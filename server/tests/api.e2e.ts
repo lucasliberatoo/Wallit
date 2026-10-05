@@ -26,6 +26,8 @@ const url = process.env.TEST_DATABASE_URL;
 if (!url) throw new Error('Set TEST_DATABASE_URL to a throwaway Postgres database.');
 // The database connection is opened lazily, on first use.
 process.env.DATABASE_URL = url;
+// The reset link must point at a trusted origin.
+process.env.TRUSTED_ORIGINS = 'http://wallit.test';
 
 // Route the app's fetch calls straight into the Hono app.
 globalThis.fetch = ((input: string, init?: RequestInit) => app.fetch(new Request(`http://wallit.test${input}`, init))) as typeof fetch;
@@ -73,6 +75,20 @@ beforeEach(async () => {
 after(closeDb);
 
 describe('API', () => {
+  it('resets a forgotten password through the emailed token', async () => {
+    const repos = client();
+    assert.deepEqual(await repos.auth.options(), { google: false, passwordResetEmail: false });
+    await repos.auth.requestPasswordReset(DEMO_ACCOUNT.email, 'http://wallit.test/redefinir-senha');
+    const rows = await getDb().execute<{ identifier: string }>(sql`select identifier from verification`);
+    const token = rows.rows.map((row) => row.identifier).find((id) => id.startsWith('reset-password:'))?.split(':')[1];
+    assert.ok(token, 'reset token stored');
+    await rejects(repos.auth.resetPassword('wrong-token', 'nova-senha'), 'validation');
+    await repos.auth.resetPassword(token, 'nova-senha');
+    await rejects(repos.auth.signIn(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password), 'invalid_credentials');
+    const session = await repos.auth.signIn(DEMO_ACCOUNT.email, 'nova-senha');
+    assert.equal(session.user.email, DEMO_ACCOUNT.email);
+  });
+
   it('signs in with the demo account and loads the Silva family', async () => {
     const { repos, familyId, principal } = await signedIn();
     const session = await repos.auth.getSession();

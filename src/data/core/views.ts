@@ -7,6 +7,7 @@ import {
   computeInvoiceTotals,
   computeMemberBalances,
   type DebtLine,
+  type Family,
   type FamilyMember,
   type ID,
   type Invoice,
@@ -30,6 +31,7 @@ import type {
   PurchaseListItem,
   ShareView,
 } from '../models';
+import { anticipatableInstallments, anticipationTargetRef } from './anticipation';
 import type { Store } from './store';
 
 /** Today's date in São Paulo-agnostic local form (YYYY-MM-DD). */
@@ -172,6 +174,28 @@ export function invoiceDetails(store: Store, invoice: Invoice): InvoiceDetails {
   };
 }
 
+/**
+ * Family setting "only managers see how much each person owes": members who
+ * don't manage the card see just their own balance and payments.
+ */
+export function canSeeAllBalances(store: Store, familyId: ID, card: Card | null, me: FamilyMember): boolean {
+  const family = store.find('families', familyId) as Family | undefined;
+  if ((family?.balancesVisibility ?? 'everyone') === 'everyone') return true;
+  if (me.role === 'owner') return true;
+  return card ? hasHolderPower(card, me) : false;
+}
+
+export function visibleInvoiceDetails(store: Store, details: InvoiceDetails): InvoiceDetails {
+  if (canSeeAllBalances(store, details.invoice.familyId, details.card, details.me)) return details;
+  const meId = details.me.id;
+  return {
+    ...details,
+    balances: details.balances.filter((b) => b.memberId === meId),
+    payments: details.payments.filter((p) => p.memberId === meId),
+    balancesRestricted: true,
+  };
+}
+
 export function invoiceListItem(store: Store, invoice: Invoice, me: FamilyMember): InvoiceListItem {
   const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
   const { balances, totals } = balancesFor(store, invoice, card, invoiceLines(store, invoice));
@@ -224,6 +248,19 @@ export function withActor(store: Store, log: AuditLog): AuditLogView {
   return { ...log, actorName: user?.name ?? 'Alguém' };
 }
 
+function anticipationInfo(store: Store, purchase: Purchase, card: Card, me: FamilyMember): PurchaseDetails['anticipation'] {
+  if (purchase.status !== 'active' || purchase.installmentCount < 2) return null;
+  if (!canEditPurchase(store, purchase) && !hasHolderPower(card, me)) return null;
+  const targetRef = anticipationTargetRef(store, card);
+  const installments = anticipatableInstallments(store, purchase, targetRef);
+  if (installments.length === 0) return null;
+  return {
+    available: installments.length,
+    availableCents: installments.reduce((sum, installment) => sum + installment.amountCents, 0),
+    targetRef,
+  };
+}
+
 export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetails {
   const me = store.requireMembership(purchase.familyId);
   const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
@@ -242,11 +279,13 @@ export function purchaseDetails(store: Store, purchase: Purchase): PurchaseDetai
     })),
     history: store.db.auditLogs
       .filter((log) => log.entity === 'purchase' && log.entityId === purchase.id)
+      .reverse() // newest first even when two entries share a millisecond
       .sort((a, b) => b.at.localeCompare(a.at))
       .map((log) => withActor(store, log)),
     canEdit: canEditPurchase(store, purchase),
     canManage: hasHolderPower(card, me),
     me,
+    anticipation: anticipationInfo(store, purchase, card, me),
     review: reviewingInvoice ? { invoiceId: reviewingInvoice.id, ...lineReview(store, reviewingInvoice, purchase, me.id) } : null,
     attachments: store.db.attachments
       .filter((a) => a.purchaseId === purchase.id && !a.deletedAt)

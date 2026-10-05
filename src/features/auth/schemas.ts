@@ -15,6 +15,13 @@ export const resetSchema = z.object({
   email: z.string().trim().email('Email inválido'),
 });
 
+export const newPasswordSchema = z
+  .object({
+    password: z.string().min(6, 'A senha precisa ter ao menos 6 caracteres'),
+    confirm: z.string(),
+  })
+  .refine((values) => values.password === values.confirm, { message: 'As senhas não são iguais', path: ['confirm'] });
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ResetValues = z.infer<typeof resetSchema>;

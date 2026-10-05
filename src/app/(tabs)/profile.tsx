@@ -1,5 +1,17 @@
 import { router } from 'expo-router';
-import { Bell, ChartColumn, Download, History, KeyRound, LogOut, RefreshCcw, Shapes, ShieldCheck, Tags } from 'lucide-react-native';
+import {
+  Bell,
+  ChartColumn,
+  Download,
+  FileText,
+  History,
+  KeyRound,
+  LogOut,
+  RefreshCcw,
+  Shapes,
+  ShieldCheck,
+  Tags,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 
@@ -106,6 +118,13 @@ export default function ProfileScreen() {
           subtitle="Gastos por mês, categoria e pessoa"
           leading={<ChartColumn size={20} color={colors.primary} />}
           onPress={() => router.push('/statistics')}
+        />
+        <Divider inset={spacing.lg + 32} />
+        <ListRow
+          title="Relatório do mês"
+          subtitle="Quanto cada um gastou e pagou, em PDF ou planilha"
+          leading={<FileText size={20} color={colors.primary} />}
+          onPress={() => router.push('/report')}
         />
         <Divider inset={spacing.lg + 32} />
         <ListRow

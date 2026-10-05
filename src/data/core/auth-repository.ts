@@ -72,6 +72,29 @@ export function createAuthRepository(store: Store): AuthRepository {
       // The real backend sends an email; the offline mock only acknowledges.
       store.run(() => undefined),
 
+    resetPassword: () =>
+      store.run(() => {
+        throw new AppError('validation', 'A troca de senha por link só funciona no app conectado ao servidor.');
+      }),
+
+    // The offline mock has no Google sign-in.
+    options: () => store.run(() => ({ google: false, passwordResetEmail: false })),
+
+    googleSignInUrl: () =>
+      store.run(() => {
+        throw new AppError('validation', 'O login com Google só funciona no app conectado ao servidor.');
+      }),
+
+    completeBrowserSignIn: () =>
+      store.run(() => {
+        throw new AppError('validation', 'O login com Google só funciona no app conectado ao servidor.');
+      }),
+
+    signInWithToken: () =>
+      store.run(() => {
+        throw new AppError('validation', 'O login com Google só funciona no app conectado ao servidor.');
+      }),
+
     updateProfile: (changes) =>
       store.run(
         () => {

@@ -2,7 +2,7 @@ import { type Card, compareRefs, computeStatistics, type Invoice, type SpendingE
 import { AppError } from '../errors';
 import type { StatisticsRepository } from '../repositories';
 import type { Store } from './store';
-import { installmentShares, todayISO } from './views';
+import { canSeeAllBalances, installmentShares, todayISO } from './views';
 
 const MAX_MONTHS = 24;
 
@@ -10,7 +10,7 @@ export function createStatisticsRepository(store: Store): StatisticsRepository {
   return {
     get: (familyId, filters) =>
       store.run(() => {
-        store.requireMembership(familyId);
+        const me = store.requireMembership(familyId);
         if (compareRefs(filters.from, filters.to) > 0) throw new AppError('validation', 'O período começa depois de terminar.');
         const months = (filters.to.year - filters.from.year) * 12 + filters.to.month - filters.from.month + 1;
         if (months > MAX_MONTHS) throw new AppError('validation', `Escolha um período de até ${MAX_MONTHS} meses.`);
@@ -39,10 +39,14 @@ export function createStatisticsRepository(store: Store): StatisticsRepository {
           }
         }
 
+        const stats = computeStatistics(entries, { from: filters.from, to: filters.to });
+        // "Only managers see how much each person owes" also hides the per-person ranking.
+        const seeAll = canSeeAllBalances(store, familyId, null, me);
         return {
-          ...computeStatistics(entries, { from: filters.from, to: filters.to }),
+          ...stats,
+          byMember: seeAll ? stats.byMember : stats.byMember.filter((b) => b.id === me.id),
           categories: store.db.categories.filter((c) => c.familyId === familyId),
-          members: store.db.members.filter((m) => m.familyId === familyId),
+          members: store.db.members.filter((m) => m.familyId === familyId && (seeAll || m.id === me.id)),
           cards: store.db.cards.filter((c: Card) => c.familyId === familyId),
         };
       }),

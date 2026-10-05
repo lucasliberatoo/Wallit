@@ -49,6 +49,25 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Balance",
+              "label": "Wallit",
+              "description": "Quanto você deve, quando vence e atalho para Nova compra",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "previewImage": "./assets/images/widget-preview.png"
+            }
+          ]
+        }
       ]
     ],
     "experiments": {

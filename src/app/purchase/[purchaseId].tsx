@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CircleCheck, History, Pencil, ShoppingBag, ThumbsUp, Trash2, UserRound, X } from 'lucide-react-native';
+import { CircleCheck, FastForward, History, Pencil, ShoppingBag, ThumbsUp, Trash2, UserRound, X } from 'lucide-react-native';
 import { View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
@@ -19,17 +19,19 @@ import {
   Surface,
 } from '@/components/ui';
 import { errorMessage } from '@/data';
-import { formatBRL, formatRef, installmentAmounts, installmentProgress } from '@/domain';
+import { formatRef, installmentAmounts, installmentProgress } from '@/domain';
 import { AttachmentsSection } from '@/features/attachments/components/AttachmentsSection';
 import { useCancelPurchase, usePurchase } from '@/features/purchases/hooks';
 import { DisputeList } from '@/features/reviews/components/DisputeList';
 import { ReviewBadge } from '@/features/reviews/components/ReviewBadge';
 import { useConfirmPurchase } from '@/features/reviews/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { confirmAction, showError } from '@/utils/confirm';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDate, formatDateTime, formatShortDate, todayISO } from '@/utils/dates';
 
 export default function PurchaseScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const { purchaseId, created } = useLocalSearchParams<{ purchaseId: string; created?: string }>();
@@ -180,9 +182,24 @@ export default function PurchaseScreen() {
                 <Divider inset={spacing.lg + 32} />
                 <ListRow
                   title={share.member.displayName}
-                  subtitle={`Paga ${Math.round((share.amountCents / p.totalCents) * 100)}%`}
+                  subtitle={
+                    p.installmentCount > 1
+                      ? `Paga ${Math.round((share.amountCents / p.totalCents) * 100)}% · total ${formatBRL(share.amountCents)}`
+                      : `Paga ${Math.round((share.amountCents / p.totalCents) * 100)}%`
+                  }
                   leading={<Avatar name={share.member.displayName} color={share.member.avatarColor} photo={share.member.photo} size={32} />}
-                  trailing={<AppText variant="money">{formatBRL(share.amountCents)}</AppText>}
+                  trailing={
+                    p.installmentCount > 1 ? (
+                      <View style={styles.perInstallment}>
+                        <AppText variant="money">{formatBRL(Math.floor(share.amountCents / p.installmentCount))}</AppText>
+                        <AppText variant="small" color="textMuted">
+                          por parcela
+                        </AppText>
+                      </View>
+                    ) : (
+                      <AppText variant="money">{formatBRL(share.amountCents)}</AppText>
+                    )
+                  }
                 />
               </View>
             ))}
@@ -202,6 +219,14 @@ export default function PurchaseScreen() {
                   ? 'Última parcela'
                   : `Restam ${progress.remainingCount} parcelas · ${formatBRL(progress.remainingCents)}`}
               </AppText>
+              {data.anticipation ? (
+                <Button
+                  label={`Antecipar ou quitar (${data.anticipation.available} ${data.anticipation.available === 1 ? 'parcela futura' : 'parcelas futuras'})`}
+                  icon={FastForward}
+                  variant="secondary"
+                  onPress={() => router.push(`/purchase/anticipate?purchaseId=${purchaseId}`)}
+                />
+              ) : null}
               <Divider />
               {data.installments.map(({ installment, invoice }) => (
                 <ListRow
@@ -294,6 +319,7 @@ const useStyles = makeStyles((colors) => ({
   invoiceLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1, gap: 2 },
   review: { gap: spacing.md },
+  perInstallment: { alignItems: 'flex-end' },
   reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   reviewActions: { flexDirection: 'row', gap: spacing.sm },
   flexButton: { flex: 1 },

@@ -1,12 +1,13 @@
-import { formatBRL, type Purchase } from '../../domain';
+import { type Card, formatBRL, type Purchase } from '../../domain';
 import { AppError } from '../errors';
 import type { CreatePurchaseInput } from '../models';
 import type { PurchaseRepository } from '../repositories';
+import { anticipatableInstallments, anticipationSummary, anticipationTargetRef } from './anticipation';
 import { purchaseLink } from './labels';
 import { notify } from './notify';
 import { insertPurchase, updatePurchaseRecord } from './purchase-core';
 import type { Store } from './store';
-import { canEditPurchase, purchaseDetails, purchaseListItem, purchaseShares } from './views';
+import { canEditPurchase, hasHolderPower, purchaseDetails, purchaseListItem, purchaseShares } from './views';
 
 function normalize(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -33,7 +34,10 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
               memberIds: [share.member.id],
               type: 'purchase_added',
               title: 'Nova compra para você',
-              body: `${purchase.merchant}: ${formatBRL(purchase.totalCents)}. Sua parte: ${formatBRL(share.amountCents)}.`,
+              body:
+                purchase.installmentCount > 1
+                  ? `${purchase.merchant}: ${purchase.installmentCount}x. Sua parte: ${purchase.installmentCount}x de ${formatBRL(Math.floor(share.amountCents / purchase.installmentCount))} (total ${formatBRL(share.amountCents)}).`
+                  : `${purchase.merchant}: ${formatBRL(purchase.totalCents)}. Sua parte: ${formatBRL(share.amountCents)}.`,
               link: purchaseLink(purchase.id),
             });
           }
@@ -84,6 +88,49 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
         { write: true },
       ),
 
+    anticipate: (purchaseId, count) =>
+      store.run(
+        () => {
+          const purchase = store.require('purchases', purchaseId, 'Compra') as Purchase;
+          if (purchase.status !== 'active') throw new AppError('validation', 'Esta compra foi cancelada.');
+          const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
+          const me = store.requireMembership(purchase.familyId);
+          if (!canEditPurchase(store, purchase) && !hasHolderPower(card, me)) {
+            throw new AppError('forbidden', 'Só quem pode editar a compra ou a titular do cartão pode antecipar parcelas.');
+          }
+          const targetRef = anticipationTargetRef(store, card);
+          const candidates = anticipatableInstallments(store, purchase, targetRef);
+          if (candidates.length === 0) throw new AppError('validation', 'Não há parcelas futuras para antecipar.');
+          if (!Number.isInteger(count) || count < 1 || count > candidates.length) {
+            throw new AppError('validation', `Escolha de 1 a ${candidates.length} parcelas.`);
+          }
+          const target = store.getOrCreateInvoice(card, targetRef);
+          const moved = candidates.slice(0, count);
+          const movedCents = moved.reduce((sum, installment) => sum + installment.amountCents, 0);
+          for (const installment of moved) installment.invoiceId = target.id;
+          purchase.updatedAt = new Date().toISOString();
+          const paidOff = count === candidates.length;
+          store.audit({
+            familyId: purchase.familyId,
+            entity: 'purchase',
+            entityId: purchase.id,
+            action: 'updated',
+            summary: `${anticipationSummary(count, target)} (${formatBRL(movedCents)})${paidOff ? ', compra quitada' : ''}`,
+            changes: [],
+          });
+          notify(store, {
+            familyId: purchase.familyId,
+            memberIds: purchaseShares(store, purchase.id).map((share) => share.member.id),
+            type: 'purchase_added',
+            title: paidOff ? 'Compra quitada antecipadamente' : 'Parcelas antecipadas',
+            body: `${purchase.merchant}: ${anticipationSummary(count, target)}.`,
+            link: purchaseLink(purchase.id),
+          });
+          return purchaseDetails(store, purchase);
+        },
+        { write: true },
+      ),
+
     get: (purchaseId) => store.run(() => purchaseDetails(store, store.require('purchases', purchaseId, 'Compra') as Purchase)),
 
     search: (familyId, filters) =>
@@ -94,6 +141,8 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
           .filter((p) => p.familyId === familyId && p.status === 'active')
           .filter((p) => !filters.cardId || p.cardId === filters.cardId)
           .filter((p) => !filters.categoryId || p.categoryId === filters.categoryId)
+          .filter((p) => !filters.buyerMemberId || p.buyerMemberId === filters.buyerMemberId)
+          .filter((p) => !filters.onlyInstallments || p.installmentCount > 1)
           .filter((p) => !filters.from || p.date >= filters.from)
           .filter((p) => !filters.to || p.date <= filters.to)
           .filter(

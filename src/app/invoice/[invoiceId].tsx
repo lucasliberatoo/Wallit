@@ -18,13 +18,14 @@ import {
   TextField,
 } from '@/components/ui';
 import { errorMessage, type InvoiceLine, type PaymentView } from '@/data';
-import { can, canTransition, formatBRL, formatRef, INVOICE_STATUS_LABEL, nextInvoiceStatus } from '@/domain';
+import { can, canTransition, formatRef, INVOICE_STATUS_LABEL, nextInvoiceStatus } from '@/domain';
 import { useChangeInvoiceStatus, useConfirmPayment, useInvoice, useRejectPayment } from '@/features/invoices/hooks';
 import { PaymentsToConfirm } from '@/features/invoices/components/PaymentsToConfirm';
 import { PixCard } from '@/features/invoices/components/PixCard';
 import { ReviewBadge } from '@/features/reviews/components/ReviewBadge';
 import { ReviewProgressCard } from '@/features/reviews/components/ReviewProgressCard';
 import { useConfirmPurchase } from '@/features/reviews/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { confirmAction, showError } from '@/utils/confirm';
 import { filterLines, type GroupBy, groupLines } from '@/features/invoices/group-lines';
 import { MemberBalanceRow } from '@/features/invoices/components/MemberBalanceRow';
@@ -41,6 +42,7 @@ const NEXT_ACTION_LABEL: Partial<Record<string, string>> = {
 };
 
 export default function InvoiceScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const { invoiceId } = useLocalSearchParams<{ invoiceId: string }>();
@@ -145,12 +147,13 @@ export default function InvoiceScreen() {
           holderName={data.holder.displayName}
         />
 
-        {myBalance && myBalance.status !== 'holder' && myBalance.pendingCents > 0 && data.invoice.status !== 'open' ? (
+        {myBalance && myBalance.status !== 'holder' && myBalance.pendingCents > 0 ? (
           <PixCard
             holderName={data.holder.displayName}
             pixKey={data.holderPixKey}
             toSendCents={myBalance.pendingCents - myBalance.awaitingCents}
             awaitingCents={myBalance.awaitingCents}
+            advance={data.invoice.status === 'open' || data.invoice.status === 'reviewing'}
             onInform={() => router.push(`/invoice/payment?invoiceId=${invoiceId}&memberId=${data.me.id}`)}
           />
         ) : null}
@@ -302,6 +305,11 @@ export default function InvoiceScreen() {
                 </View>
               ))}
             </Surface>
+            {data.balancesRestricted ? (
+              <AppText variant="small" color="textMuted">
+                Nesta família, só o dono e quem é titular veem a parte de cada pessoa.
+              </AppText>
+            ) : null}
             {data.holder.id === data.me.id ? null : (
               <View style={styles.pixHint}>
                 <Copy size={14} color={colors.textMuted} />

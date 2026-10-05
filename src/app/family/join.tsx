@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { PageHeader, Screen } from '@/components/layout';
@@ -8,7 +8,8 @@ import { FormError } from '@/features/auth/FormError';
 import { useJoinFamily } from '@/features/families/hooks';
 
 export default function JoinFamilyScreen() {
-  const [code, setCode] = useState('');
+  const params = useLocalSearchParams<{ code?: string }>();
+  const [code, setCode] = useState(params.code?.toUpperCase() ?? '');
   const join = useJoinFamily();
 
   return (
@@ -25,7 +26,9 @@ export default function JoinFamilyScreen() {
           />
         }>
         <AppText variant="body" color="textSecondary">
-          Peça o código de convite para o dono da família e digite abaixo.
+          {params.code
+            ? 'Confira o código do convite e toque em "Entrar na família".'
+            : 'Peça o link ou o código de convite para o dono da família e digite abaixo.'}
         </AppText>
         <TextField
           label="Código"
@@ -33,7 +36,7 @@ export default function JoinFamilyScreen() {
           autoCapitalize="characters"
           value={code}
           onChangeText={setCode}
-          autoFocus
+          autoFocus={!params.code}
           maxLength={8}
         />
         <FormError message={join.error ? errorMessage(join.error) : null} />

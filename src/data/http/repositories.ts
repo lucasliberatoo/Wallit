@@ -1,7 +1,7 @@
 import type { NotificationPrefs, User } from '../../domain';
 import { AppError } from '../errors';
 import type { Session } from '../models';
-import type { AuthRepository, PushRepository, Repositories } from '../repositories';
+import type { AuthOptions, AuthRepository, PushRepository, Repositories } from '../repositories';
 import { ApiClient, type TokenStorage } from './client';
 
 interface AuthUser {
@@ -43,7 +43,7 @@ function createHttpAuthRepository(api: ApiClient): AuthRepository {
     return { user: toUser(data.user) };
   };
 
-  return {
+  const repository: AuthRepository = {
     async getSession() {
       if (!(await api.getToken())) return null;
       const { status, data } = await api.request<{ user: AuthUser } | null>('/auth/get-session');
@@ -74,12 +74,65 @@ function createHttpAuthRepository(api: ApiClient): AuthRepository {
       await api.setToken(null);
     },
 
-    async requestPasswordReset(email) {
-      await api.request('/auth/request-password-reset', { method: 'POST', body: { email: email.trim().toLowerCase() } });
+    async requestPasswordReset(email, redirectTo) {
+      const { status } = await api.request('/auth/request-password-reset', {
+        method: 'POST',
+        body: { email: email.trim().toLowerCase(), redirectTo },
+      });
+      if (status >= 300) throw new AppError('internal', 'Não foi possível enviar o link agora. Tente de novo.');
+    },
+
+    async resetPassword(token, newPassword) {
+      const { status, data } = await api.request<{ code?: string }>('/auth/reset-password', {
+        method: 'POST',
+        body: { token, newPassword },
+      });
+      if (status < 300) return;
+      if (data?.code === 'INVALID_TOKEN')
+        throw new AppError('validation', 'Este link expirou ou já foi usado. Peça um novo em "Esqueci minha senha".');
+      throw new AppError('validation', 'Não foi possível trocar a senha. Confira a nova senha e tente de novo.');
+    },
+
+    async options() {
+      try {
+        const { status, data } = await api.request<AuthOptions>('/auth-options');
+        if (status < 300 && data) return { google: Boolean(data.google), passwordResetEmail: Boolean(data.passwordResetEmail) };
+      } catch {
+        // Offline: only email and password.
+      }
+      return { google: false, passwordResetEmail: false };
+    },
+
+    async googleSignInUrl(callbackURL, errorCallbackURL) {
+      const { status, data } = await api.request<{ url?: string }>('/auth/sign-in/social', {
+        method: 'POST',
+        body: { provider: 'google', callbackURL, errorCallbackURL, disableRedirect: true },
+        cookies: true,
+      });
+      if (status >= 300 || !data?.url) throw new AppError('internal', 'O login com Google não está disponível agora.');
+      return data.url;
+    },
+
+    async completeBrowserSignIn() {
+      const { status, data } = await api.request<{ user: AuthUser; session: { token: string } } | null>('/auth/get-session', {
+        cookies: true,
+      });
+      if (status >= 300 || !data?.session?.token)
+        throw new AppError('unauthorized', 'Não foi possível entrar com o Google. Tente de novo.');
+      await api.setToken(data.session.token);
+      return { session: { user: toUser(data.user) }, token: data.session.token };
+    },
+
+    async signInWithToken(token) {
+      await api.setToken(token);
+      const session = await repository.getSession();
+      if (!session) throw new AppError('unauthorized', 'Não foi possível entrar com o Google. Tente de novo.');
+      return session;
     },
 
     updateProfile: (changes) => api.rpc('auth.updateProfile', [changes]),
   };
+  return repository;
 }
 
 function createHttpPushRepository(api: ApiClient): PushRepository {
@@ -120,6 +173,7 @@ export function createHttpRepositories(apiUrl: string, tokens: TokenStorage): Re
     aliases: remote(api, 'aliases'),
     notifications: remote(api, 'notifications'),
     statistics: remote(api, 'statistics'),
+    reports: remote(api, 'reports'),
     attachments: remote(api, 'attachments'),
     push: createHttpPushRepository(api),
     dashboard: remote(api, 'dashboard'),

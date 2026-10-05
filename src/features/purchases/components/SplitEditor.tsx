@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { AppText, Avatar, Button, MoneyInput, PressableScale } from '@/components/ui';
-import { describeSplit, type FamilyMember, type ShareInput, type SplitValidation } from '@/domain';
+import { describeSplit, type FamilyMember, formatBRL, type ShareInput, type SplitValidation } from '@/domain';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export interface SplitEditorProps {
@@ -14,6 +14,8 @@ export interface SplitEditorProps {
   onChangeAmount: (memberId: string, value: number) => void;
   onSplitEqually: () => void;
   onFillRemaining: (memberId: string) => void;
+  /** Each person pays their part spread over the installments. */
+  installmentCount?: number;
 }
 
 /**
@@ -28,6 +30,7 @@ export function SplitEditor({
   onChangeAmount,
   onSplitEqually,
   onFillRemaining,
+  installmentCount = 1,
 }: SplitEditorProps) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -67,9 +70,16 @@ export function SplitEditor({
             return (
               <Animated.View key={share.memberId} layout={LinearTransition} style={styles.amountRow}>
                 <Avatar name={member.displayName} color={member.avatarColor} photo={member.photo} size={32} />
-                <AppText variant="bodyStrong" style={styles.flex} numberOfLines={1}>
-                  {member.displayName}
-                </AppText>
+                <View style={styles.flex}>
+                  <AppText variant="bodyStrong" numberOfLines={1}>
+                    {member.displayName}
+                  </AppText>
+                  {installmentCount > 1 && share.amountCents > 0 ? (
+                    <AppText variant="small" color="textMuted" numberOfLines={1}>
+                      {installmentCount}x de {formatBRL(Math.floor(share.amountCents / installmentCount))}
+                    </AppText>
+                  ) : null}
+                </View>
                 {validation.difference > 0 ? (
                   <PressableScale
                     onPress={() => onFillRemaining(member.id)}

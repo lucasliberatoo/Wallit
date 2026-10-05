@@ -4,7 +4,7 @@ import type { InvoiceRepository } from '../repositories';
 import { invoiceLabel, invoiceLink } from './labels';
 import { notify } from './notify';
 import type { Store } from './store';
-import { invoiceDetails, invoiceListItem, sortInvoicesDesc, todayISO } from './views';
+import { invoiceDetails, invoiceListItem, sortInvoicesDesc, todayISO, visibleInvoiceDetails } from './views';
 
 /** Tells the family what changed: review started, or each person's final amount. */
 function announceStatus(store: Store, invoice: Invoice): void {
@@ -61,7 +61,8 @@ export function createInvoiceRepository(store: Store): InvoiceRepository {
         );
       }),
 
-    getDetails: (invoiceId) => store.run(() => invoiceDetails(store, store.require('invoices', invoiceId, 'Fatura') as Invoice)),
+    getDetails: (invoiceId) =>
+      store.run(() => visibleInvoiceDetails(store, invoiceDetails(store, store.require('invoices', invoiceId, 'Fatura') as Invoice))),
 
     create: (cardId, ref) =>
       store.run(

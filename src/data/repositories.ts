@@ -29,6 +29,7 @@ import type {
   HomeSummary,
   InvoiceDetails,
   InvoiceListItem,
+  MonthlyReport,
   MerchantAlias,
   NotificationView,
   PurchaseDetails,
@@ -47,12 +48,27 @@ import type {
  * interfaces (through hooks), so the backend can be swapped (mock in memory,
  * HTTP API on Vercel, ...) without touching the UI.
  */
+export interface AuthOptions {
+  google: boolean;
+  passwordResetEmail: boolean;
+}
+
 export interface AuthRepository {
   getSession(): Promise<Session | null>;
   signIn(email: string, password: string): Promise<Session>;
   signUp(input: SignUpInput): Promise<Session>;
   signOut(): Promise<void>;
-  requestPasswordReset(email: string): Promise<void>;
+  /** `redirectTo` is the page that receives `?token=` from the email link. */
+  requestPasswordReset(email: string, redirectTo?: string): Promise<void>;
+  resetPassword(token: string, newPassword: string): Promise<void>;
+  /** What this backend offers besides email and password. */
+  options(): Promise<AuthOptions>;
+  /** Google sign-in page; it comes back to `callbackURL` with a browser session. */
+  googleSignInUrl(callbackURL: string, errorCallbackURL: string): Promise<string>;
+  /** Turns the browser session left by Google into the app session; returns its token. */
+  completeBrowserSignIn(): Promise<{ session: Session; token: string }>;
+  /** Starts the app session from a token handed over by the browser (installed app). */
+  signInWithToken(token: string): Promise<Session>;
   /** `photo: ''` removes the photo. */
   updateProfile(changes: Partial<Pick<User, 'name' | 'pixKey' | 'avatarColor' | 'photo' | 'notificationPrefs'>>): Promise<User>;
 }
@@ -68,6 +84,8 @@ export interface FamilyRepository {
   leave(familyId: ID): Promise<void>;
   createInvite(familyId: ID): Promise<{ code: string }>;
   joinByCode(code: string): Promise<Family>;
+  /** Owner only. */
+  updateSettings(familyId: ID, changes: Partial<Pick<Family, 'name' | 'color' | 'balancesVisibility'>>): Promise<Family>;
 }
 
 export interface WalletRepository {
@@ -94,6 +112,11 @@ export interface PurchaseRepository {
   create(input: CreatePurchaseInput): Promise<PurchaseDetails>;
   update(purchaseId: ID, changes: UpdatePurchaseInput): Promise<PurchaseDetails>;
   cancel(purchaseId: ID): Promise<void>;
+  /**
+   * Brings the last `count` future installments into the card's open invoice
+   * (bank "antecipação"). Moving all of them pays the purchase off early.
+   */
+  anticipate(purchaseId: ID, count: number): Promise<PurchaseDetails>;
   get(purchaseId: ID): Promise<PurchaseDetails>;
   search(familyId: ID, filters: HistoryFilters): Promise<PurchaseListItem[]>;
 }
@@ -139,6 +162,11 @@ export interface StatisticsRepository {
   get(familyId: ID, filters: StatisticsFilters): Promise<StatisticsView>;
 }
 
+export interface ReportRepository {
+  /** Every card's invoice of `ref` in the family, per person. */
+  monthly(familyId: ID, ref: InvoiceRef): Promise<MonthlyReport>;
+}
+
 export interface AttachmentRepository {
   add(input: AddAttachmentInput): Promise<Attachment>;
   remove(attachmentId: ID): Promise<void>;
@@ -176,6 +204,7 @@ export interface Repositories {
   aliases: AliasRepository;
   notifications: NotificationRepository;
   statistics: StatisticsRepository;
+  reports: ReportRepository;
   attachments: AttachmentRepository;
   push: PushRepository;
   dashboard: DashboardRepository;

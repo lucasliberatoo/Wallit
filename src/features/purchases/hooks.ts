@@ -44,3 +44,12 @@ export function useCancelPurchase() {
   const invalidate = useInvalidateData();
   return useMutation({ mutationFn: (purchaseId: string) => purchases.cancel(purchaseId), onSuccess: invalidate });
 }
+
+export function useAnticipateInstallments() {
+  const { purchases } = useRepositories();
+  const invalidate = useInvalidateData();
+  return useMutation({
+    mutationFn: ({ purchaseId, count }: { purchaseId: string; count: number }) => purchases.anticipate(purchaseId, count),
+    onSuccess: invalidate,
+  });
+}

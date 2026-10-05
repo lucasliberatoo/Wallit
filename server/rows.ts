@@ -54,8 +54,22 @@ const families: Mapper<Family, typeof t.families.$inferInsert> = {
   table: t.families,
   key: t.families.id,
   keyOf: (f) => f.id,
-  fromRow: (r) => ({ id: r.id, name: r.name, color: r.color, createdBy: r.createdBy, createdAt: iso(r.createdAt as Date) }),
-  toRow: (f) => ({ id: f.id, name: f.name, color: f.color, createdBy: f.createdBy, createdAt: new Date(f.createdAt) }),
+  fromRow: (r) => ({
+    id: r.id,
+    name: r.name,
+    color: r.color,
+    balancesVisibility: r.balancesVisibility === 'managers' ? 'managers' : 'everyone',
+    createdBy: r.createdBy,
+    createdAt: iso(r.createdAt as Date),
+  }),
+  toRow: (f) => ({
+    id: f.id,
+    name: f.name,
+    color: f.color,
+    balancesVisibility: f.balancesVisibility ?? 'everyone',
+    createdBy: f.createdBy,
+    createdAt: new Date(f.createdAt),
+  }),
 };
 
 const members: Mapper<FamilyMember, typeof t.familyMembers.$inferInsert> = {

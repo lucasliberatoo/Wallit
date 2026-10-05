@@ -3,7 +3,8 @@ import { ChevronRight, WalletCards } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
-import { type Card, type Cents, formatBRL } from '@/domain';
+import { type Card, type Cents } from '@/domain';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { cardThemes, makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export interface WalletFolderProps {
@@ -18,6 +19,7 @@ export interface WalletFolderProps {
  * by the original prototype.
  */
 export function WalletFolder({ name, cards, totalCents, onPress }: WalletFolderProps) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const visible = cards.slice(0, 3);

@@ -35,7 +35,10 @@ export class ApiClient {
     }
   }
 
-  async request<T>(path: string, init: { method?: 'GET' | 'POST'; body?: unknown } = {}): Promise<{ status: number; data: T }> {
+  async request<T>(
+    path: string,
+    init: { method?: 'GET' | 'POST'; body?: unknown; cookies?: boolean } = {},
+  ): Promise<{ status: number; data: T }> {
     const token = await this.getToken();
     let response: Response;
     try {
@@ -46,6 +49,8 @@ export class ApiClient {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+        // Only the web sign-in with Google relies on the browser's cookies.
+        ...(init.cookies ? { credentials: 'include' as const } : {}),
       });
     } catch {
       throw new AppError('network', 'Sem conexão com o servidor. Confira sua internet.');

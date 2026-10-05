@@ -2,7 +2,8 @@ import { CalendarClock } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, ProgressBar, Surface } from '@/components/ui';
-import { formatBRL, type InvoiceStatus, type InvoiceTotals } from '@/domain';
+import { type InvoiceStatus, type InvoiceTotals } from '@/domain';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { spacing, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 import { InvoiceStatusBadge } from './StatusBadges';
@@ -25,6 +26,7 @@ export function InvoiceSummaryCard({
   holderName,
   pendingLabel = 'Falta receber',
 }: InvoiceSummaryCardProps) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const accruing = status === 'open' || status === 'reviewing';
   return (

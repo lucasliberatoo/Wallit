@@ -24,10 +24,15 @@ export interface User {
 /** A 256×256 JPEG fits comfortably; anything bigger is rejected. */
 export const PROFILE_PHOTO_MAX_LENGTH = 200_000;
 
+/** Who sees how much each person owes in the invoices. */
+export type BalancesVisibility = 'everyone' | 'managers';
+
 export interface Family {
   id: ID;
   name: string;
   color: string;
+  /** Default 'everyone'. With 'managers', members only see their own part. */
+  balancesVisibility?: BalancesVisibility;
   createdBy: ID;
   createdAt: ISODateTime;
 }

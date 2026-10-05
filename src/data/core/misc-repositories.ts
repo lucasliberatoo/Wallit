@@ -2,7 +2,7 @@ import { can, type Card, type Category, type Invoice, isInvoiceLocked } from '..
 import { AppError } from '../errors';
 import type { CategoryRepository, DashboardRepository } from '../repositories';
 import { newId, nowISO, type Store } from './store';
-import { currentInvoiceFor, hasHolderPower, invoiceDetails, purchaseListItem, todayISO, withActor } from './views';
+import { currentInvoiceFor, hasHolderPower, installmentShares, invoiceDetails, purchaseListItem, todayISO, withActor } from './views';
 
 export function createCategoryRepository(store: Store): CategoryRepository {
   const requireManager = (familyId: string) => {
@@ -120,9 +120,14 @@ export function createDashboardRepository(store: Store): DashboardRepository {
             const invoice = store.find('invoices', i.invoiceId) as Invoice | undefined;
             return invoice ? invoice.dueDate >= today : false;
           });
-          if (future.length > 0) {
+          // Only my part of each installment: shared purchases split every installment.
+          const mine = future.reduce(
+            (sum, i) => sum + (installmentShares(store, i).find((share) => share.member.id === me.id)?.amountCents ?? 0),
+            0,
+          );
+          if (mine > 0) {
             installmentCount += 1;
-            remainingCents += future.reduce((sum, i) => sum + i.amountCents, 0);
+            remainingCents += mine;
           }
         }
 
@@ -168,6 +173,7 @@ export function createDashboardRepository(store: Store): DashboardRepository {
         store.requireMembership(familyId);
         return store.db.auditLogs
           .filter((log) => log.familyId === familyId)
+          .reverse() // newest first even when two entries share a millisecond
           .sort((a, b) => b.at.localeCompare(a.at))
           .slice(0, 100)
           .map((log) => withActor(store, log));

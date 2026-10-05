@@ -6,8 +6,10 @@ import { Platform, View } from 'react-native';
 import { AppText, Button, TextField } from '@/components/ui';
 import { DEMO_ACCOUNT, errorMessage } from '@/data';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
+import { usePendingInviteStore } from '@/stores/pending-invite-store';
 import { FormError } from '@/features/auth/FormError';
-import { useSignIn } from '@/features/auth/hooks';
+import { GoogleButton } from '@/features/auth/GoogleButton';
+import { useAuthOptions, useGoogleSignIn, useSignIn } from '@/features/auth/hooks';
 import { signInSchema } from '@/features/auth/schemas';
 import { useZodForm } from '@/lib/form';
 import { fontFamily, makeStyles, spacing } from '@/theme';
@@ -15,6 +17,9 @@ import { fontFamily, makeStyles, spacing } from '@/theme';
 export default function LoginScreen() {
   const styles = useStyles();
   const signIn = useSignIn();
+  const google = useGoogleSignIn();
+  const options = useAuthOptions();
+  const hasInvite = Boolean(usePendingInviteStore((state) => state.code));
   const form = useZodForm(signInSchema, { defaultValues: { email: '', password: '' } });
 
   const submit = form.handleSubmit((values) => signIn.mutate(values));
@@ -22,7 +27,11 @@ export default function LoginScreen() {
   return (
     <AuthScaffold
       title="Bem-vindo de volta"
-      subtitle="Quem compra registra. Quem deve acompanha."
+      subtitle={
+        hasInvite
+          ? 'Você recebeu um convite. Entre ou crie sua conta para entrar na família.'
+          : 'Quem compra registra. Quem deve acompanha.'
+      }
       footer={
         <View style={styles.footer}>
           <AppText variant="body" color="textSecondary">
@@ -75,9 +84,12 @@ export default function LoginScreen() {
       <Link href="/forgot-password" style={[styles.link, styles.forgot]}>
         Esqueci minha senha
       </Link>
-      <FormError message={signIn.error ? errorMessage(signIn.error) : null} />
+      <FormError message={signIn.error ? errorMessage(signIn.error) : google.error ? errorMessage(google.error) : null} />
       <View style={styles.actions}>
         <Button label="Entrar" icon={LogIn} size="lg" onPress={submit} loading={signIn.isPending} />
+        {options.data?.google ? (
+          <GoogleButton onPress={() => google.mutate()} loading={google.isPending} disabled={signIn.isPending} />
+        ) : null}
         <Button
           label="Entrar com a conta de demonstração"
           icon={Sparkles}

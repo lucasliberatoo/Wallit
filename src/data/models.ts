@@ -12,6 +12,7 @@ import type {
   ID,
   Invoice,
   InvoiceRef,
+  InvoiceStatus,
   InvoiceTotals,
   ISODate,
   LineReviewStatus,
@@ -109,6 +110,8 @@ export interface InvoiceDetails {
   canManage: boolean;
   /** Where members send their part ("Copiar chave PIX"). */
   holderPixKey: string | null;
+  /** The family hides other people's balances from this user. */
+  balancesRestricted?: boolean;
 }
 
 export interface PaymentView extends Payment {
@@ -144,6 +147,8 @@ export interface PurchaseDetails {
   /** Holder power over the card: answers disputes, removes any attachment. */
   canManage: boolean;
   me: FamilyMember;
+  /** Future installments that can be brought into the open invoice (null when none or not allowed). */
+  anticipation: { available: number; availableCents: Cents; targetRef: InvoiceRef } | null;
   /** Review state while one of its invoices is being reviewed. */
   review: (LineReview & { invoiceId: ID }) | null;
   attachments: Attachment[];
@@ -190,7 +195,11 @@ export type { MerchantAlias };
 export interface HistoryFilters {
   search?: string;
   cardId?: ID;
+  /** Bought or pays part of it. */
   memberId?: ID;
+  /** Only purchases this member bought. */
+  buyerMemberId?: ID;
+  onlyInstallments?: boolean;
   categoryId?: ID;
   from?: ISODate;
   to?: ISODate;
@@ -271,3 +280,52 @@ export interface RegisterPaymentInput {
 }
 
 export type { InvoiceRef };
+
+/** One person in the monthly report (all cards of the family, one invoice month). */
+export interface ReportPerson {
+  member: FamilyMember;
+  /** Their part of every installment in the month's invoices. */
+  spentCents: Cents;
+  /** Confirmed transfers, plus their own part on the cards they hold. */
+  paidCents: Cents;
+  /** Sent but not confirmed by the holder yet. */
+  awaitingCents: Cents;
+  pendingCents: Cents;
+  /** Total of the installments they bought (for anyone). */
+  boughtCents: Cents;
+  /** Cards this person holds (they pay the bank). */
+  holderOf: string[];
+}
+
+export interface ReportInvoice {
+  invoiceId: ID;
+  cardName: string;
+  holderName: string;
+  dueDate: ISODate;
+  status: InvoiceStatus;
+  totalCents: Cents;
+}
+
+export interface ReportLine {
+  date: ISODate;
+  merchant: string;
+  cardName: string;
+  buyerName: string;
+  categoryName: string | null;
+  /** "2/3" for installments. */
+  installment: string | null;
+  amountCents: Cents;
+  shares: { memberId: ID; name: string; amountCents: Cents }[];
+}
+
+export interface MonthlyReport {
+  familyName: string;
+  ref: InvoiceRef;
+  generatedAt: string;
+  people: ReportPerson[];
+  invoices: ReportInvoice[];
+  lines: ReportLine[];
+  totals: { spentCents: Cents; paidCents: Cents; pendingCents: Cents };
+  /** The family hides other people's balances from this user: only their own row. */
+  restricted: boolean;
+}

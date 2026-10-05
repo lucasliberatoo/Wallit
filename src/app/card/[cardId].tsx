@@ -6,13 +6,15 @@ import { CreditCardView, InvoiceStatusBadge } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
 import { AppText, Button, Divider, ErrorState, ListRow, LoadingState, ProgressBar, SectionHeader, Surface } from '@/components/ui';
 import { errorMessage } from '@/data';
-import { formatBRL, formatRef, installmentAmounts, installmentProgress } from '@/domain';
+import { formatRef, installmentAmounts, installmentProgress } from '@/domain';
 import { useCard } from '@/features/cards/hooks';
 import { useCardInvoices, useInvoice } from '@/features/invoices/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { spacing, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 
 export default function CardScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const card = useCard(cardId);
