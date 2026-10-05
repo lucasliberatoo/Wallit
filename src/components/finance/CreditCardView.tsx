@@ -3,7 +3,8 @@ import { Nfc } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
-import { type Card, type Cents, formatBRL } from '@/domain';
+import { type Card, type Cents } from '@/domain';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { cardThemes, makeStyles, radius, spacing } from '@/theme';
 
 /** Silver contact chip, readable on every card theme. */
@@ -29,6 +30,7 @@ export interface CreditCardViewProps {
 
 /** Physical-card representation. Shows no card number, only a nickname. */
 export function CreditCardView({ card, holderName, amountCents, amountLabel = 'Fatura atual', width = 280, onPress }: CreditCardViewProps) {
+  const formatBRL = useMoneyFormatter();
   const styles = useStyles();
   const theme = cardThemes[card.theme];
   const height = width * 0.62;

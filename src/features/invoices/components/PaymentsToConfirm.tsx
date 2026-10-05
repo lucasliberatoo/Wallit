@@ -3,7 +3,8 @@ import { View } from 'react-native';
 
 import { AppText, Avatar, Button, Divider, SectionHeader, Surface } from '@/components/ui';
 import type { PaymentView } from '@/data';
-import { formatBRL } from '@/domain';
+
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, spacing } from '@/theme';
 import { formatDateTime } from '@/utils/dates';
 
@@ -16,6 +17,7 @@ export interface PaymentsToConfirmProps {
 
 /** Payments members said they made, waiting for the holder to check the bank. */
 export function PaymentsToConfirm({ payments, busyId, onConfirm, onReject }: PaymentsToConfirmProps) {
+  const formatBRL = useMoneyFormatter();
   const styles = useStyles();
   return (
     <View>

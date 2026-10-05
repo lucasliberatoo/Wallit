@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { PaymentStatusBadge, paymentStatusStyle } from '@/components/finance';
 import { AppText, Avatar, Badge, Button, ProgressBar } from '@/components/ui';
 import type { MemberBalanceView } from '@/data';
-import { formatBRL } from '@/domain';
+
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { spacing, useTheme } from '@/theme';
 
 export interface MemberBalanceRowProps {
@@ -17,6 +18,7 @@ export interface MemberBalanceRowProps {
 }
 
 export function MemberBalanceRow({ balance, isMe, canRegister, invoiceOpen, onRegister }: MemberBalanceRowProps) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const { member, owedCents, paidCents, pendingCents, awaitingCents, status } = balance;
   const toRegisterCents = pendingCents - awaitingCents;

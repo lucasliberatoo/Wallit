@@ -6,12 +6,14 @@ import { CreditCardView, InvoiceStatusBadge } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
 import { AppText, Button, Divider, EmptyState, ErrorState, ListRow, LoadingState, SectionHeader, Surface } from '@/components/ui';
 import { errorMessage } from '@/data';
-import { formatBRL, sumCents } from '@/domain';
+import { sumCents } from '@/domain';
 import { useWallet } from '@/features/wallets/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { cardThemes, makeStyles, radius, spacing } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 
 export default function WalletScreen() {
+  const formatBRL = useMoneyFormatter();
   const styles = useStyles();
   const { walletId } = useLocalSearchParams<{ walletId: string }>();
   const wallet = useWallet(walletId);

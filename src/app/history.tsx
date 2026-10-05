@@ -7,12 +7,13 @@ import { PurchaseRow } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
 import { AppText, Chip, Divider, EmptyState, LoadingState, SegmentedControl, Surface, TextField } from '@/components/ui';
 import type { HistoryFilters } from '@/data';
-import { addMonths, formatBRL, monthName, sumCents } from '@/domain';
+import { addMonths, monthName, sumCents } from '@/domain';
 import { useFamilyCards } from '@/features/cards/hooks';
 import { useCategories } from '@/features/categories/hooks';
 import { useCurrentFamily, useMembers } from '@/features/families/hooks';
 import { useActivity } from '@/features/home/hooks';
 import { usePurchaseSearch } from '@/features/purchases/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { formatDateTime, formatDayMonth, todayISO } from '@/utils/dates';
 
@@ -28,6 +29,7 @@ function lastMonths(count: number) {
 }
 
 export default function HistoryScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const params = useLocalSearchParams<{ tab?: Tab; installments?: string }>();

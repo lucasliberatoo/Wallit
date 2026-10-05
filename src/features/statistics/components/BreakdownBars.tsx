@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { AppText } from '@/components/ui';
-import { formatBRL } from '@/domain';
+
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, spacing, useTheme } from '@/theme';
 
 export interface BreakdownItem {
@@ -15,6 +16,7 @@ export interface BreakdownItem {
 
 /** Ranked horizontal bars: label and value in text ink, the bar only carries magnitude. */
 export function BreakdownBars({ items }: { items: BreakdownItem[] }) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const max = Math.max(...items.map((item) => item.totalCents), 1);

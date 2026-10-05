@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppText } from '@/components/ui';
-import { formatBRL, type MonthTotal, monthName, refKey } from '@/domain';
+import { type MonthTotal, monthName, refKey } from '@/domain';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, spacing, useTheme } from '@/theme';
 
 const CHART_HEIGHT = 140;
@@ -16,6 +17,7 @@ function shortMonth(month: number): string {
  * web) a month shows its value above the chart; the last month starts selected.
  */
 export function MonthlyBars({ months }: { months: MonthTotal[] }) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const [selected, setSelected] = useState(months.length - 1);

@@ -18,13 +18,14 @@ import {
   TextField,
 } from '@/components/ui';
 import { errorMessage, type InvoiceLine, type PaymentView } from '@/data';
-import { can, canTransition, formatBRL, formatRef, INVOICE_STATUS_LABEL, nextInvoiceStatus } from '@/domain';
+import { can, canTransition, formatRef, INVOICE_STATUS_LABEL, nextInvoiceStatus } from '@/domain';
 import { useChangeInvoiceStatus, useConfirmPayment, useInvoice, useRejectPayment } from '@/features/invoices/hooks';
 import { PaymentsToConfirm } from '@/features/invoices/components/PaymentsToConfirm';
 import { PixCard } from '@/features/invoices/components/PixCard';
 import { ReviewBadge } from '@/features/reviews/components/ReviewBadge';
 import { ReviewProgressCard } from '@/features/reviews/components/ReviewProgressCard';
 import { useConfirmPurchase } from '@/features/reviews/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { confirmAction, showError } from '@/utils/confirm';
 import { filterLines, type GroupBy, groupLines } from '@/features/invoices/group-lines';
 import { MemberBalanceRow } from '@/features/invoices/components/MemberBalanceRow';
@@ -41,6 +42,7 @@ const NEXT_ACTION_LABEL: Partial<Record<string, string>> = {
 };
 
 export default function InvoiceScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const { invoiceId } = useLocalSearchParams<{ invoiceId: string }>();

@@ -190,7 +190,11 @@ export type { MerchantAlias };
 export interface HistoryFilters {
   search?: string;
   cardId?: ID;
+  /** Bought or pays part of it. */
   memberId?: ID;
+  /** Only purchases this member bought. */
+  buyerMemberId?: ID;
+  onlyInstallments?: boolean;
   categoryId?: ID;
   from?: ISODate;
   to?: ISODate;

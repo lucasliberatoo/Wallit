@@ -5,6 +5,8 @@ import {
   CalendarClock,
   ChartColumn,
   ChevronDown,
+  Eye,
+  EyeOff,
   HandCoins,
   Layers,
   SearchCheck,
@@ -13,30 +15,23 @@ import {
 } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { MoneyText, PurchaseRow } from '@/components/finance';
+import { MoneyText } from '@/components/finance';
 import { GradientHeader, Screen } from '@/components/layout';
-import {
-  AppText,
-  Avatar,
-  Divider,
-  EmptyState,
-  ErrorState,
-  IconButton,
-  LoadingState,
-  PressableScale,
-  SectionHeader,
-  Surface,
-} from '@/components/ui';
+import { AppText, Avatar, EmptyState, ErrorState, IconButton, LoadingState, PressableScale, Surface } from '@/components/ui';
 import { errorMessage } from '@/data';
-import { formatBRL } from '@/domain';
+
 import { useCurrentUser } from '@/features/auth/hooks';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { useHomeSummary } from '@/features/home/hooks';
+import { RecentPurchases } from '@/features/home/RecentPurchases';
 import { useUnreadCount } from '@/features/notifications/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
+import { usePreferencesStore } from '@/stores/preferences-store';
 import { fontFamily, makeStyles, radius, spacing, useTheme } from '@/theme';
-import { formatDayMonth, formatLongDate } from '@/utils/dates';
+import { formatLongDate } from '@/utils/dates';
 
 export default function HomeScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const user = useCurrentUser();
@@ -184,35 +179,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/statistics')}
           />
 
-          <View>
-            <SectionHeader title="Últimas compras" actionLabel="Ver histórico" onAction={() => router.push('/history')} />
-            <Surface padded={false} style={styles.list}>
-              {home.data.recentPurchases.length === 0 ? (
-                <AppText variant="body" color="textSecondary" style={styles.emptyList}>
-                  Nenhuma compra ainda. Toque no + para registrar a primeira.
-                </AppText>
-              ) : (
-                home.data.recentPurchases.map((item, index) => (
-                  <View key={item.purchase.id}>
-                    {index > 0 && <Divider inset={spacing.lg + 56} />}
-                    <View style={styles.rowPad}>
-                      <PurchaseRow
-                        merchant={item.purchase.merchant}
-                        statementName={item.purchase.statementName}
-                        amountCents={item.purchase.totalCents}
-                        category={item.category}
-                        buyer={item.buyer}
-                        payers={item.payers}
-                        installment={item.purchase.installmentCount > 1 ? { number: 1, count: item.purchase.installmentCount } : undefined}
-                        dateLabel={formatDayMonth(item.purchase.date)}
-                        onPress={() => router.push(`/purchase/${item.purchase.id}`)}
-                      />
-                    </View>
-                  </View>
-                ))
-              )}
-            </Surface>
-          </View>
+          <RecentPurchases familyId={current.family.id} meId={home.data.me.id} />
         </>
       ) : null}
     </Screen>
@@ -220,13 +187,17 @@ export default function HomeScreen() {
 }
 
 function OwedCard({ summary }: { summary: NonNullable<ReturnType<typeof useHomeSummary>['data']> }) {
+  const formatBRL = useMoneyFormatter();
   const styles = useStyles();
   const settled = summary.owedCents === 0;
   return (
     <Surface elevation="md" style={styles.owed}>
-      <AppText variant="caption" color="textSecondary">
-        {settled ? 'Você está em dia' : 'Você deve'}
-      </AppText>
+      <View style={styles.owedHeader}>
+        <AppText variant="caption" color="textSecondary" style={styles.flex}>
+          {settled ? 'Você está em dia' : 'Você deve'}
+        </AppText>
+        <HideValuesButton />
+      </View>
       <MoneyText value={summary.owedCents} variant="moneyLarge" color={settled ? 'success' : 'brand'} />
       <View style={styles.owedFooter}>
         <AppText variant="caption" color="textSecondary">
@@ -237,6 +208,23 @@ function OwedCard({ summary }: { summary: NonNullable<ReturnType<typeof useHomeS
         </AppText>
       </View>
     </Surface>
+  );
+}
+
+/** Eye icon: hides every amount in the app until tapped again. */
+function HideValuesButton() {
+  const { colors } = useTheme();
+  const hidden = usePreferencesStore((state) => state.hideValues);
+  const toggle = usePreferencesStore((state) => state.toggleHideValues);
+  const Icon = hidden ? EyeOff : Eye;
+  return (
+    <PressableScale
+      onPress={toggle}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={hidden ? 'Mostrar valores' : 'Esconder valores'}>
+      <Icon size={20} color={colors.textSecondary} />
+    </PressableScale>
   );
 }
 
@@ -313,6 +301,7 @@ const useStyles = makeStyles((colors) => ({
     paddingVertical: 2,
   },
   owed: { gap: spacing.xs },
+  owedHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   owedFooter: { marginTop: spacing.xs, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   bold: { fontFamily: fontFamily.bold },
   tiles: { flexDirection: 'row', gap: spacing.md },

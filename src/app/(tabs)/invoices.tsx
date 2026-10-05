@@ -7,9 +7,10 @@ import { InvoiceStatusBadge, PaymentStatusBadge } from '@/components/finance';
 import { GradientHeader, Screen } from '@/components/layout';
 import { AppText, Badge, Chip, EmptyState, ErrorState, LoadingState, ProgressBar, Surface } from '@/components/ui';
 import { errorMessage, type InvoiceListItem } from '@/data';
-import { compareRefs, formatBRL, formatRef, type InvoiceRef, invoiceRefForDate } from '@/domain';
+import { compareRefs, formatRef, type InvoiceRef, invoiceRefForDate } from '@/domain';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { useFamilyInvoices } from '@/features/invoices/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, spacing, useTheme } from '@/theme';
 import { formatShortDate, todayISO } from '@/utils/dates';
 
@@ -41,6 +42,7 @@ function matches(item: InvoiceListItem, filter: Filter): boolean {
 }
 
 export default function InvoicesScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const { current } = useCurrentFamily();

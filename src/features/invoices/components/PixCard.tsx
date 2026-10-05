@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { AppText, Button, Surface } from '@/components/ui';
-import { type Cents, formatBRL } from '@/domain';
+import { type Cents } from '@/domain';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 
 export interface PixCardProps {
@@ -18,6 +19,7 @@ export interface PixCardProps {
 
 /** "Sua parte": how much to send to the holder, with the PIX key to copy. */
 export function PixCard({ holderName, pixKey, toSendCents, awaitingCents, onInform }: PixCardProps) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const [copied, setCopied] = useState(false);

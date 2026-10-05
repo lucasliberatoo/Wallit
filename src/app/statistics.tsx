@@ -6,11 +6,12 @@ import { CategoryIcon } from '@/components/finance';
 import { PageHeader, Screen } from '@/components/layout';
 import { AppText, Avatar, Chip, EmptyState, ErrorState, LoadingState, SectionHeader, Surface } from '@/components/ui';
 import { errorMessage, type StatisticsFilters } from '@/data';
-import { addMonths, formatBRL, formatRef, type InvoiceRef } from '@/domain';
+import { addMonths, formatRef, type InvoiceRef } from '@/domain';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { BreakdownBars } from '@/features/statistics/components/BreakdownBars';
 import { MonthlyBars } from '@/features/statistics/components/MonthlyBars';
 import { useStatistics } from '@/features/statistics/hooks';
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { cardThemes, makeStyles, spacing, useTheme } from '@/theme';
 
 const PERIODS = [3, 6, 12] as const;
@@ -21,6 +22,7 @@ function currentRef(): InvoiceRef {
 }
 
 export default function StatisticsScreen() {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const { current } = useCurrentFamily();

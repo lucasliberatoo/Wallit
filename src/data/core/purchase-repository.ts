@@ -97,6 +97,8 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
           .filter((p) => p.familyId === familyId && p.status === 'active')
           .filter((p) => !filters.cardId || p.cardId === filters.cardId)
           .filter((p) => !filters.categoryId || p.categoryId === filters.categoryId)
+          .filter((p) => !filters.buyerMemberId || p.buyerMemberId === filters.buyerMemberId)
+          .filter((p) => !filters.onlyInstallments || p.installmentCount > 1)
           .filter((p) => !filters.from || p.date >= filters.from)
           .filter((p) => !filters.to || p.date <= filters.to)
           .filter(

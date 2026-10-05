@@ -4,7 +4,8 @@ import { View } from 'react-native';
 
 import { AppText, PressableScale } from '@/components/ui';
 import type { Category, Cents, FamilyMember } from '@/domain';
-import { formatBRL } from '@/domain';
+
+import { useMoneyFormatter } from '@/lib/money-visibility';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 import { CategoryIcon } from './CategoryIcon';
 
@@ -40,6 +41,7 @@ export function PurchaseRow({
   footer,
   onPress,
 }: PurchaseRowProps) {
+  const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
   const payersLabel = payers.map((p) => p.displayName).join(' + ');
