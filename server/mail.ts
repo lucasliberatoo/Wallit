@@ -8,13 +8,15 @@ let transporter: Transporter | null | undefined;
 
 function getTransporter(): Transporter | null {
   if (transporter !== undefined) return transporter;
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) {
     transporter = null;
     return null;
   }
-  const port = Number(SMTP_PORT ?? 465);
-  transporter = nodemailer.createTransport({ host: SMTP_HOST, port, secure: port === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } });
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
   return transporter;
 }
 
