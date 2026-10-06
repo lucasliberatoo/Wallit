@@ -26,6 +26,7 @@ export default function CardScreen() {
 
   const { totals, currentInvoice, holder } = card.data;
   const accruing = !currentInvoice || currentInvoice.status === 'open' || currentInvoice.status === 'reviewing';
+  const myOwedCents = current.data?.balances.find((b) => b.memberId === current.data?.me.id)?.owedCents ?? 0;
   const installments = current.data?.lines.filter((line) => line.installment.count > 1) ?? [];
 
   return (
@@ -60,6 +61,17 @@ export default function CardScreen() {
             <Stat label="Vencimento" value={currentInvoice ? formatShortDate(currentInvoice.dueDate) : '—'} color={colors.text} />
           </View>
         </Surface>
+
+        {currentInvoice && myOwedCents > 0 ? (
+          <Surface padded={false} style={styles.list}>
+            <ListRow
+              title="Minha fatura"
+              subtitle={`Só a sua parte: ${formatBRL(myOwedCents)}`}
+              leading={<ReceiptText size={20} color={colors.primary} />}
+              onPress={() => router.push(`/invoice/${currentInvoice.id}?view=mine`)}
+            />
+          </Surface>
+        ) : null}
 
         <Button
           label="Nova compra neste cartão"

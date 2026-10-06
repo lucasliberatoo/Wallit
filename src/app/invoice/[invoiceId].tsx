@@ -27,11 +27,12 @@ import { ReviewProgressCard } from '@/features/reviews/components/ReviewProgress
 import { useConfirmPurchase } from '@/features/reviews/hooks';
 import { useMoneyFormatter } from '@/lib/money-visibility';
 import { confirmAction, showError } from '@/utils/confirm';
-import { filterLines, type GroupBy, groupLines } from '@/features/invoices/group-lines';
+import { filterLines, type GroupBy, groupLines, normalizeText } from '@/features/invoices/group-lines';
 import { MemberBalanceRow } from '@/features/invoices/components/MemberBalanceRow';
+import { MemberInvoice } from '@/features/invoices/components/MemberInvoice';
 import { makeStyles, radius, spacing, useTheme } from '@/theme';
 
-type Tab = 'purchases' | 'members';
+type Tab = 'purchases' | 'mine' | 'members';
 
 const NEXT_ACTION_LABEL: Partial<Record<string, string>> = {
   reviewing: 'Iniciar conferência',
@@ -45,7 +46,7 @@ export default function InvoiceScreen() {
   const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
   const styles = useStyles();
-  const { invoiceId } = useLocalSearchParams<{ invoiceId: string }>();
+  const { invoiceId, view } = useLocalSearchParams<{ invoiceId: string; view?: string }>();
   const invoice = useInvoice(invoiceId);
   const changeStatus = useChangeInvoiceStatus();
   const confirmPurchase = useConfirmPurchase();
@@ -53,9 +54,10 @@ export default function InvoiceScreen() {
   const rejectPayment = useRejectPayment();
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [busyPaymentId, setBusyPaymentId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('purchases');
+  const [tab, setTab] = useState<Tab>(view === 'mine' ? 'mine' : 'purchases');
   const [groupBy, setGroupBy] = useState<GroupBy>('date');
   const [search, setSearch] = useState('');
+  const [mineMemberId, setMineMemberId] = useState<string | undefined>();
 
   const groups = useMemo(
     () => (invoice.data ? groupLines(filterLines(invoice.data.lines, search), groupBy) : []),
@@ -77,6 +79,10 @@ export default function InvoiceScreen() {
   const openDisputes = data.reviewProgress.disputed;
   const blockedByDisputes = next === 'closed' && openDisputes > 0;
   const pendingPayments = data.payments.filter((payment) => payment.status === 'pending');
+  // Searching a person's name lists whole purchases; point to their own invoice instead.
+  const searchedMember = search.trim()
+    ? data.balances.find((b) => b.owedCents > 0 && normalizeText(b.member.displayName).includes(normalizeText(search.trim())))
+    : undefined;
   const showReview = reviewing || data.lines.some((line) => line.review.disputes.length > 0);
 
   const advance = async () => {
@@ -208,7 +214,8 @@ export default function InvoiceScreen() {
           onChange={setTab}
           options={[
             { value: 'purchases', label: 'Compras' },
-            { value: 'members', label: 'Quem deve quanto' },
+            { value: 'mine', label: 'Minha fatura' },
+            { value: 'members', label: 'Quem deve' },
           ]}
         />
 
@@ -221,6 +228,25 @@ export default function InvoiceScreen() {
               onChangeText={setSearch}
               trailing={<Search size={18} color={colors.textMuted} />}
             />
+            {searchedMember ? (
+              <Surface
+                style={styles.searchHint}
+                onPress={() => {
+                  setMineMemberId(searchedMember.memberId);
+                  setTab('mine');
+                }}
+                accessibilityLabel={`Ver a fatura de ${searchedMember.member.displayName}`}>
+                <AppText variant="caption" color="textSecondary">
+                  Aqui aparece o valor inteiro de cada compra. Para ver só{' '}
+                  {searchedMember.memberId === data.me.id ? 'a sua parte' : `a parte de ${searchedMember.member.displayName}`} (
+                  {formatBRL(searchedMember.owedCents)}),{' '}
+                  <AppText variant="caption" color="primary">
+                    toque aqui
+                  </AppText>
+                  .
+                </AppText>
+              </Surface>
+            ) : null}
             <View style={styles.chips}>
               <Chip label="Por data" selected={groupBy === 'date'} onPress={() => setGroupBy('date')} />
               <Chip label="Por categoria" selected={groupBy === 'category'} onPress={() => setGroupBy('category')} />
@@ -289,6 +315,8 @@ export default function InvoiceScreen() {
               ))
             )}
           </View>
+        ) : tab === 'mine' ? (
+          <MemberInvoice data={data} memberId={mineMemberId} onMemberChange={setMineMemberId} />
         ) : (
           <View style={styles.section}>
             <Surface padded={false} style={styles.list}>
@@ -339,6 +367,7 @@ const useStyles = makeStyles((colors) => ({
   statusActions: { gap: spacing.sm },
   section: { gap: spacing.md },
   chips: { flexDirection: 'row', gap: spacing.sm },
+  searchHint: { paddingVertical: spacing.md },
   group: { gap: spacing.sm },
   groupHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xs },
   list: { paddingHorizontal: spacing.lg, borderRadius: radius.xl },

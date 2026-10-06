@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import { CircleDot, ReceiptText } from 'lucide-react-native';
+import { ChevronRight, CircleDot, ReceiptText } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { InvoiceStatusBadge, PaymentStatusBadge } from '@/components/finance';
 import { GradientHeader, Screen } from '@/components/layout';
-import { AppText, Badge, Chip, EmptyState, ErrorState, LoadingState, ProgressBar, Surface } from '@/components/ui';
+import { AppText, Badge, Chip, EmptyState, ErrorState, LoadingState, PressableScale, ProgressBar, Surface } from '@/components/ui';
 import { errorMessage, type InvoiceListItem } from '@/data';
 import { compareRefs, formatRef, type InvoiceRef, invoiceRefForDate } from '@/domain';
 import { useCurrentFamily } from '@/features/families/hooks';
@@ -116,9 +116,13 @@ export default function InvoicesScreen() {
                 </AppText>
               </View>
               {item.myBalance && item.myBalance.owedCents > 0 ? (
-                <View style={styles.mine}>
+                <PressableScale
+                  style={styles.mine}
+                  onPress={() => router.push(`/invoice/${item.invoice.id}?view=mine`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver minha fatura: ${formatBRL(item.myBalance.owedCents)}`}>
                   <AppText variant="caption" style={styles.flex}>
-                    Sua parte:{' '}
+                    Minha fatura:{' '}
                     <AppText variant="caption" color="brand">
                       {formatBRL(item.myBalance.owedCents)}
                     </AppText>
@@ -128,7 +132,8 @@ export default function InvoicesScreen() {
                   ) : (
                     <PaymentStatusBadge status={item.myBalance.status} />
                   )}
-                </View>
+                  <ChevronRight size={16} color={colors.textMuted} />
+                </PressableScale>
               ) : null}
             </Surface>
           );

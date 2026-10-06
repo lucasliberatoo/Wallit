@@ -11,15 +11,15 @@ export interface LineGroup {
   lines: InvoiceLine[];
 }
 
-function normalize(text: string): string {
+export function normalizeText(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
 export function filterLines(lines: InvoiceLine[], search: string): InvoiceLine[] {
-  const term = normalize(search.trim());
+  const term = normalizeText(search.trim());
   if (!term) return lines;
   return lines.filter((line) =>
-    normalize(
+    normalizeText(
       [
         line.purchase.merchant,
         line.purchase.statementName,
@@ -33,7 +33,28 @@ export function filterLines(lines: InvoiceLine[], search: string): InvoiceLine[]
   );
 }
 
-export function groupLines(lines: InvoiceLine[], groupBy: GroupBy): LineGroup[] {
+/** What one member pays of a line (0 when they are not a payer). */
+export function memberShareCents(line: InvoiceLine, memberId: string): number {
+  return sumCents(line.shares.filter((s) => s.member.id === memberId).map((s) => s.amountCents));
+}
+
+/** Lines a member pays part of: their own invoice inside the card's invoice. */
+export function memberLines(lines: InvoiceLine[], memberId: string): InvoiceLine[] {
+  return lines.filter((line) => memberShareCents(line, memberId) > 0);
+}
+
+/** "50%", "33,3%": the member's part of the line, for the explanation. */
+export function sharePercentLabel(shareCents: number, totalCents: number): string {
+  if (totalCents <= 0) return '0%';
+  const percent = Math.round((shareCents / totalCents) * 1000) / 10;
+  return `${String(percent).replace('.', ',')}%`;
+}
+
+/**
+ * Groups lines by date or category. With `memberId`, each group's total is
+ * that member's share, so the groups add up to what they owe.
+ */
+export function groupLines(lines: InvoiceLine[], groupBy: GroupBy, memberId?: string): LineGroup[] {
   const groups = new Map<string, LineGroup>();
   for (const line of lines) {
     const key = groupBy === 'date' ? line.purchase.date : (line.category?.id ?? 'none');
@@ -44,7 +65,7 @@ export function groupLines(lines: InvoiceLine[], groupBy: GroupBy): LineGroup[] 
   }
   const result = [...groups.values()].map((group) => ({
     ...group,
-    totalCents: sumCents(group.lines.map((l) => l.installment.amountCents)),
+    totalCents: sumCents(group.lines.map((l) => (memberId ? memberShareCents(l, memberId) : l.installment.amountCents))),
   }));
   return groupBy === 'date' ? result.sort((a, b) => b.key.localeCompare(a.key)) : result.sort((a, b) => b.totalCents - a.totalCents);
 }
