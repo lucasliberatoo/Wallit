@@ -106,7 +106,9 @@ export const familyMembers = pgTable(
   (t) => [
     index('family_members_family_idx').on(t.familyId),
     index('family_members_user_idx').on(t.userId),
-    uniqueIndex('family_members_family_user_uq').on(t.familyId, t.userId).where(sql`${t.userId} is not null`),
+    uniqueIndex('family_members_family_user_uq')
+      .on(t.familyId, t.userId)
+      .where(sql`${t.userId} is not null`),
     check('family_members_role_ck', sql`${t.role} in ('owner', 'titular', 'member', 'guest')`),
     check('family_members_status_ck', sql`${t.status} in ('active', 'removed')`),
   ],
@@ -119,6 +121,7 @@ export const familyInvites = pgTable(
     familyId: text('family_id')
       .notNull()
       .references(() => families.id),
+    memberId: text('member_id').references(() => familyMembers.id),
     createdAt: timestamptz('created_at').notNull(),
   },
   (t) => [index('family_invites_family_idx').on(t.familyId)],
@@ -423,7 +426,9 @@ export const notifications = pgTable(
   },
   (t) => [
     index('notifications_family_idx').on(t.familyId, t.createdAt),
-    uniqueIndex('notifications_dedupe_uq').on(t.recipientMemberId, t.dedupeKey).where(sql`${t.dedupeKey} is not null`),
+    uniqueIndex('notifications_dedupe_uq')
+      .on(t.recipientMemberId, t.dedupeKey)
+      .where(sql`${t.dedupeKey} is not null`),
   ],
 );
 

@@ -106,8 +106,13 @@ const invites: Mapper<Invite, typeof t.familyInvites.$inferInsert> = {
   table: t.familyInvites,
   key: t.familyInvites.code,
   keyOf: (i) => i.code,
-  fromRow: (r) => ({ code: r.code, familyId: r.familyId, createdAt: iso(r.createdAt as Date) }),
-  toRow: (i) => ({ code: i.code, familyId: i.familyId, createdAt: new Date(i.createdAt) }),
+  fromRow: (r) => ({
+    code: r.code,
+    familyId: r.familyId,
+    ...(r.memberId ? { memberId: r.memberId } : {}),
+    createdAt: iso(r.createdAt as Date),
+  }),
+  toRow: (i) => ({ code: i.code, familyId: i.familyId, memberId: i.memberId ?? null, createdAt: new Date(i.createdAt) }),
 };
 
 const wallets: Mapper<Wallet, typeof t.wallets.$inferInsert> = {

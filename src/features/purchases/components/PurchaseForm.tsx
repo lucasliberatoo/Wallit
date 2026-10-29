@@ -6,7 +6,7 @@ import { CategoryIcon } from '@/components/finance';
 import { Screen } from '@/components/layout';
 import { AppText, Avatar, Button, Chip, MoneyInput, PressableScale, TextField } from '@/components/ui';
 import type { CardSummary } from '@/data';
-import { type Category, type FamilyMember, MAX_ATTACHMENTS_PER_PURCHASE, normalizeStatementName } from '@/domain';
+import { type Category, type FamilyMember, formatBRL, MAX_ATTACHMENTS_PER_PURCHASE, normalizeStatementName } from '@/domain';
 import { useAliases } from '@/features/aliases/hooks';
 import { AttachButtons } from '@/features/attachments/components/AttachButtons';
 import { PickedFiles } from '@/features/attachments/components/PickedFiles';
@@ -15,6 +15,7 @@ import { usePurchaseSearch } from '@/features/purchases/hooks';
 import { cardThemes, radius, spacing, useTheme } from '@/theme';
 import { addDaysISO, formatDate, parseBRDate, todayISO } from '@/utils/dates';
 import type { usePurchaseForm } from '../use-purchase-form';
+import { AmountField } from './AmountField';
 import { FieldBlock } from './FieldBlock';
 import { InstallmentStepper } from './InstallmentStepper';
 import { SplitEditor } from './SplitEditor';
@@ -127,18 +128,31 @@ export function PurchaseForm({
           </View>
         }>
         {top}
-        <View style={styles.hero}>
-          <AppText variant="caption" color="textSecondary">
-            Valor da compra
-          </AppText>
-          <MoneyInput
-            value={state.totalCents}
-            onChangeValue={(value) => dispatch({ type: 'setTotal', value })}
-            size="hero"
-            label="Valor da compra"
+        {lockInstallments ? (
+          <View style={styles.hero}>
+            <AppText variant="caption" color="textSecondary">
+              Valor da compra
+            </AppText>
+            <MoneyInput
+              value={state.totalCents}
+              onChangeValue={(value) => dispatch({ type: 'setTotal', value })}
+              size="hero"
+              label="Valor da compra"
+              autoFocus={!state.merchant}
+            />
+          </View>
+        ) : (
+          <AmountField
+            mode={state.amountMode}
+            onModeChange={(value) => dispatch({ type: 'setAmountMode', value })}
+            totalCents={state.totalCents}
+            installmentCents={state.installmentCents}
+            installmentCount={state.installmentCount}
+            onChangeTotal={(value) => dispatch({ type: 'setTotal', value })}
+            onChangeInstallment={(value) => dispatch({ type: 'setInstallmentValue', value })}
             autoFocus={!state.merchant}
           />
-        </View>
+        )}
 
         <View style={styles.block}>
           <TextField
@@ -295,6 +309,11 @@ export function PurchaseForm({
             <InstallmentStepper
               count={state.installmentCount}
               installmentValue={installmentValue}
+              caption={
+                state.amountMode === 'installment' && state.totalCents > 0 && state.installmentCount > 1
+                  ? `total de ${formatBRL(state.totalCents)}`
+                  : undefined
+              }
               onChange={(value) => dispatch({ type: 'setInstallments', value })}
             />
           )}

@@ -8,11 +8,11 @@ import { inviteLink, inviteMessage } from '@/lib/invite-link';
 import { makeStyles, radius, spacing } from '@/theme';
 
 /** Link to send on WhatsApp (or anywhere) that opens Wallit with the code filled in. */
-export function InviteShare({ familyName, code }: { familyName: string; code: string }) {
+export function InviteShare({ familyName, code, personName }: { familyName: string; code: string; personName?: string }) {
   const styles = useStyles();
   const [copied, setCopied] = useState(false);
   const link = inviteLink(code);
-  const message = inviteMessage(familyName, code);
+  const message = inviteMessage(familyName, code, personName);
   const canShare = Platform.OS !== 'web' || (typeof navigator !== 'undefined' && 'share' in navigator);
 
   const copy = async () => {

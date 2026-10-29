@@ -21,6 +21,39 @@ export function createFamilyRepository(store: Store): FamilyRepository {
     return me;
   };
 
+  /**
+   * The person was added by name (no account) and now signs in: they take
+   * over that profile, so their purchases, shares and balances stay theirs.
+   */
+  const claimProfile = (memberId: string, user: StoredUser, existing: FamilyMember | undefined) => {
+    const member = store.find('members', memberId) as FamilyMember | undefined;
+    if (!member || member.status !== 'active') throw new AppError('invalid_invite', 'Este convite não vale mais. Peça um novo.');
+    if (member.userId === user.id) return;
+    if (member.userId) throw new AppError('invalid_invite', 'Este perfil já foi vinculado a outra conta.');
+    if (existing?.status === 'active') {
+      throw new AppError(
+        'validation',
+        `Você já faz parte desta família. Peça para removerem seu perfil atual antes de assumir o de ${member.displayName}.`,
+      );
+    }
+    if (existing) {
+      // A profile left behind earlier keeps its history but lets go of the account.
+      existing.userId = null;
+      // Saved first, so the account is free before the other profile takes it.
+      store.db.members = [existing, ...store.db.members.filter((m) => m !== existing)];
+    }
+    member.userId = user.id;
+    member.photo = user.photo;
+    store.audit({
+      familyId: member.familyId,
+      entity: 'member',
+      entityId: member.id,
+      action: 'updated',
+      summary: `${member.displayName} agora usa o Wallit com a própria conta`,
+      changes: [],
+    });
+  };
+
   return {
     listMine: () =>
       store.run(() => {
@@ -151,12 +184,21 @@ export function createFamilyRepository(store: Store): FamilyRepository {
         { write: true },
       ),
 
-    createInvite: (familyId) =>
+    createInvite: (familyId, memberId) =>
       store.run(
         () => {
           requireManager(familyId);
+          if (memberId) {
+            const member = store.find('members', memberId) as FamilyMember | undefined;
+            if (!member || member.familyId !== familyId || member.status !== 'active') {
+              throw new AppError('not_found', 'Pessoa não encontrada na família.');
+            }
+            if (member.userId) throw new AppError('validation', `${member.displayName} já tem conta no Wallit.`);
+            // One link per person: a new one replaces the old.
+            store.db.invites = store.db.invites.filter((i) => i.memberId !== memberId);
+          }
           const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-          store.db.invites.push({ code, familyId, createdAt: nowISO() });
+          store.db.invites.push({ code, familyId, ...(memberId ? { memberId } : {}), createdAt: nowISO() });
           return { code };
         },
         { write: true },
@@ -200,7 +242,10 @@ export function createFamilyRepository(store: Store): FamilyRepository {
           const user = store.require('users', store.currentUserId(), 'Usuário') as StoredUser;
           const family = store.require('families', invite.familyId, 'Família') as Family;
           const existing = store.db.members.find((m) => m.familyId === family.id && m.userId === user.id);
-          if (existing) {
+          if (invite.memberId) {
+            claimProfile(invite.memberId, user, existing);
+            store.db.invites = store.db.invites.filter((i) => i.code !== invite.code);
+          } else if (existing) {
             existing.status = 'active';
             existing.photo = user.photo;
           } else {

@@ -4,8 +4,14 @@ import type { CreatePurchaseInput } from '@/data';
 import { type Cents, MAX_INSTALLMENTS, type ShareInput, splitEqually, validateSplit } from '@/domain';
 import { todayISO } from '@/utils/dates';
 
+/** The amount typed is the whole purchase, or one installment that repeats. */
+export type AmountMode = 'total' | 'installment';
+
 export interface PurchaseFormState {
   totalCents: Cents;
+  amountMode: AmountMode;
+  /** Typed in 'installment' mode; the total is this times the installment count. */
+  installmentCents: Cents;
   merchant: string;
   statementName: string;
   cardId: string | null;
@@ -21,6 +27,8 @@ export interface PurchaseFormState {
 
 type Action =
   | { type: 'setTotal'; value: Cents }
+  | { type: 'setInstallmentValue'; value: Cents }
+  | { type: 'setAmountMode'; value: AmountMode }
   | { type: 'setField'; field: 'merchant' | 'statementName' | 'note' | 'date'; value: string }
   | { type: 'setCard'; value: string }
   | { type: 'setCategory'; value: string }
@@ -35,16 +43,27 @@ function equalShares(total: Cents, memberIds: string[]): ShareInput[] {
   return total > 0 ? splitEqually(total, memberIds) : memberIds.map((memberId) => ({ memberId, amountCents: 0 }));
 }
 
+function withTotal(state: PurchaseFormState, total: Cents): PurchaseFormState {
+  const shares = state.autoSplit
+    ? equalShares(
+        total,
+        state.shares.map((s) => s.memberId),
+      )
+    : state.shares;
+  return { ...state, totalCents: total, shares };
+}
+
 function reducer(state: PurchaseFormState, action: Action): PurchaseFormState {
   switch (action.type) {
-    case 'setTotal': {
-      const shares = state.autoSplit
-        ? equalShares(
-            action.value,
-            state.shares.map((s) => s.memberId),
-          )
-        : state.shares;
-      return { ...state, totalCents: action.value, shares };
+    case 'setTotal':
+      return withTotal(state, action.value);
+    case 'setInstallmentValue':
+      return withTotal({ ...state, installmentCents: action.value }, action.value * state.installmentCount);
+    case 'setAmountMode': {
+      if (action.value === state.amountMode) return state;
+      if (action.value === 'total') return { ...state, amountMode: 'total' };
+      const installmentCents = Math.floor(state.totalCents / state.installmentCount);
+      return withTotal({ ...state, amountMode: 'installment', installmentCents }, installmentCents * state.installmentCount);
     }
     case 'setField':
       return { ...state, [action.field]: action.value };
@@ -52,8 +71,14 @@ function reducer(state: PurchaseFormState, action: Action): PurchaseFormState {
       return { ...state, cardId: action.value };
     case 'setCategory':
       return { ...state, categoryId: action.value };
-    case 'setInstallments':
-      return { ...state, installmentCount: Math.min(Math.max(action.value, 1), MAX_INSTALLMENTS) };
+    case 'setInstallments': {
+      const installmentCount = Math.min(Math.max(action.value, 1), MAX_INSTALLMENTS);
+      // "R$ 50 por mês": more installments means a bigger total, the installment stays.
+      if (state.amountMode === 'installment') {
+        return withTotal({ ...state, installmentCount }, state.installmentCents * installmentCount);
+      }
+      return { ...state, installmentCount };
+    }
     case 'setBuyer': {
       // If the split is still "the buyer pays everything", follow the new buyer.
       const followsBuyer = state.autoSplit && state.shares.length <= 1;
@@ -104,6 +129,8 @@ function reducer(state: PurchaseFormState, action: Action): PurchaseFormState {
 export function initialPurchaseForm(partial: Partial<PurchaseFormState> = {}): PurchaseFormState {
   return {
     totalCents: 0,
+    amountMode: 'total',
+    installmentCents: 0,
     merchant: '',
     statementName: '',
     cardId: null,

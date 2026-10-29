@@ -101,7 +101,9 @@ export function useRemoveMember() {
 
 export function useCreateInvite() {
   const { families } = useRepositories();
-  return useMutation({ mutationFn: (familyId: string) => families.createInvite(familyId) });
+  return useMutation({
+    mutationFn: ({ familyId, memberId }: { familyId: string; memberId?: string }) => families.createInvite(familyId, memberId),
+  });
 }
 
 export function useUpdateFamilySettings() {

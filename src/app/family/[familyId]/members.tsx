@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Copy, KeyRound, Trash2, UserPlus } from 'lucide-react-native';
+import { Copy, KeyRound, Send, Trash2, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Platform, View } from 'react-native';
 
@@ -43,6 +43,9 @@ export default function MembersScreen() {
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveMember();
   const invite = useCreateInvite();
+  const memberInvite = useCreateInvite();
+  // Which account-less person the last personal invite was made for.
+  const [invitedId, setInvitedId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [role, setRole] = useState<Role>('member');
 
@@ -101,6 +104,31 @@ export default function MembersScreen() {
                   />
                 ) : null}
               </View>
+              {canManage && !member.userId ? (
+                <View style={styles.claim}>
+                  {invitedId === member.id && memberInvite.data ? (
+                    <>
+                      <AppText variant="caption" color="textSecondary">
+                        Mande este link para {member.displayName}. Ao entrar ou criar a conta, a pessoa assume este perfil e continua com
+                        todas as compras e valores que já estão no nome dela. O link vale uma vez.
+                      </AppText>
+                      <InviteShare familyName={family.data.family.name} code={memberInvite.data.code} personName={member.displayName} />
+                    </>
+                  ) : (
+                    <Button
+                      label={`Convidar ${member.displayName} para ter conta`}
+                      icon={Send}
+                      variant="secondary"
+                      loading={memberInvite.isPending && invitedId === member.id}
+                      onPress={() => {
+                        setInvitedId(member.id);
+                        memberInvite.mutate({ familyId, memberId: member.id });
+                      }}
+                    />
+                  )}
+                  {invitedId === member.id ? <FormError message={memberInvite.error ? errorMessage(memberInvite.error) : null} /> : null}
+                </View>
+              ) : null}
               {canManage && member.id !== family.data.me.id ? (
                 <View style={styles.roles}>
                   {ROLES.map((option) => (
@@ -122,7 +150,8 @@ export default function MembersScreen() {
             <View style={styles.section}>
               <SectionHeader title="Adicionar pessoa" />
               <AppText variant="caption" color="textSecondary">
-                Adicione quem não usa o app (como a avó) só pelo nome. Depois essa pessoa pode ser vinculada a uma conta.
+                Adicione quem não usa o app (como a avó) só pelo nome. Quando a pessoa quiser usar o Wallit, toque em “Convidar para ter
+                conta” no nome dela.
               </AppText>
               <TextField label="Nome" placeholder="Ex.: João" value={name} onChangeText={setName} maxLength={30} />
               <View style={styles.roles}>
@@ -157,7 +186,7 @@ export default function MembersScreen() {
               <Button
                 label={invite.data ? 'Gerar outro convite' : 'Gerar convite'}
                 variant="secondary"
-                onPress={() => invite.mutate(familyId)}
+                onPress={() => invite.mutate({ familyId })}
                 loading={invite.isPending}
               />
             </Surface>
@@ -174,6 +203,7 @@ const useStyles = makeStyles((colors) => ({
   flex: { flex: 1, gap: 4 },
   badges: { flexDirection: 'row', gap: spacing.xs },
   roles: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingBottom: spacing.md },
+  claim: { gap: spacing.sm, paddingBottom: spacing.md },
   section: { gap: spacing.md },
   inviteHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   code: {

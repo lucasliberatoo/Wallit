@@ -8,17 +8,23 @@ import { makeStyles, radius, spacing } from '@/theme';
 export interface InstallmentStepperProps {
   count: number;
   installmentValue: Cents;
+  /** Replaces "de R$ X" under the count. */
+  caption?: string;
   onChange: (count: number) => void;
 }
 
-export function InstallmentStepper({ count, installmentValue, onChange }: InstallmentStepperProps) {
+export function InstallmentStepper({ count, installmentValue, caption, onChange }: InstallmentStepperProps) {
   const styles = useStyles();
   return (
     <View style={styles.row}>
       <IconButton icon={Minus} accessibilityLabel="Menos parcelas" onPress={() => onChange(count - 1)} />
       <View style={styles.center} accessibilityLiveRegion="polite">
         <AppText variant="h3">{count === 1 ? 'À vista' : `${count}x`}</AppText>
-        {count > 1 && installmentValue > 0 ? (
+        {caption ? (
+          <AppText variant="caption" color="textSecondary">
+            {caption}
+          </AppText>
+        ) : count > 1 && installmentValue > 0 ? (
           <AppText variant="caption" color="textSecondary">
             de {formatBRL(installmentValue)}
           </AppText>

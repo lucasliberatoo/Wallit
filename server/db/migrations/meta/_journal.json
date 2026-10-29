@@ -36,6 +36,13 @@
       "when": 1791172430759,
       "tag": "0004_fase_3",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793312913703,
+      "tag": "0005_convite_membro",
+      "breakpoints": true
     }
   ]
 }

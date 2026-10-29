@@ -34,9 +34,11 @@ import type {
   NotificationView,
   PurchaseDetails,
   PurchaseListItem,
+  PurchaseSimulation,
   RegisterPaymentInput,
   Session,
   SignUpInput,
+  SimulatePurchaseInput,
   StatisticsFilters,
   StatisticsView,
   UpdatePurchaseInput,
@@ -82,7 +84,11 @@ export interface FamilyRepository {
   updateMemberRole(memberId: ID, role: Role): Promise<FamilyMember>;
   removeMember(memberId: ID): Promise<void>;
   leave(familyId: ID): Promise<void>;
-  createInvite(familyId: ID): Promise<{ code: string }>;
+  /**
+   * With `memberId` (a person without an account), whoever uses the code
+   * takes over that profile and everything already registered for it.
+   */
+  createInvite(familyId: ID, memberId?: ID): Promise<{ code: string }>;
   joinByCode(code: string): Promise<Family>;
   /** Owner only. */
   updateSettings(familyId: ID, changes: Partial<Pick<Family, 'name' | 'color' | 'balancesVisibility'>>): Promise<Family>;
@@ -117,6 +123,10 @@ export interface PurchaseRepository {
    * (bank "antecipação"). Moving all of them pays the purchase off early.
    */
   anticipate(purchaseId: ID, count: number): Promise<PurchaseDetails>;
+  /** How a purchase would change the next invoices, without saving it. */
+  simulate(input: SimulatePurchaseInput): Promise<PurchaseSimulation>;
+  /** How anticipating the last `count` installments would change the invoices, without doing it. */
+  simulateAnticipation(purchaseId: ID, count: number): Promise<PurchaseSimulation>;
   get(purchaseId: ID): Promise<PurchaseDetails>;
   search(familyId: ID, filters: HistoryFilters): Promise<PurchaseListItem[]>;
 }
