@@ -128,6 +128,36 @@ describe('scenario simulation', () => {
     expect(result.payoffs[0].movedCents).toBeGreaterThanOrEqual(30000);
   });
 
+  it('pays off only a chosen amount, from the last installments', async () => {
+    const { repos, familyId, card, byName, category } = await setup();
+    const lucas = byName('Lucas');
+    await repos.purchases.create({
+      familyId,
+      cardId: card.id,
+      merchant: 'TV',
+      totalCents: 600000,
+      date: today(),
+      categoryId: category.id,
+      buyerMemberId: lucas.id,
+      installmentCount: 6,
+      shares: [{ memberId: lucas.id, amountCents: 600000 }],
+    });
+    const target = await openRef(repos, card.id);
+    const result = await repos.purchases.simulateScenario({
+      familyId,
+      operations: [{ kind: 'payoff', cardId: card.id, targetRef: target, amountCents: 150000 }],
+    });
+    expect(result.payoffs[0].movedCents).toBe(150000);
+    expect(delta(monthOf(result.months, target), 'cards')).toBe(150000);
+    expect(result.months.reduce((sum, m) => sum + delta(m, 'cards'), 0)).toBe(0);
+    // My installments go first, from the last one: the TV's 6th leaves entirely, the 5th by half.
+    const tvLast = addMonths(invoiceRefForDate(today(), card.closingDay), 5);
+    expect(delta(monthOf(result.months, tvLast), 'mine')).toBe(-100000);
+    expect(delta(monthOf(result.months, addMonths(tvLast, -1)), 'mine')).toBe(-50000);
+    // The whole amount is mine to pay in the target invoice.
+    expect(delta(monthOf(result.months, target), 'mine')).toBe(150000);
+  });
+
   it('does not start a simulation in an invoice that is already closed', async () => {
     const { repos, familyId, card } = await setup();
     const target = await openRef(repos, card.id);

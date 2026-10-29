@@ -286,6 +286,12 @@ export type ScenarioOperation =
       purchaseId?: ID;
       /** Only with a purchase: how many of its last installments. Default: all. */
       count?: number;
+      /**
+       * Pay off only this amount, starting from the last installments (the
+       * card's, or the purchase's; mine first). It all counts as my payment,
+       * even the part that covers other people's installments. Default: everything.
+       */
+      amountCents?: Cents;
     };
 
 export interface ScenarioInput {

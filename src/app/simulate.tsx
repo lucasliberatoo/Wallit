@@ -1,19 +1,19 @@
-import { Banknote, CreditCard, FastForward, ShoppingCart } from 'lucide-react-native';
+import { CreditCard, Plus } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, Button, EmptyState, LoadingState, SectionHeader } from '@/components/ui';
+import { AppText, EmptyState, LoadingState, PressableScale, SectionHeader, SegmentedControl } from '@/components/ui';
 import { errorMessage, type ScenarioInput, type ScenarioOperation } from '@/data';
 import { addMonths, compareRefs, type InvoiceRef, invoiceRefForDate, refKey } from '@/domain';
 import { FormError } from '@/features/auth/FormError';
 import { useFamilyCards } from '@/features/cards/hooks';
 import { useCurrentFamily, useMembers } from '@/features/families/hooks';
-import { usePurchaseSearch, useScenarioSimulation } from '@/features/purchases/hooks';
-import { ScenarioOperationCard } from '@/features/simulation/ScenarioOperationCard';
+import { useScenarioSimulation } from '@/features/purchases/hooks';
+import { ICONS, ScenarioOperationCard } from '@/features/simulation/ScenarioOperationCard';
 import { ScenarioResultView, type ScenarioView } from '@/features/simulation/ScenarioResultView';
 import { type DraftKind, type ScenarioDraft, toOperation } from '@/features/simulation/scenario-draft';
-import { spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 import { todayISO } from '@/utils/dates';
 
 /** Waits until typing stops, so the simulation isn't recalculated on every digit. */
@@ -31,14 +31,15 @@ function useDebounced<T>(value: T, ms = 400): T {
  * month with how things are today. Nothing is saved.
  */
 export default function SimulateScreen() {
+  const { colors } = useTheme();
   const { current, isLoading } = useCurrentFamily();
   const familyId = current?.family.id;
   const meId = current?.me.id;
   const cards = useFamilyCards(familyId);
   const members = useMembers(familyId);
-  const installmentPurchases = usePurchaseSearch(familyId, { onlyInstallments: true });
   const [drafts, setDrafts] = useState<ScenarioDraft[]>([]);
   const [view, setView] = useState<ScenarioView>('mine');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const nextId = useRef(1);
 
   const operations = useMemo(
@@ -102,8 +103,20 @@ export default function SimulateScreen() {
               count: 10,
               startKey: refKey(addMonths(firstRef, 1)),
             }
-          : { id, kind, cardId, targetKey: refKey(openRef(cardId)), purchaseId: null, count: null };
+          : {
+              id,
+              kind,
+              cardId,
+              targetKey: refKey(openRef(cardId)),
+              scope: 'card',
+              purchaseId: null,
+              purchaseLabel: null,
+              purchaseInstallments: null,
+              count: null,
+              amountCents: 0,
+            };
     setDrafts((list) => [...list, draft]);
+    setEditingId(id);
   };
 
   return (
@@ -111,36 +124,60 @@ export default function SimulateScreen() {
       <PageHeader title="Simular" subtitle={current?.family.name} />
       <Screen>
         <AppText variant="body" color="textSecondary">
-          Junte compras, empréstimos e quitações e compare mês a mês com o que você paga hoje. Nada é salvo.
+          Monte um cenário e compare com o que você paga hoje. Por exemplo: pegar um empréstimo para quitar o cartão. Nada é salvo.
         </AppText>
 
+        <SectionHeader title="1. Seu cenário" />
         {drafts.map((draft, index) => (
           <ScenarioOperationCard
             key={draft.id}
             index={index}
             draft={draft}
+            expanded={editingId === draft.id}
+            onToggle={() => setEditingId(editingId === draft.id ? null : draft.id)}
             onChange={(next) => setDrafts((list) => list.map((item) => (item.id === draft.id ? next : item)))}
             onRemove={() => setDrafts((list) => list.filter((item) => item.id !== draft.id))}
             familyId={familyId}
             meId={meId}
             members={members.data ?? []}
             cards={cardList}
-            installmentPurchases={installmentPurchases.data ?? []}
             openRef={openRef}
             firstRef={firstRef}
           />
         ))}
-
         <View style={styles.add}>
-          <SectionHeader title={drafts.length ? 'Adicionar outra simulação' : 'O que você quer simular?'} />
-          <Button label="Compra no cartão" icon={ShoppingCart} variant="secondary" onPress={() => add('purchase')} />
-          <Button label="Empréstimo ou dívida" icon={Banknote} variant="secondary" onPress={() => add('loan')} />
-          <Button label="Quitar ou antecipar parcelas" icon={FastForward} variant="secondary" onPress={() => add('payoff')} />
+          {(['purchase', 'loan', 'payoff'] as const).map((kind) => {
+            const Icon = ICONS[kind];
+            return (
+              <PressableScale
+                key={kind}
+                onPress={() => add(kind)}
+                accessibilityRole="button"
+                accessibilityLabel={`Adicionar ${ADD_LABELS[kind]}`}
+                style={[styles.addTile, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                <Plus size={14} color={colors.primary} style={styles.plus} />
+                <Icon size={22} color={colors.primary} />
+                <AppText variant="small" align="center">
+                  {ADD_LABELS[kind]}
+                </AppText>
+              </PressableScale>
+            );
+          })}
         </View>
 
-        <SectionHeader title={operations.length ? 'Hoje × com a simulação' : 'Como estão suas próximas faturas'} />
+        <View style={styles.resultHeader}>
+          <SectionHeader title={operations.length ? '2. Hoje × com a simulação' : '2. Como estão suas faturas hoje'} />
+          <SegmentedControl<ScenarioView>
+            options={[
+              { value: 'mine', label: 'Minha parte' },
+              { value: 'cards', label: 'Cartão inteiro' },
+            ]}
+            value={view}
+            onChange={setView}
+          />
+        </View>
         {result.data ? (
-          <ScenarioResultView result={result.data} view={view} onViewChange={setView} hasOperations={operations.length > 0} />
+          <ScenarioResultView result={result.data} view={view} hasOperations={operations.length > 0} />
         ) : result.isLoading ? (
           <LoadingState />
         ) : null}
@@ -150,6 +187,24 @@ export default function SimulateScreen() {
   );
 }
 
+const ADD_LABELS: Record<DraftKind, string> = {
+  purchase: 'Compra no cartão',
+  loan: 'Empréstimo',
+  payoff: 'Quitar parcelas',
+};
+
 const styles = StyleSheet.create({
-  add: { gap: spacing.sm },
+  add: { flexDirection: 'row', gap: spacing.sm },
+  addTile: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  plus: { position: 'absolute', top: 8, right: 8 },
+  resultHeader: { gap: spacing.sm },
 });
