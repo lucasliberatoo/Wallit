@@ -128,7 +128,8 @@ export function runScenario(store: Store, input: ScenarioInput): ScenarioResult 
     loans.set(refKey(ref), { payments: current.payments + payments, received: current.received + received });
   };
   const limitAdded = new Map<ID, number>();
-  const moved = new Set<ID>();
+  /** How much of each real installment earlier payoffs already moved. */
+  const moved = new Map<ID, number>();
   const payoffs: ScenarioResult['payoffs'] = [];
 
   const requireCard = (index: number, cardId: ID): Card => {
@@ -179,15 +180,18 @@ export function runScenario(store: Store, input: ScenarioInput): ScenarioResult 
     const earlier = [...changes.entries()].map(([key, change]) => ({ ref: refFromKey(key), ...change }));
     let movedCents = 0;
     let myMovedCents = 0;
+    // A fixed amount comes out of my pocket, even where it covers other people's installments.
+    const paysAll = operation.amountCents !== undefined;
     const move = (from: InvoiceRef, cardCents: number, myCents: number) => {
       addChange(changes, from, -cardCents, -myCents);
-      addChange(changes, operation.targetRef, cardCents, myCents);
+      addChange(changes, operation.targetRef, cardCents, paysAll ? cardCents : myCents);
       movedCents += cardCents;
-      myMovedCents += myCents;
+      myMovedCents += paysAll ? cardCents : myCents;
     };
 
+    // Future installments (or what is left of them) that this payoff can bring forward.
     let installments = store.db.installments.filter((installment) => {
-      if (moved.has(installment.id)) return false;
+      if ((moved.get(installment.id) ?? 0) >= installment.amountCents) return false;
       if (operation.purchaseId ? installment.purchaseId !== operation.purchaseId : false) return false;
       const purchase = store.find('purchases', installment.purchaseId) as Purchase | undefined;
       if (!purchase || purchase.status !== 'active' || purchase.cardId !== card.id) return false;
@@ -204,19 +208,34 @@ export function runScenario(store: Store, input: ScenarioInput): ScenarioResult 
       }
       installments = installments.sort((a, b) => b.number - a.number).slice(0, count);
     }
-    for (const installment of installments) {
-      const invoice = store.require('invoices', installment.invoiceId, 'Fatura') as Invoice;
-      const myCents = installmentShares(store, installment).find((share) => share.member.id === me.id)?.amountCents ?? 0;
-      move(invoice.ref, installment.amountCents, myCents);
-      moved.add(installment.id);
+    if (operation.amountCents !== undefined && (!Number.isInteger(operation.amountCents) || operation.amountCents <= 0)) {
+      fail(index, 'informe o valor a quitar.');
     }
+
+    const movable: { ref: InvoiceRef; cents: number; myCents: number; installmentId?: ID }[] = installments.map((installment) => {
+      const invoice = store.require('invoices', installment.invoiceId, 'Fatura') as Invoice;
+      const full = installmentShares(store, installment).find((share) => share.member.id === me.id)?.amountCents ?? 0;
+      const cents = installment.amountCents - (moved.get(installment.id) ?? 0);
+      return { ref: invoice.ref, cents, myCents: Math.round((full * cents) / installment.amountCents), installmentId: installment.id };
+    });
     if (!operation.purchaseId) {
-      // Paying off the whole card also covers what the earlier simulations put on it.
+      // Paying off the card also covers what the earlier simulations put on it.
       for (const change of earlier) {
-        if (compareRefs(change.ref, operation.targetRef) <= 0) continue;
-        if (change.cardCents === 0 && change.myCents === 0) continue;
-        move(change.ref, change.cardCents, change.myCents);
+        if (compareRefs(change.ref, operation.targetRef) <= 0 || change.cardCents <= 0) continue;
+        movable.push({ ref: change.ref, cents: change.cardCents, myCents: change.myCents });
       }
+    }
+    // Banks anticipate from the last installments; a fixed amount stops when it is used up,
+    // and pays the simulating person's installments first, since it is their money.
+    movable.sort((a, b) => (operation.amountCents ? Number(b.myCents > 0) - Number(a.myCents > 0) : 0) || compareRefs(b.ref, a.ref));
+    let budget = operation.amountCents ?? Number.POSITIVE_INFINITY;
+    for (const item of movable) {
+      if (budget <= 0) break;
+      const cents = Math.min(item.cents, budget);
+      const myCents = cents === item.cents ? item.myCents : Math.round((item.myCents * cents) / item.cents);
+      move(item.ref, cents, myCents);
+      budget -= cents;
+      if (item.installmentId) moved.set(item.installmentId, (moved.get(item.installmentId) ?? 0) + cents);
     }
     payoffs.push({ operation: index, movedCents, myMovedCents });
   });
