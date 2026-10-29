@@ -12,6 +12,9 @@ export function inviteLink(code: string): string {
   return `${webBaseUrl()}/convite/${encodeURIComponent(code)}`;
 }
 
-export function inviteMessage(familyName: string, code: string): string {
+export function inviteMessage(familyName: string, code: string, personName?: string): string {
+  if (personName) {
+    return `${personName}, crie sua conta no Wallit para acompanhar as suas compras na família "${familyName}". Tudo o que já foi lançado para você continua lá: ${inviteLink(code)}\n\nSe preferir, use o código ${code}.`;
+  }
   return `Entre na família "${familyName}" no Wallit para dividirmos o cartão: ${inviteLink(code)}\n\nSe preferir, use o código ${code}.`;
 }

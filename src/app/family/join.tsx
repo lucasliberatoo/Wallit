@@ -28,7 +28,7 @@ export default function JoinFamilyScreen() {
         <AppText variant="body" color="textSecondary">
           {params.code
             ? 'Confira o código do convite e toque em "Entrar na família".'
-            : 'Peça o link ou o código de convite para o dono da família e digite abaixo.'}
+            : 'Peça o link ou o código de convite para o dono da família e digite abaixo. Se já lançaram compras no seu nome, o convite feito para você mantém todas elas.'}
         </AppText>
         <TextField
           label="Código"

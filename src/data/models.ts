@@ -148,7 +148,13 @@ export interface PurchaseDetails {
   canManage: boolean;
   me: FamilyMember;
   /** Future installments that can be brought into the open invoice (null when none or not allowed). */
-  anticipation: { available: number; availableCents: Cents; targetRef: InvoiceRef } | null;
+  anticipation: {
+    available: number;
+    availableCents: Cents;
+    targetRef: InvoiceRef;
+    /** false: the person can only simulate, not anticipate for real. */
+    allowed: boolean;
+  } | null;
   /** Review state while one of its invoices is being reviewed. */
   review: (LineReview & { invoiceId: ID }) | null;
   attachments: Attachment[];
@@ -225,6 +231,44 @@ export interface CreatePurchaseInput {
   installmentCount: number;
   shares: ShareInput[];
   note?: string;
+}
+
+/** A purchase that is not saved, only to see how it changes the next invoices. */
+export interface SimulatePurchaseInput {
+  familyId: ID;
+  cardId: ID;
+  totalCents: Cents;
+  installmentCount: number;
+  /** Default: today. */
+  date?: ISODate;
+  /** Who would pay. Default: all of it on the person simulating. */
+  shares?: ShareInput[];
+}
+
+export interface SimulationMonth {
+  ref: InvoiceRef;
+  dueDate: ISODate;
+  /** `null` when the invoice doesn't exist yet (nothing was bought for that month). */
+  status: InvoiceStatus | null;
+  /** Card invoice total today, without the simulated purchase. */
+  beforeCents: Cents;
+  /** Installment of the simulated purchase in this invoice. */
+  addedCents: Cents;
+  myBeforeCents: Cents;
+  myAddedCents: Cents;
+}
+
+export interface PurchaseSimulation {
+  card: Card;
+  me: FamilyMember;
+  months: SimulationMonth[];
+  /** The part of the simulated purchase that would be mine. */
+  myTotalCents: Cents;
+  /**
+   * Only when the card has a limit. `usedCents` is what is still to be paid on
+   * the card (installments in invoices not paid yet).
+   */
+  limit: { limitCents: Cents; usedCents: Cents; availableBeforeCents: Cents; availableAfterCents: Cents } | null;
 }
 
 export type UpdatePurchaseInput = Partial<Omit<CreatePurchaseInput, 'familyId' | 'cardId' | 'installmentCount'>>;

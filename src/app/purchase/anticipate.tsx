@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, Button, Chip, ErrorState, IconButton, LoadingState, Surface } from '@/components/ui';
+import { AppText, Button, Chip, ErrorState, IconButton, LoadingState, SectionHeader, Surface } from '@/components/ui';
 import { errorMessage, type PurchaseDetails } from '@/data';
 import { formatBRL, formatRef } from '@/domain';
 import { FormError } from '@/features/auth/FormError';
-import { useAnticipateInstallments, usePurchase } from '@/features/purchases/hooks';
+import { useAnticipateInstallments, useAnticipationSimulation, usePurchase } from '@/features/purchases/hooks';
+import { SimulationImpact } from '@/features/simulation/SimulationImpact';
 import { makeStyles, radius, spacing } from '@/theme';
 
 export default function AnticipateScreen() {
@@ -40,23 +41,30 @@ function AnticipateForm({
   const chosen = future.slice(0, count);
   const chosenCents = chosen.reduce((sum, { installment }) => sum + installment.amountCents, 0);
   const payOff = count === max;
+  const impact = useAnticipationSimulation(purchase.id, count);
+  const allowed = anticipation.allowed;
 
   return (
     <>
-      <PageHeader title="Antecipar parcelas" subtitle={purchase.merchant} />
+      <PageHeader title={allowed ? 'Antecipar parcelas' : 'Simular antecipação'} subtitle={purchase.merchant} />
       <Screen
         footer={
-          <Button
-            label={payOff ? 'Quitar a compra' : `Antecipar ${count} ${count === 1 ? 'parcela' : 'parcelas'}`}
-            icon={FastForward}
-            size="lg"
-            loading={anticipate.isPending}
-            onPress={() => anticipate.mutate({ purchaseId: purchase.id, count }, { onSuccess: () => router.back() })}
-          />
+          !allowed ? undefined : (
+            <Button
+              label={payOff ? 'Quitar a compra' : `Antecipar ${count} ${count === 1 ? 'parcela' : 'parcelas'}`}
+              icon={FastForward}
+              size="lg"
+              loading={anticipate.isPending}
+              onPress={() => anticipate.mutate({ purchaseId: purchase.id, count }, { onSuccess: () => router.back() })}
+            />
+          )
         }>
         <AppText variant="body" color="textSecondary">
-          Use quando o titular do cartão antecipar parcelas no app do banco. As últimas parcelas passam para a fatura de{' '}
-          {formatRef(anticipation.targetRef)}, e cada pessoa paga a sua parte nela.
+          {allowed
+            ? 'Simule antes e registre quando o titular do cartão antecipar parcelas no app do banco.'
+            : 'Simulação: só quem registrou a compra ou o titular do cartão pode antecipar de verdade.'}{' '}
+          As últimas parcelas passam para a fatura de As últimas parcelas passam para a fatura de {formatRef(anticipation.targetRef)}, e
+          cada pessoa paga a sua parte nela.
         </AppText>
 
         <Surface style={styles.card}>
@@ -100,6 +108,13 @@ function AnticipateForm({
           ) : null}
         </Surface>
 
+        {impact.data ? (
+          <View style={styles.impact}>
+            <SectionHeader title="Como ficam as faturas" />
+            <SimulationImpact simulation={impact.data} />
+          </View>
+        ) : null}
+
         <AppText variant="small" color="textMuted">
           Se o banco deu desconto na antecipação, ajuste o valor da compra depois em Editar.
         </AppText>
@@ -121,4 +136,5 @@ const useStyles = makeStyles((colors) => ({
   center: { flex: 1, alignItems: 'center' },
   chips: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center' },
   summary: { alignItems: 'center', gap: spacing.xs },
+  impact: { gap: spacing.sm },
 }));

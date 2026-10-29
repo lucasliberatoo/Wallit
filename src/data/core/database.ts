@@ -30,6 +30,8 @@ export interface StoredUser extends User {
 export interface Invite {
   code: string;
   familyId: ID;
+  /** Invite for a person already in the family without an account: they take over that profile. */
+  memberId?: ID;
   createdAt: ISODateTime;
 }
 

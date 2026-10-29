@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import type { CreatePurchaseInput, HistoryFilters, UpdatePurchaseInput } from '@/data';
+import type { CreatePurchaseInput, HistoryFilters, SimulatePurchaseInput, UpdatePurchaseInput } from '@/data';
 import { queryKeys } from '@/lib/query-keys';
 import { useInvalidateData } from '@/lib/use-invalidate';
 import { useRepositories } from '@/providers/RepositoriesProvider';
@@ -51,5 +51,26 @@ export function useAnticipateInstallments() {
   return useMutation({
     mutationFn: ({ purchaseId, count }: { purchaseId: string; count: number }) => purchases.anticipate(purchaseId, count),
     onSuccess: invalidate,
+  });
+}
+
+/** Simulated purchase: recalculated as the inputs change, nothing is saved. */
+export function usePurchaseSimulation(input: SimulatePurchaseInput | null) {
+  const { purchases } = useRepositories();
+  return useQuery({
+    queryKey: queryKeys.simulation(input),
+    queryFn: () => purchases.simulate(input!),
+    enabled: input !== null,
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useAnticipationSimulation(purchaseId: string, count: number) {
+  const { purchases } = useRepositories();
+  return useQuery({
+    queryKey: queryKeys.anticipationSimulation(purchaseId, count),
+    queryFn: () => purchases.simulateAnticipation(purchaseId, count),
+    enabled: count > 0,
+    placeholderData: (previous) => previous,
   });
 }

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import {
   ArrowRight,
   Bell,
+  Calculator,
   CalendarClock,
   ChartColumn,
   ChevronDown,
@@ -181,6 +182,15 @@ export default function HomeScreen() {
               <ArrowRight size={18} color={colors.textMuted} />
             </Surface>
           ) : null}
+
+          <ActionCard
+            icon={Calculator}
+            tint={colors.accent}
+            background={colors.primarySoft}
+            title="Simular compra"
+            caption="Veja se ainda cabe nas próximas faturas"
+            onPress={() => router.push('/simulate')}
+          />
 
           <ActionCard
             icon={ChartColumn}

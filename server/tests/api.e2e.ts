@@ -244,6 +244,53 @@ describe('API', () => {
     assert.equal(joined.me.role, 'member');
   });
 
+  it('lets someone added by name take over their profile with a personal invite', async () => {
+    const lucas = await signedIn();
+    const joao = lucas.byName('João');
+    const created = await lucas.repos.purchases.create({
+      familyId: lucas.familyId,
+      cardId: lucas.principal.card.id,
+      merchant: 'Tênis do João',
+      totalCents: 30000,
+      date: purchaseDate(lucas.principal.currentInvoice!.closingDate),
+      categoryId: lucas.category.id,
+      buyerMemberId: lucas.byName('Lucas').id,
+      installmentCount: 3,
+      shares: [{ memberId: joao.id, amountCents: 30000 }],
+    });
+
+    // Pedro was in the family before, left, and now is João's profile.
+    const pedro = client();
+    await pedro.auth.signUp({ name: 'Pedro', email: 'pedro@example.com', password: '123456' });
+    await pedro.families.joinByCode((await lucas.repos.families.createInvite(lucas.familyId)).code);
+    await pedro.families.leave(lucas.familyId);
+
+    const { code } = await lucas.repos.families.createInvite(lucas.familyId, joao.id);
+    await pedro.families.joinByCode(code);
+    const [mine] = await pedro.families.listMine();
+    assert.equal(mine.me.id, joao.id);
+    const purchase = await pedro.purchases.get(created.purchase.id);
+    assert.equal(purchase.shares[0].member.id, joao.id);
+    assert.equal(purchase.shares[0].member.userId, mine.me.userId);
+
+    const other = client();
+    await other.auth.signUp({ name: 'Outra', email: 'outra@example.com', password: '123456' });
+    await rejects(other.families.joinByCode(code), 'invalid_invite');
+  });
+
+  it('simulates purchases and anticipations without saving them', async () => {
+    const { repos, familyId, principal } = await signedIn();
+    const before = await repos.invoices.listByCard(principal.card.id);
+    const simulation = await repos.purchases.simulate({ familyId, cardId: principal.card.id, totalCents: 90000, installmentCount: 3 });
+    assert.equal(simulation.months.length, 3);
+    assert.deepEqual(
+      simulation.months.map((m) => m.addedCents),
+      [30000, 30000, 30000],
+    );
+    assert.equal(simulation.myTotalCents, 90000);
+    assert.deepEqual(await repos.invoices.listByCard(principal.card.id), before);
+  });
+
   it('rejects duplicate sign-ups', async () => {
     await rejects(client().auth.signUp({ name: 'Outro', email: DEMO_ACCOUNT.email, password: '123456' }), 'email_taken');
   });

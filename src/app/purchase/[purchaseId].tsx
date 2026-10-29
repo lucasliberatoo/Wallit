@@ -221,7 +221,7 @@ export default function PurchaseScreen() {
               </AppText>
               {data.anticipation ? (
                 <Button
-                  label={`Antecipar ou quitar (${data.anticipation.available} ${data.anticipation.available === 1 ? 'parcela futura' : 'parcelas futuras'})`}
+                  label={`${data.anticipation.allowed ? 'Antecipar ou quitar' : 'Simular antecipação'} (${data.anticipation.available} ${data.anticipation.available === 1 ? 'parcela futura' : 'parcelas futuras'})`}
                   icon={FastForward}
                   variant="secondary"
                   onPress={() => router.push(`/purchase/anticipate?purchaseId=${purchaseId}`)}

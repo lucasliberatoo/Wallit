@@ -250,7 +250,6 @@ export function withActor(store: Store, log: AuditLog): AuditLogView {
 
 function anticipationInfo(store: Store, purchase: Purchase, card: Card, me: FamilyMember): PurchaseDetails['anticipation'] {
   if (purchase.status !== 'active' || purchase.installmentCount < 2) return null;
-  if (!canEditPurchase(store, purchase) && !hasHolderPower(card, me)) return null;
   const targetRef = anticipationTargetRef(store, card);
   const installments = anticipatableInstallments(store, purchase, targetRef);
   if (installments.length === 0) return null;
@@ -258,6 +257,7 @@ function anticipationInfo(store: Store, purchase: Purchase, card: Card, me: Fami
     available: installments.length,
     availableCents: installments.reduce((sum, installment) => sum + installment.amountCents, 0),
     targetRef,
+    allowed: canEditPurchase(store, purchase) || hasHolderPower(card, me),
   };
 }
 

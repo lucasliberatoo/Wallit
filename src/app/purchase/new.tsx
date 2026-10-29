@@ -17,10 +17,12 @@ import { useCurrentFamily, useMembers } from '@/features/families/hooks';
 import { FieldBlock } from '@/features/purchases/components/FieldBlock';
 import { PurchaseForm } from '@/features/purchases/components/PurchaseForm';
 import { useCreatePurchase } from '@/features/purchases/hooks';
-import { initialPurchaseForm, usePurchaseForm } from '@/features/purchases/use-purchase-form';
+import { initialPurchaseForm, type PurchaseFormState, usePurchaseForm } from '@/features/purchases/use-purchase-form';
+import { MAX_INSTALLMENTS } from '@/domain';
 
 export default function NewPurchaseScreen() {
-  const params = useLocalSearchParams<{ cardId?: string; familyId?: string }>();
+  // total/installments/mode come from "Registrar esta compra" in the simulation.
+  const params = useLocalSearchParams<{ cardId?: string; familyId?: string; total?: string; installments?: string; mode?: string }>();
   const { current, families, isLoading } = useCurrentFamily();
   const [chosenId, setChosenId] = useState<string | undefined>(params.familyId);
   const chosen = families.find((item) => item.family.id === chosenId) ?? current;
@@ -102,8 +104,23 @@ export default function NewPurchaseScreen() {
       cards={cards.data}
       categories={categories.data ?? []}
       familyPicker={familyPicker}
+      prefill={prefillFrom(params)}
     />
   );
+}
+
+function prefillFrom(params: { total?: string; installments?: string; mode?: string }): Partial<PurchaseFormState> {
+  const total = Number(params.total);
+  const count = Number(params.installments);
+  if (!Number.isInteger(total) || total <= 0) return {};
+  const installmentCount = Number.isInteger(count) && count >= 1 && count <= MAX_INSTALLMENTS ? count : 1;
+  const byInstallment = params.mode === 'installment' && total % installmentCount === 0;
+  return {
+    totalCents: total,
+    installmentCount,
+    amountMode: byInstallment ? 'installment' : 'total',
+    installmentCents: byInstallment ? total / installmentCount : 0,
+  };
 }
 
 function NewPurchaseForm(props: {
@@ -115,12 +132,18 @@ function NewPurchaseForm(props: {
   cards: NonNullable<ReturnType<typeof useFamilyCards>['data']>;
   categories: NonNullable<ReturnType<typeof useCategories>['data']>;
   familyPicker: ReactNode;
+  prefill: Partial<PurchaseFormState>;
 }) {
   const create = useCreatePurchase();
   const uploads = useUploadPicked();
   const [files, setFiles] = useState<PickedFile[]>([]);
   const form = usePurchaseForm(
-    initialPurchaseForm({ cardId: props.defaultCardId, buyerId: props.meId, shares: [{ memberId: props.meId, amountCents: 0 }] }),
+    initialPurchaseForm({
+      cardId: props.defaultCardId,
+      buyerId: props.meId,
+      shares: [{ memberId: props.meId, amountCents: props.prefill.totalCents ?? 0 }],
+      ...props.prefill,
+    }),
   );
   return (
     <>
