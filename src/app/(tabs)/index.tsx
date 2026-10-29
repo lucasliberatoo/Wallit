@@ -187,8 +187,8 @@ export default function HomeScreen() {
             icon={Calculator}
             tint={colors.accent}
             background={colors.primarySoft}
-            title="Simular compra"
-            caption="Veja se ainda cabe nas próximas faturas"
+            title="Simular"
+            caption="Compras, empréstimos e quitações nas próximas faturas"
             onPress={() => router.push('/simulate')}
           />
 

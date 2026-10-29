@@ -1,4 +1,4 @@
-import type { HistoryFilters, SimulatePurchaseInput, StatisticsFilters } from '@/data';
+import type { HistoryFilters, ScenarioInput, StatisticsFilters } from '@/data';
 
 /** Centralized query keys so invalidation stays consistent. */
 export const queryKeys = {
@@ -18,7 +18,7 @@ export const queryKeys = {
   categories: (familyId: string) => ['families', familyId, 'categories'] as const,
   purchase: (purchaseId: string) => ['purchases', purchaseId] as const,
   purchases: (familyId: string, filters: HistoryFilters) => ['families', familyId, 'purchases', filters] as const,
-  simulation: (input: SimulatePurchaseInput | null) => ['families', input?.familyId ?? '', 'simulation', input] as const,
+  simulation: (input: ScenarioInput | null) => ['families', input?.familyId ?? '', 'simulation', input] as const,
   anticipationSimulation: (purchaseId: string, count: number) => ['purchases', purchaseId, 'simulation', count] as const,
   aliases: (familyId: string) => ['families', familyId, 'aliases'] as const,
   statistics: (familyId: string, filters: StatisticsFilters) => ['families', familyId, 'statistics', filters] as const,

@@ -278,16 +278,24 @@ describe('API', () => {
     await rejects(other.families.joinByCode(code), 'invalid_invite');
   });
 
-  it('simulates purchases and anticipations without saving them', async () => {
+  it('simulates purchases, loans and payoffs together without saving them', async () => {
     const { repos, familyId, principal } = await signedIn();
     const before = await repos.invoices.listByCard(principal.card.id);
-    const simulation = await repos.purchases.simulate({ familyId, cardId: principal.card.id, totalCents: 90000, installmentCount: 3 });
-    assert.equal(simulation.months.length, 3);
-    assert.deepEqual(
-      simulation.months.map((m) => m.addedCents),
-      [30000, 30000, 30000],
-    );
-    assert.equal(simulation.myTotalCents, 90000);
+    const empty = await repos.purchases.simulateScenario({ familyId, operations: [] });
+    const start = empty.openRefs.find((item) => item.cardId === principal.card.id)!.ref;
+    const result = await repos.purchases.simulateScenario({
+      familyId,
+      operations: [
+        { kind: 'purchase', cardId: principal.card.id, totalCents: 90000, installmentCount: 3, startRef: start },
+        { kind: 'payoff', cardId: principal.card.id, targetRef: start },
+        { kind: 'loan', receivedCents: 100000, receivedRef: start, installmentCents: 12000, installmentCount: 10, startRef: start },
+      ],
+    });
+    const first = result.months.find((m) => refKey(m.ref) === refKey(start))!;
+    // The whole purchase lands in the first invoice, since the card is paid off there.
+    assert.ok(first.cards.afterCents - first.cards.beforeCents >= 90000);
+    assert.equal(first.loanReceivedCents, 100000);
+    assert.equal(result.months.filter((m) => m.loanPaymentsCents === 12000).length, 10);
     assert.deepEqual(await repos.invoices.listByCard(principal.card.id), before);
   });
 

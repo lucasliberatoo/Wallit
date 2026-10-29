@@ -1,4 +1,5 @@
-import { addMonths, compareRefs, invoiceRefForDate } from '../../domain';
+import { addMonths, compareRefs, type InvoiceRef, invoiceRefForDate, isInvoiceLocked } from '../../domain';
+import type { ScenarioMonth } from '../models';
 import { createMockRepositories, DEMO_ACCOUNT } from '../mock';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -21,52 +22,121 @@ async function setup() {
   return { repos, familyId, card: cards[0].card, byName, category: categories[0] };
 }
 
-describe('purchase simulation', () => {
-  it('shows each next invoice before and after, without saving anything', async () => {
+/** First invoice still open on the card, where simulations may start. */
+async function openRef(repos: Awaited<ReturnType<typeof setup>>['repos'], cardId: string) {
+  const invoices = await repos.invoices.listByCard(cardId);
+  const card = (await repos.cards.get(cardId)).card;
+  let ref = invoiceRefForDate(today(), card.closingDay);
+  while (invoices.some((i) => compareRefs(i.invoice.ref, ref) === 0 && isInvoiceLocked(i.invoice.status))) ref = addMonths(ref, 1);
+  return ref;
+}
+
+const delta = (m: ScenarioMonth, view: 'cards' | 'mine') => m[view].afterCents - m[view].beforeCents;
+const monthOf = (months: ScenarioMonth[], ref: InvoiceRef) => months.find((m) => compareRefs(m.ref, ref) === 0)!;
+
+describe('scenario simulation', () => {
+  it('shows a purchase month by month, for the whole card and for my part, without saving anything', async () => {
     const { repos, familyId, card, byName } = await setup();
     const lucas = byName('Lucas');
     const maria = byName('Maria');
     const before = await repos.invoices.listByCard(card.id);
+    const start = addMonths(await openRef(repos, card.id), 1);
 
-    const simulation = await repos.purchases.simulate({
+    const result = await repos.purchases.simulateScenario({
       familyId,
-      cardId: card.id,
-      totalCents: 60000,
-      installmentCount: 3,
-      shares: [
-        { memberId: lucas.id, amountCents: 30000 },
-        { memberId: maria.id, amountCents: 30000 },
+      operations: [
+        {
+          kind: 'purchase',
+          cardId: card.id,
+          totalCents: 60000,
+          installmentCount: 3,
+          startRef: start,
+          shares: [
+            { memberId: lucas.id, amountCents: 30000 },
+            { memberId: maria.id, amountCents: 30000 },
+          ],
+        },
       ],
     });
 
-    expect(simulation.months).toHaveLength(3);
-    const first = invoiceRefForDate(today(), card.closingDay);
-    simulation.months.forEach((month, index) => {
-      expect(compareRefs(month.ref, addMonths(first, index))).toBe(0);
-      expect(month.addedCents).toBe(20000);
-      expect(month.myAddedCents).toBe(10000);
-    });
-    expect(simulation.myTotalCents).toBe(30000);
-    expect(simulation.limit?.availableAfterCents).toBe(simulation.limit!.availableBeforeCents - 60000);
-
-    // The current invoice's "before" is what is really there.
-    const current = before.find((item) => compareRefs(item.invoice.ref, first) === 0);
-    if (current) expect(simulation.months[0].beforeCents).toBe(current.totals.totalCents);
-
+    for (let i = 0; i < 3; i += 1) {
+      const month = monthOf(result.months, addMonths(start, i));
+      expect(delta(month, 'cards')).toBe(20000);
+      expect(delta(month, 'mine')).toBe(10000);
+    }
+    expect(delta(monthOf(result.months, addMonths(start, -1)), 'cards')).toBe(0);
+    expect(result.limits[0].availableAfterCents).toBe(result.limits[0].availableBeforeCents - 60000);
     expect(await repos.invoices.listByCard(card.id)).toEqual(before);
   });
 
-  it('warns when the purchase goes over the card limit', async () => {
-    const { repos, familyId, card } = await setup();
-    const simulation = await repos.purchases.simulate({
+  it('compares paying off the card with a loan against keeping the installments', async () => {
+    const { repos, familyId, card, byName, category } = await setup();
+    const lucas = byName('Lucas');
+    await repos.purchases.create({
       familyId,
       cardId: card.id,
-      totalCents: card.limitCents! + 100,
-      installmentCount: 10,
+      merchant: 'Sofá',
+      totalCents: 600000,
+      date: today(),
+      categoryId: category.id,
+      buyerMemberId: lucas.id,
+      installmentCount: 6,
+      shares: [{ memberId: lucas.id, amountCents: 600000 }],
     });
-    expect(simulation.limit!.availableAfterCents).toBeLessThan(0);
-    // Without shares, everything is on whoever simulates.
-    expect(simulation.myTotalCents).toBe(card.limitCents! + 100);
+    const target = await openRef(repos, card.id);
+
+    const result = await repos.purchases.simulateScenario({
+      familyId,
+      operations: [
+        { kind: 'payoff', cardId: card.id, targetRef: target },
+        {
+          kind: 'loan',
+          receivedCents: 1000000,
+          receivedRef: target,
+          installmentCents: 100000,
+          installmentCount: 10,
+          startRef: addMonths(target, 1),
+        },
+      ],
+    });
+
+    const [payoff] = result.payoffs;
+    expect(payoff.movedCents).toBeGreaterThanOrEqual(500000);
+    const first = monthOf(result.months, target);
+    expect(delta(first, 'cards')).toBe(payoff.movedCents);
+    expect(first.loanReceivedCents).toBe(1000000);
+    // Paying off only moves money between months; the loan is paid over the next 10.
+    expect(result.months.reduce((sum, m) => sum + delta(m, 'cards'), 0)).toBe(0);
+    expect(result.months.filter((m) => m.loanPaymentsCents === 100000)).toHaveLength(10);
+    for (const month of result.months.filter((m) => compareRefs(m.ref, target) > 0)) {
+      expect(month.cards.afterCents).toBeLessThanOrEqual(month.cards.beforeCents);
+    }
+  });
+
+  it('paying off the whole card also covers purchases simulated before it', async () => {
+    const { repos, familyId, card } = await setup();
+    const target = await openRef(repos, card.id);
+    const result = await repos.purchases.simulateScenario({
+      familyId,
+      operations: [
+        { kind: 'purchase', cardId: card.id, totalCents: 30000, installmentCount: 3, startRef: addMonths(target, 1) },
+        { kind: 'payoff', cardId: card.id, targetRef: target },
+      ],
+    });
+    expect(result.months.reduce((sum, m) => sum + delta(m, 'cards'), 0)).toBe(30000);
+    expect(delta(monthOf(result.months, target), 'cards')).toBe(result.payoffs[0].movedCents);
+    expect(result.payoffs[0].movedCents).toBeGreaterThanOrEqual(30000);
+  });
+
+  it('does not start a simulation in an invoice that is already closed', async () => {
+    const { repos, familyId, card } = await setup();
+    const target = await openRef(repos, card.id);
+    await expect(
+      repos.purchases.simulateScenario({
+        familyId,
+        operations: [{ kind: 'purchase', cardId: card.id, totalCents: 1000, installmentCount: 1, startRef: addMonths(target, -1) }],
+      }),
+    ).rejects.toThrow('Simulação 1');
   });
 
   it('simulates anticipating installments: the last invoices go down, the open one goes up', async () => {
@@ -91,7 +161,6 @@ describe('purchase simulation', () => {
     expect(target.addedCents).toBe(available * 20000);
     expect(simulation.months.filter((m) => m.addedCents < 0)).toHaveLength(available);
     expect(simulation.months.reduce((sum, m) => sum + m.addedCents, 0)).toBe(0);
-    expect(simulation.limit).toBeNull();
 
     // Nothing moved for real.
     const after = await repos.purchases.get(created.purchase.id);

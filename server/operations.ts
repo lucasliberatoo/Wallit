@@ -41,7 +41,7 @@ export const OPERATIONS = {
   'purchases.update': 'write',
   'purchases.cancel': 'write',
   'purchases.anticipate': 'write',
-  'purchases.simulate': 'read',
+  'purchases.simulateScenario': 'read',
   'purchases.simulateAnticipation': 'read',
   'purchases.get': 'read',
   'purchases.search': 'read',
