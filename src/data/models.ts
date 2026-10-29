@@ -233,18 +233,6 @@ export interface CreatePurchaseInput {
   note?: string;
 }
 
-/** A purchase that is not saved, only to see how it changes the next invoices. */
-export interface SimulatePurchaseInput {
-  familyId: ID;
-  cardId: ID;
-  totalCents: Cents;
-  installmentCount: number;
-  /** Default: today. */
-  date?: ISODate;
-  /** Who would pay. Default: all of it on the person simulating. */
-  shares?: ShareInput[];
-}
-
 export interface SimulationMonth {
   ref: InvoiceRef;
   dueDate: ISODate;
@@ -262,13 +250,82 @@ export interface PurchaseSimulation {
   card: Card;
   me: FamilyMember;
   months: SimulationMonth[];
-  /** The part of the simulated purchase that would be mine. */
+  /** The part of the moved installments that is mine. */
   myTotalCents: Cents;
-  /**
-   * Only when the card has a limit. `usedCents` is what is still to be paid on
-   * the card (installments in invoices not paid yet).
-   */
-  limit: { limitCents: Cents; usedCents: Cents; availableBeforeCents: Cents; availableAfterCents: Cents } | null;
+}
+
+/** One step of a simulated scenario. Nothing is saved. */
+export type ScenarioOperation =
+  | {
+      kind: 'purchase';
+      cardId: ID;
+      totalCents: Cents;
+      installmentCount: number;
+      /** Invoice of the first installment. */
+      startRef: InvoiceRef;
+      /** Who would pay. Default: all of it on the person simulating. */
+      shares?: ShareInput[];
+    }
+  | {
+      /** A loan or other debt outside the card, always the simulating person's. */
+      kind: 'loan';
+      /** Money received (e.g. to pay off the card), in the month of `receivedRef`. */
+      receivedCents: Cents;
+      receivedRef: InvoiceRef;
+      installmentCents: Cents;
+      installmentCount: number;
+      /** Month of the first payment. */
+      startRef: InvoiceRef;
+    }
+  | {
+      /** Brings future installments into the invoice of `targetRef` (bank "antecipação"). */
+      kind: 'payoff';
+      cardId: ID;
+      targetRef: InvoiceRef;
+      /** Without a purchase, every future installment of the card. */
+      purchaseId?: ID;
+      /** Only with a purchase: how many of its last installments. Default: all. */
+      count?: number;
+    };
+
+export interface ScenarioInput {
+  familyId: ID;
+  operations: ScenarioOperation[];
+}
+
+/** Amounts of one month, today and with the scenario. */
+export interface ScenarioAmounts {
+  beforeCents: Cents;
+  afterCents: Cents;
+}
+
+export interface ScenarioMonth {
+  ref: InvoiceRef;
+  /** Every card of the family together. */
+  cards: ScenarioAmounts;
+  /** My part of those invoices. */
+  mine: ScenarioAmounts;
+  /** Loan installments due this month (outside the card, mine). */
+  loanPaymentsCents: Cents;
+  /** Money received from loans this month. */
+  loanReceivedCents: Cents;
+}
+
+export interface ScenarioCardLimit {
+  card: Card;
+  availableBeforeCents: Cents;
+  availableAfterCents: Cents;
+}
+
+export interface ScenarioResult {
+  me: FamilyMember;
+  months: ScenarioMonth[];
+  /** Only cards with a limit that a simulated purchase uses. */
+  limits: ScenarioCardLimit[];
+  /** First invoice still open on each card: simulations on it start there or later. */
+  openRefs: { cardId: ID; ref: InvoiceRef }[];
+  /** Installments that left a month for an earlier one, per operation index. */
+  payoffs: { operation: number; movedCents: Cents; myMovedCents: Cents }[];
 }
 
 export type UpdatePurchaseInput = Partial<Omit<CreatePurchaseInput, 'familyId' | 'cardId' | 'installmentCount'>>;

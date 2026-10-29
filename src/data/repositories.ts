@@ -35,10 +35,11 @@ import type {
   PurchaseDetails,
   PurchaseListItem,
   PurchaseSimulation,
+  ScenarioInput,
+  ScenarioResult,
   RegisterPaymentInput,
   Session,
   SignUpInput,
-  SimulatePurchaseInput,
   StatisticsFilters,
   StatisticsView,
   UpdatePurchaseInput,
@@ -123,8 +124,11 @@ export interface PurchaseRepository {
    * (bank "antecipação"). Moving all of them pays the purchase off early.
    */
   anticipate(purchaseId: ID, count: number): Promise<PurchaseDetails>;
-  /** How a purchase would change the next invoices, without saving it. */
-  simulate(input: SimulatePurchaseInput): Promise<PurchaseSimulation>;
+  /**
+   * Purchases, loans and early payoffs together: how the next months would
+   * look, for every card and for my part. Nothing is saved.
+   */
+  simulateScenario(input: ScenarioInput): Promise<ScenarioResult>;
   /** How anticipating the last `count` installments would change the invoices, without doing it. */
   simulateAnticipation(purchaseId: ID, count: number): Promise<PurchaseSimulation>;
   get(purchaseId: ID): Promise<PurchaseDetails>;

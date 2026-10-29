@@ -1,13 +1,4 @@
-import {
-  type Card,
-  describeSplit,
-  formatBRL,
-  type Invoice,
-  MAX_INSTALLMENTS,
-  planInstallments,
-  type Purchase,
-  validateSplit,
-} from '../../domain';
+import { type Card, formatBRL, type Invoice, type Purchase } from '../../domain';
 import { AppError } from '../errors';
 import type { CreatePurchaseInput } from '../models';
 import type { PurchaseRepository } from '../repositories';
@@ -15,9 +6,9 @@ import { anticipatableInstallments, anticipationSummary, anticipationTargetRef }
 import { purchaseLink } from './labels';
 import { notify } from './notify';
 import { insertPurchase, updatePurchaseRecord } from './purchase-core';
-import { addChange, type MonthChange, myInstallmentParts, simulationResult } from './simulation';
+import { addChange, type MonthChange, myInstallmentParts, runScenario, simulationResult } from './simulation';
 import type { Store } from './store';
-import { canEditPurchase, hasHolderPower, purchaseDetails, purchaseListItem, purchaseShares, todayISO } from './views';
+import { canEditPurchase, hasHolderPower, purchaseDetails, purchaseListItem, purchaseShares } from './views';
 
 function normalize(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -141,42 +132,7 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
         { write: true },
       ),
 
-    simulate: (input) =>
-      store.run(() => {
-        const me = store.requireMembership(input.familyId);
-        const card = store.require('cards', input.cardId, 'Cartão') as Card;
-        if (card.familyId !== input.familyId) throw new AppError('validation', 'Cartão não pertence a esta família.');
-        const count = input.installmentCount;
-        if (!Number.isInteger(count) || count < 1 || count > MAX_INSTALLMENTS) {
-          throw new AppError('validation', `Parcelamento deve ser entre 1x e ${MAX_INSTALLMENTS}x.`);
-        }
-        if (!Number.isInteger(input.totalCents) || input.totalCents < count) {
-          throw new AppError('validation', 'Informe o valor da compra.');
-        }
-        const shares = input.shares?.length ? input.shares : [{ memberId: me.id, amountCents: input.totalCents }];
-        const familyMemberIds = new Set(store.activeMembers(input.familyId).map((m) => m.id));
-        if (shares.some((share) => !familyMemberIds.has(share.memberId))) {
-          throw new AppError('validation', 'Responsável não faz parte da família.');
-        }
-        const split = validateSplit(input.totalCents, shares);
-        if (split.status !== 'complete') throw new AppError('validation', describeSplit(split));
-
-        const plan = planInstallments({
-          totalCents: input.totalCents,
-          count,
-          purchaseDate: input.date ?? todayISO(),
-          closingDay: card.closingDay,
-        });
-        const mine = myInstallmentParts(
-          plan.map((p) => p.amountCents),
-          shares,
-          me.id,
-        );
-        const changes = new Map<string, MonthChange>();
-        plan.forEach((planned, index) => addChange(changes, planned.invoiceRef, planned.amountCents, mine[index]));
-        const myTotal = mine.reduce((sum, value) => sum + value, 0);
-        return simulationResult(store, card, me, changes, myTotal, input.totalCents);
-      }),
+    simulateScenario: (input) => store.run(() => runScenario(store, input)),
 
     simulateAnticipation: (purchaseId, count) =>
       store.run(() => {
@@ -206,7 +162,7 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
           addChange(changes, targetRef, installment.amountCents, myPart);
           myMoved += myPart;
         }
-        return simulationResult(store, card, me, changes, myMoved, null);
+        return simulationResult(store, card, me, changes, myMoved);
       }),
 
     get: (purchaseId) => store.run(() => purchaseDetails(store, store.require('purchases', purchaseId, 'Compra') as Purchase)),
