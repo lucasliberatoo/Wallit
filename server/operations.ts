@@ -32,6 +32,7 @@ export const OPERATIONS = {
   'cards.listByFamily': 'read',
   'cards.get': 'read',
   'cards.create': 'write',
+  'cards.setModerators': 'write',
   'invoices.listByCard': 'read',
   'invoices.listByFamily': 'read',
   'invoices.getDetails': 'read',

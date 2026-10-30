@@ -107,6 +107,12 @@ export interface CardRepository {
   listByFamily(familyId: ID): Promise<CardSummary[]>;
   get(cardId: ID): Promise<CardSummary>;
   create(input: CreateCardInput): Promise<Card>;
+  /**
+   * Holder (or family owner) picks the people who manage the card with the
+   * holder's powers: review, close and reopen invoices, confirm payments,
+   * edit locked purchases. Replaces the whole list.
+   */
+  setModerators(cardId: ID, memberIds: ID[]): Promise<Card>;
 }
 
 export interface InvoiceRepository {

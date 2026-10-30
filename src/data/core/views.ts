@@ -13,6 +13,7 @@ import {
   type Invoice,
   invoiceRefForDate,
   isInvoiceLocked,
+  managesCard,
   lineReviewState,
   type Purchase,
   type PurchaseInstallment,
@@ -71,20 +72,18 @@ function activePurchase(store: Store, purchaseId: ID): Purchase | undefined {
 
 /** Holder of the card, or the family owner, manages its invoices. */
 export function hasHolderPower(card: Card, member: FamilyMember): boolean {
-  return can(member.role, 'invoice.changeStatus', { isCardHolder: card.holderMemberId === member.id });
+  return can(member.role, 'invoice.changeStatus', { isCardHolder: managesCard(card, member.id) });
 }
 
 /**
- * Who answers for a card's invoices: the holder, or the family owners when
- * the holder doesn't use the app (e.g. the grandmother's card).
+ * Who answers for a card's invoices: the holder and the moderators, or the
+ * family owners when none of them uses the app (e.g. the grandmother's card).
  */
 export function cardManagerIds(store: Store, card: Card): ID[] {
-  const holder = store.member(card.holderMemberId);
-  if (holder.userId && holder.status === 'active') return [holder.id];
-  return store
-    .activeMembers(card.familyId)
-    .filter((m) => m.role === 'owner' && m.userId)
-    .map((m) => m.id);
+  const members = store.activeMembers(card.familyId).filter((m) => m.userId);
+  const managers = members.filter((m) => managesCard(card, m.id));
+  if (managers.length) return managers.map((m) => m.id);
+  return members.filter((m) => m.role === 'owner').map((m) => m.id);
 }
 
 /** Who confirms a purchase in a review: buyer and payers that use the app. */
@@ -234,7 +233,7 @@ export function canEditPurchase(store: Store, purchase: Purchase): boolean {
   if (purchase.status !== 'active') return false;
   const me = store.requireMembership(purchase.familyId);
   const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
-  const isCardHolder = card.holderMemberId === me.id;
+  const isCardHolder = managesCard(card, me.id);
   const locked = purchaseInstallments(store, purchase.id).some((installment) => {
     const invoice = store.find('invoices', installment.invoiceId) as Invoice | undefined;
     return invoice ? isInvoiceLocked(invoice.status) : false;

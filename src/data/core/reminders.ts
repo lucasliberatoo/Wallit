@@ -1,8 +1,11 @@
-import { type AppNotification, type Card, DUE_REMINDER_DAYS, formatBRL, parseISODate } from '../../domain';
+import { type AppNotification, type Card, DUE_REMINDER_DAYS, formatBRL, type InvoiceStatus, parseISODate } from '../../domain';
 import { invoiceLabel, invoiceLink } from './labels';
 import { notify } from './notify';
 import type { Store } from './store';
 import { balancesFor, invoiceLines } from './views';
+
+/** Under review too: it closes by itself on the due date anyway. */
+const REMINDED_STATUSES: readonly InvoiceStatus[] = ['reviewing', 'closed', 'collecting'];
 
 function addDays(date: string, days: number): string {
   const { year, month, day } = parseISODate(date);
@@ -18,7 +21,7 @@ export function createDueReminders(store: Store, today: string): AppNotification
   const dueDate = addDays(today, DUE_REMINDER_DAYS);
   const created: AppNotification[] = [];
   for (const invoice of store.db.invoices) {
-    if (invoice.dueDate !== dueDate || (invoice.status !== 'closed' && invoice.status !== 'collecting')) continue;
+    if (invoice.dueDate !== dueDate || !REMINDED_STATUSES.includes(invoice.status)) continue;
     const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
     const { balances } = balancesFor(store, invoice, card, invoiceLines(store, invoice));
     for (const balance of balances) {

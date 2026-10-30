@@ -7,6 +7,7 @@ import {
   type ID,
   type Invoice,
   isInvoiceLocked,
+  managesCard,
   MAX_INSTALLMENTS,
   planInstallments,
   type Purchase,
@@ -59,7 +60,7 @@ function writeInstallments(store: Store, purchase: Purchase, card: Card, actorMe
   for (const planned of plan) {
     const invoice = store.getOrCreateInvoice(card, planned.invoiceRef);
     if (isInvoiceLocked(invoice.status) && !actorMemberCanEditLocked) {
-      throw new AppError('invoice_locked', 'Essa compra cairia numa fatura já fechada. Peça à titular.');
+      throw new AppError('invoice_locked', 'Essa compra cairia numa fatura já fechada. Peça à titular ou a um moderador.');
     }
     store.db.installments.push({
       id: newId('ins'),
@@ -75,7 +76,7 @@ function writeInstallments(store: Store, purchase: Purchase, card: Card, actorMe
 function canEditLocked(store: Store, card: Card, actorUserId: ID): boolean {
   const member = store.db.members.find((m) => m.familyId === card.familyId && m.userId === actorUserId && m.status === 'active');
   if (!member) return false;
-  return can(member.role, 'invoice.editLocked', { isCardHolder: card.holderMemberId === member.id });
+  return can(member.role, 'invoice.editLocked', { isCardHolder: managesCard(card, member.id) });
 }
 
 export function insertPurchase(store: Store, rawInput: CreatePurchaseInput, actorUserId: ID, createdAt = nowISO()): Purchase {

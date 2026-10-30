@@ -1,4 +1,11 @@
-import { createCoreRepositories, createDueReminders, seedDemoDatabase, startReviewsAfterClosing, Store } from '../core';
+import {
+  closeReviewsOnDueDate,
+  createCoreRepositories,
+  createDueReminders,
+  seedDemoDatabase,
+  startReviewsAfterClosing,
+  Store,
+} from '../core';
 import { AppError } from '../errors';
 import { createMockRepositories, DEMO_ACCOUNT } from '../mock';
 import { addMonths } from '@/domain';
@@ -295,6 +302,31 @@ describe('review after the closing day', () => {
   });
 });
 
+describe('review on the due date', () => {
+  it('closes an unfinished review on the due date, unless a dispute is still open', async () => {
+    const store = new Store({ persistence: { load: async () => null, save: async () => undefined }, seed: seedDemoDatabase });
+    await store.init();
+    const reviewing = store.db.invoices.find((i) => i.status === 'reviewing')!;
+    const [year, month, day] = reviewing.dueDate.split('-').map(Number);
+    const twoDaysBefore = new Date(Date.UTC(year, month - 1, day - 2)).toISOString().slice(0, 10);
+
+    // Reminded while still under review.
+    expect(createDueReminders(store, twoDaysBefore).length).toBeGreaterThan(0);
+
+    // Maria's dispute from the seed is still open.
+    expect(closeReviewsOnDueDate(store, reviewing.dueDate)).toHaveLength(0);
+    expect(reviewing.status).toBe('reviewing');
+
+    const dispute = store.db.reviews.find((r) => r.invoiceId === reviewing.id && r.status === 'disputed')!;
+    dispute.status = 'resolved';
+    expect(closeReviewsOnDueDate(store, twoDaysBefore)).toHaveLength(0);
+    expect(closeReviewsOnDueDate(store, reviewing.dueDate).map((i) => i.id)).toEqual([reviewing.id]);
+    expect(reviewing.status).toBe('closed');
+    expect(store.db.auditLogs.at(-1)?.summary).toContain('vencimento');
+    expect(store.db.notifications.at(-1)?.type).toBe('amount_defined');
+  });
+});
+
 describe('due date reminders', () => {
   it('reminds people who still owe, once', async () => {
     const store = new Store({ persistence: { load: async () => null, save: async () => undefined }, seed: seedDemoDatabase });
@@ -318,5 +350,35 @@ describe('due date reminders', () => {
     const repos = createCoreRepositories(store);
     await repos.auth.signIn(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password);
     expect(await repos.notifications.unreadCount()).toBe(2);
+  });
+});
+
+describe('card moderators', () => {
+  it('gives the people the holder picks the same powers over the card', async () => {
+    const { repos, secundario, byName, signInAs } = await setup();
+    const maria = byName('Maria');
+    const invoiceId = secundario.currentInvoice!.id;
+    expect((await repos.invoices.getDetails(invoiceId)).invoice.status).toBe('reviewing');
+
+    // Before: Maria is a regular member.
+    await signInAs(MARIA);
+    await expect(repos.invoices.changeStatus(invoiceId, 'open')).rejects.toThrow('moderador');
+    await expect(repos.cards.setModerators(secundario.card.id, [maria.id])).rejects.toThrow('moderadores');
+
+    await signInAs(DEMO_ACCOUNT.email);
+    await expect(repos.cards.setModerators(secundario.card.id, ['mem_nope'])).rejects.toThrow('família');
+    const card = await repos.cards.setModerators(secundario.card.id, [maria.id, maria.id]);
+    expect(card.moderatorMemberIds).toEqual([maria.id]);
+
+    await signInAs(MARIA);
+    expect((await repos.invoices.getDetails(invoiceId)).canManage).toBe(true);
+    await repos.invoices.changeStatus(invoiceId, 'open');
+    expect((await repos.invoices.getDetails(invoiceId)).invoice.status).toBe('open');
+
+    // Taken back.
+    await signInAs(DEMO_ACCOUNT.email);
+    await repos.cards.setModerators(secundario.card.id, []);
+    await signInAs(MARIA);
+    expect((await repos.invoices.getDetails(invoiceId)).canManage).toBe(false);
   });
 });

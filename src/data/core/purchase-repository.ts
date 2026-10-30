@@ -18,7 +18,7 @@ export function createPurchaseRepository(store: Store): PurchaseRepository {
   const requireEditable = (purchaseId: string) => {
     const purchase = store.require('purchases', purchaseId, 'Compra') as Purchase;
     if (!canEditPurchase(store, purchase)) {
-      throw new AppError('invoice_locked', 'Esta compra está numa fatura fechada. Só a titular pode alterar.');
+      throw new AppError('invoice_locked', 'Esta compra está numa fatura fechada. Só a titular ou um moderador pode alterar.');
     }
     return purchase;
   };

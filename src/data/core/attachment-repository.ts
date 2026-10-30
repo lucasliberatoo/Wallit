@@ -80,7 +80,7 @@ export function createAttachmentRepository(store: Store): AttachmentRepository {
           const purchase = store.require('purchases', attachment.purchaseId, 'Compra') as Purchase;
           const card = store.require('cards', purchase.cardId, 'Cartão') as Card;
           if (attachment.createdBy !== store.currentUserId() && !hasHolderPower(card, me)) {
-            throw new AppError('forbidden', 'Só quem anexou ou a titular pode remover.');
+            throw new AppError('forbidden', 'Só quem anexou, a titular ou um moderador pode remover.');
           }
           // Rule 14: hidden, not erased.
           attachment.deletedAt = nowISO();

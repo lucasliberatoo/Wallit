@@ -8,6 +8,7 @@ import { AppText, Button, Divider, ErrorState, ListRow, LoadingState, ProgressBa
 import { errorMessage } from '@/data';
 import { formatRef, installmentAmounts, installmentProgress } from '@/domain';
 import { useCard } from '@/features/cards/hooks';
+import { ModeratorsSection } from '@/features/cards/ModeratorsSection';
 import { useCardInvoices, useInvoice } from '@/features/invoices/hooks';
 import { useMoneyFormatter } from '@/lib/money-visibility';
 import { spacing, useTheme } from '@/theme';
@@ -113,6 +114,8 @@ export default function CardScreen() {
             </Surface>
           </View>
         ) : null}
+
+        <ModeratorsSection summary={card.data} />
 
         <View>
           <SectionHeader title="Faturas" />

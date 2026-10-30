@@ -18,9 +18,13 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 - O primeiro pagamento de uma fatura fechada a coloca em "recebendo"; quando tudo foi confirmado, ela vira "paga" sozinha.
 - Quando a titular não usa o app (ex.: a Avó), quem responde pelos pagamentos e contestações do cartão é o dono da família.
 
+## Moderadores do cartão
+- A titular (ou o dono da família) escolhe na tela do cartão quem modera (`cards.setModerators`, coluna `cards.moderator_member_ids`). Moderadores têm os mesmos poderes da titular naquele cartão (`managesCard`): conferir, fechar e reabrir faturas, confirmar pagamentos, responder contestações e alterar compras travadas. Só a titular ou o dono escolhem moderadores; convidados não podem ser.
+
 ## Conferência e contestação
 - "Iniciar conferência" (aberta → em conferência) avisa quem participa das compras da fatura. Se a titular não iniciar, a tarefa diária inicia sozinha no dia seguinte ao fechamento (avisa só para faturas fechadas há até 7 dias).
 - Quando a última compra é confirmada ou a última contestação é respondida, a fatura vira "fechada" sozinha e cada pessoa recebe o valor final.
+- No dia do vencimento, a fatura ainda em conferência fecha sozinha: compras não conferidas contam como aceitas. Com contestação aberta, ela espera a titular responder. O aviso "vence em 2 dias" também vale para faturas em conferência.
 - Cada compra é conferida por quem comprou e por quem paga (só quem tem conta). Cada pessoa confirma ou contesta (motivo + observação + anexo opcional). Responder de novo substitui a resposta anterior.
 - A fatura não fecha com contestação em aberto: a titular responde cada uma. Ao fechar, cada pessoa recebe o valor da sua parte.
 - Se a compra muda de valor, divisão ou comprador, as confirmações dela voltam a ficar pendentes.

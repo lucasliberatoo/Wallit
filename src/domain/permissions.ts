@@ -1,4 +1,4 @@
-import type { Role } from './types';
+import type { Card, ID, Role } from './types';
 
 export type Action =
   | 'family.manage'
@@ -40,6 +40,11 @@ const ROLE_ACTIONS: Record<Role, readonly Action[]> = {
 };
 
 const HOLDER_ACTIONS: readonly Action[] = ['card.manage', 'invoice.changeStatus', 'invoice.editLocked', 'payment.register'];
+
+/** The holder or one of the card's moderators: both get the holder powers over it. */
+export function managesCard(card: Pick<Card, 'holderMemberId' | 'moderatorMemberIds'>, memberId: ID): boolean {
+  return card.holderMemberId === memberId || (card.moderatorMemberIds ?? []).includes(memberId);
+}
 
 export function can(role: Role, action: Action, context: { isCardHolder?: boolean } = {}): boolean {
   if (ROLE_ACTIONS[role].includes(action)) return true;

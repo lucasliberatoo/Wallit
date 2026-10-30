@@ -1,0 +1,1 @@
+ALTER TABLE "cards" ADD COLUMN "moderator_member_ids" jsonb DEFAULT '[]'::jsonb NOT NULL;

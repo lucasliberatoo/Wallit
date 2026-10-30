@@ -111,5 +111,43 @@ export function createCardRepository(store: Store): CardRepository {
         },
         { write: true },
       ),
+
+    setModerators: (cardId, memberIds) =>
+      store.run(
+        () => {
+          const card = store.require('cards', cardId, 'Cartão') as Card;
+          const me = store.requireMembership(card.familyId);
+          if (card.holderMemberId !== me.id && me.role !== 'owner') {
+            throw new AppError('forbidden', 'Só a titular do cartão escolhe os moderadores.');
+          }
+          const ids = [...new Set(memberIds)].filter((id) => id !== card.holderMemberId);
+          if (ids.length > 10) throw new AppError('validation', 'Escolha no máximo 10 moderadores.');
+          const members = store.activeMembers(card.familyId);
+          for (const id of ids) {
+            const member = members.find((m) => m.id === id);
+            if (!member) throw new AppError('validation', 'Moderador não faz parte da família.');
+            if (member.role === 'guest') throw new AppError('validation', 'Convidados não podem ser moderadores.');
+          }
+          const name = (id: string) => store.member(id).displayName;
+          const before = card.moderatorMemberIds ?? [];
+          card.moderatorMemberIds = ids.length ? ids : undefined;
+          store.audit({
+            familyId: card.familyId,
+            entity: 'card',
+            entityId: card.id,
+            action: 'updated',
+            summary: `Moderadores do cartão ${card.name}`,
+            changes: [
+              {
+                field: 'Moderadores',
+                from: before.map(name).join(', ') || null,
+                to: ids.map(name).join(', ') || null,
+              },
+            ],
+          });
+          return card;
+        },
+        { write: true },
+      ),
   };
 }

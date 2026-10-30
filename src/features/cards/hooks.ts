@@ -23,3 +23,9 @@ export function useCreateCard() {
   const invalidate = useInvalidateData();
   return useMutation({ mutationFn: cards.create, onSuccess: invalidate });
 }
+
+export function useSetModerators(cardId: string) {
+  const { cards } = useRepositories();
+  const invalidate = useInvalidateData();
+  return useMutation({ mutationFn: (memberIds: string[]) => cards.setModerators(cardId, memberIds), onSuccess: invalidate });
+}
