@@ -14,14 +14,19 @@ export interface AssistantChatProps {
   simulation?: { operations: ScenarioOperation[] };
   intro: string;
   suggestions: string[];
+  /** Keeps the conversation outside the chat (e.g. while the bubble is closed). */
+  /** Inside a panel that already sits above the safe area. */
+  embedded?: boolean;
+  conversation?: [AssistantMessage[], (messages: AssistantMessage[] | ((list: AssistantMessage[]) => AssistantMessage[])) => void];
 }
 
-/** Conversation with the AI assistant. The conversation lives only while the screen is open. */
-export function AssistantChat({ familyId, simulation, intro, suggestions }: AssistantChatProps) {
+/** Conversation with the AI assistant. It is never saved on the server. */
+export function AssistantChat({ familyId, simulation, intro, suggestions, conversation, embedded = false }: AssistantChatProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const local = useState<AssistantMessage[]>([]);
+  const [messages, setMessages] = conversation ?? local;
   const [text, setText] = useState('');
   const ask = useAskAssistant(familyId, simulation);
   const scroll = useRef<ScrollView>(null);
@@ -87,7 +92,7 @@ export function AssistantChat({ familyId, simulation, intro, suggestions }: Assi
           O Wally pode errar. Confira os valores no app antes de decidir.
         </AppText>
       </ScrollView>
-      <View style={[styles.composer, { paddingBottom: insets.bottom + spacing.sm }]}>
+      <View style={[styles.composer, { paddingBottom: (embedded ? 0 : insets.bottom) + spacing.sm }]}>
         <TextInput
           value={text}
           onChangeText={setText}

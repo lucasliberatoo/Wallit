@@ -32,6 +32,7 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 ## Wally (assistente de IA)
 - Conversa em português sobre os dados da família, usando o Gemini do Google no plano gratuito (`server/assistant.ts`, `POST /api/assistant`). Só aparece com `GEMINI_API_KEY` definida na Vercel (`GEMINI_MODEL` troca o modelo; padrão `gemini-flash-latest`).
 - Só lê: as ferramentas do modelo (listar e detalhar faturas, buscar compras, estatísticas, simular compra) passam pelas mesmas operações de leitura do app, então ele vê exatamente o que a pessoa vê.
+- Fica numa bolinha flutuante acima da barra de abas (`WallyBubble`), que abre o chat num painel; a conversa continua ao fechar e volta a zero ao trocar de família ou fechar o app.
 - Na tela "Simular", "Entender com o Wally" manda as operações do cenário; o servidor recalcula a simulação e explica com os números dela.
 - A conversa não é salva. Quando o limite gratuito acaba, ele avisa para tentar mais tarde.
 
