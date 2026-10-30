@@ -160,6 +160,7 @@ export const cards = pgTable(
     limitCents: integer('limit_cents'),
     closingDay: integer('closing_day').notNull(),
     dueDay: integer('due_day').notNull(),
+    moderatorMemberIds: jsonb('moderator_member_ids').$type<string[]>().notNull().default([]),
     status: text('status').notNull(),
     createdAt: timestamptz('created_at').notNull(),
   },

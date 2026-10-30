@@ -494,6 +494,18 @@ describe('API', () => {
     assert.equal(again.sent, 0);
   });
 
+  it('saves card moderators and gives them the holder powers', async () => {
+    const lucas = await signedIn();
+    const secundario = (await lucas.repos.cards.listByFamily(lucas.familyId)).find((c) => c.card.name === 'Cartão Secundário')!;
+    const maria = lucas.byName('Maria');
+    await lucas.repos.cards.setModerators(secundario.card.id, [maria.id]);
+
+    const asMaria = await signedIn('maria@wallit.app');
+    assert.deepEqual((await asMaria.repos.cards.get(secundario.card.id)).card.moderatorMemberIds, [maria.id]);
+    assert.equal((await asMaria.repos.invoices.getDetails(secundario.currentInvoice!.id)).canManage, true);
+    await rejects(asMaria.repos.cards.setModerators(secundario.card.id, []), 'forbidden');
+  });
+
   it('accepts Web Push subscriptions from signed-in users', async () => {
     const lucas = await signedIn();
     const key = await lucas.repos.push.publicKey();

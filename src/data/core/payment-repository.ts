@@ -31,7 +31,7 @@ export function createPaymentRepository(store: Store): PaymentRepository {
     const invoice = store.require('invoices', payment.invoiceId, 'Fatura') as Invoice;
     const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
     if (!hasHolderPower(card, store.requireMembership(invoice.familyId))) {
-      throw new AppError('forbidden', 'Só a titular do cartão confirma pagamentos.');
+      throw new AppError('forbidden', 'Só a titular do cartão ou um moderador confirma pagamentos.');
     }
     if (payment.status !== 'pending') throw new AppError('validation', 'Este pagamento já foi respondido.');
     return { payment, invoice };

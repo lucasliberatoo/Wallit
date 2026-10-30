@@ -109,7 +109,7 @@ export function createReviewRepository(store: Store): ReviewRepository {
           const invoice = store.require('invoices', review.invoiceId, 'Fatura') as Invoice;
           const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
           const me = store.requireMembership(invoice.familyId);
-          if (!hasHolderPower(card, me)) throw new AppError('forbidden', 'Só a titular responde contestações.');
+          if (!hasHolderPower(card, me)) throw new AppError('forbidden', 'Só a titular ou um moderador responde contestações.');
           if (review.status !== 'disputed') throw new AppError('validation', 'Esta contestação já foi respondida.');
           const answer = note.trim();
           if (!answer) throw new AppError('validation', 'Escreva o que foi feito.');

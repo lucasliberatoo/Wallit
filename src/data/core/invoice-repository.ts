@@ -7,6 +7,7 @@ import {
   type Invoice,
   INVOICE_STATUS_LABEL,
   invoiceRefForDate,
+  managesCard,
   type ID,
   type ISODate,
   parseISODate,
@@ -118,8 +119,8 @@ function addDays(date: ISODate, days: number): ISODate {
 export function createInvoiceRepository(store: Store): InvoiceRepository {
   const requireHolderPower = (card: Card) => {
     const me = store.requireMembership(card.familyId);
-    if (!can(me.role, 'invoice.changeStatus', { isCardHolder: card.holderMemberId === me.id })) {
-      throw new AppError('forbidden', 'Apenas a titular do cartão pode fazer isso.');
+    if (!can(me.role, 'invoice.changeStatus', { isCardHolder: managesCard(card, me.id) })) {
+      throw new AppError('forbidden', 'Apenas a titular do cartão ou um moderador pode fazer isso.');
     }
   };
 

@@ -320,3 +320,33 @@ describe('due date reminders', () => {
     expect(await repos.notifications.unreadCount()).toBe(2);
   });
 });
+
+describe('card moderators', () => {
+  it('gives the people the holder picks the same powers over the card', async () => {
+    const { repos, secundario, byName, signInAs } = await setup();
+    const maria = byName('Maria');
+    const invoiceId = secundario.currentInvoice!.id;
+    expect((await repos.invoices.getDetails(invoiceId)).invoice.status).toBe('reviewing');
+
+    // Before: Maria is a regular member.
+    await signInAs(MARIA);
+    await expect(repos.invoices.changeStatus(invoiceId, 'open')).rejects.toThrow('moderador');
+    await expect(repos.cards.setModerators(secundario.card.id, [maria.id])).rejects.toThrow('moderadores');
+
+    await signInAs(DEMO_ACCOUNT.email);
+    await expect(repos.cards.setModerators(secundario.card.id, ['mem_nope'])).rejects.toThrow('família');
+    const card = await repos.cards.setModerators(secundario.card.id, [maria.id, maria.id]);
+    expect(card.moderatorMemberIds).toEqual([maria.id]);
+
+    await signInAs(MARIA);
+    expect((await repos.invoices.getDetails(invoiceId)).canManage).toBe(true);
+    await repos.invoices.changeStatus(invoiceId, 'open');
+    expect((await repos.invoices.getDetails(invoiceId)).invoice.status).toBe('open');
+
+    // Taken back.
+    await signInAs(DEMO_ACCOUNT.email);
+    await repos.cards.setModerators(secundario.card.id, []);
+    await signInAs(MARIA);
+    expect((await repos.invoices.getDetails(invoiceId)).canManage).toBe(false);
+  });
+});

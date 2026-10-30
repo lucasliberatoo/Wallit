@@ -18,7 +18,7 @@ import {
   TextField,
 } from '@/components/ui';
 import { errorMessage, type InvoiceLine, type PaymentView } from '@/data';
-import { can, canTransition, formatRef, INVOICE_STATUS_LABEL, nextInvoiceStatus } from '@/domain';
+import { can, canTransition, formatRef, INVOICE_STATUS_LABEL, managesCard, nextInvoiceStatus } from '@/domain';
 import { useChangeInvoiceStatus, useConfirmPayment, useInvoice, useRejectPayment } from '@/features/invoices/hooks';
 import { PaymentsToConfirm } from '@/features/invoices/components/PaymentsToConfirm';
 import { PixCard } from '@/features/invoices/components/PixCard';
@@ -68,7 +68,7 @@ export default function InvoiceScreen() {
   if (invoice.error || !invoice.data) return <ErrorState message={errorMessage(invoice.error)} onRetry={() => invoice.refetch()} />;
 
   const data = invoice.data;
-  const isCardHolder = data.card.holderMemberId === data.me.id;
+  const isCardHolder = managesCard(data.card, data.me.id);
   const canChangeStatus = can(data.me.role, 'invoice.changeStatus', { isCardHolder });
   const canRegisterAny = can(data.me.role, 'payment.register', { isCardHolder });
   const next = nextInvoiceStatus(data.invoice.status);

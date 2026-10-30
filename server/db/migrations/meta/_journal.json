@@ -43,6 +43,13 @@
       "when": 1793312913703,
       "tag": "0005_convite_membro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793321805840,
+      "tag": "0006_moderadores",
+      "breakpoints": true
     }
   ]
 }

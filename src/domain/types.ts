@@ -77,6 +77,8 @@ export interface Card {
   walletId: ID;
   name: string;
   holderMemberId: ID;
+  /** People the holder chose to manage the card with the same powers. */
+  moderatorMemberIds?: ID[];
   theme: CardTheme;
   brand?: CardBrand;
   limitCents?: Cents;
