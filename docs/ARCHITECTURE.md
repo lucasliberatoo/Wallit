@@ -29,6 +29,12 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 - No app: sino no início, com contador. Na web instalada (PWA), também chegam como push (Web Push com chaves VAPID derivadas do segredo do servidor, então não precisa configurar nada; `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` substituem). No iPhone, push só funciona com o app adicionado à tela de início. Push no APK Android precisa de Firebase e fica para depois.
 - Lembrete de vencimento: tarefa diária (Vercel Cron, 9h de Brasília, `GET /api/cron/daily`) avisa 2 dias antes quem ainda deve. Não repete o mesmo lembrete. Com `CRON_SECRET` definido, só a Vercel consegue chamar.
 
+## Wally (assistente de IA)
+- Conversa em português sobre os dados da família, usando o Gemini do Google no plano gratuito (`server/assistant.ts`, `POST /api/assistant`). Só aparece com `GEMINI_API_KEY` definida na Vercel (`GEMINI_MODEL` troca o modelo; padrão `gemini-flash-latest`).
+- Só lê: as ferramentas do modelo (listar e detalhar faturas, buscar compras, estatísticas, simular compra) passam pelas mesmas operações de leitura do app, então ele vê exatamente o que a pessoa vê.
+- Na tela "Simular", "Entender com o Wally" manda as operações do cenário; o servidor recalcula a simulação e explica com os números dela.
+- A conversa não é salva. Quando o limite gratuito acaba, ele avisa para tentar mais tarde.
+
 ## Apelidos de estabelecimento
 - Por família: "JANUARIO DA SILVEIRA" → "Mercado Três Amigos". O nome da fatura é comparado sem acento, caixa ou espaços extras.
 - São aprendidos ao salvar uma compra com nome na fatura diferente do estabelecimento; também dá para criar e apagar à mão. Uma compra com só o nome da fatura recebe o apelido, e criar um apelido renomeia compras que ainda mostravam o nome cru.

@@ -1,7 +1,7 @@
 import type { NotificationPrefs, User } from '../../domain';
-import { AppError } from '../errors';
+import { AppError, type AppErrorCode } from '../errors';
 import type { Session } from '../models';
-import type { AuthOptions, AuthRepository, PushRepository, Repositories } from '../repositories';
+import type { AssistantRepository, AuthOptions, AuthRepository, PushRepository, Repositories } from '../repositories';
 import { ApiClient, type TokenStorage } from './client';
 
 interface AuthUser {
@@ -150,6 +150,28 @@ function createHttpPushRepository(api: ApiClient): PushRepository {
   };
 }
 
+function createHttpAssistantRepository(api: ApiClient): AssistantRepository {
+  return {
+    async available() {
+      try {
+        const { status, data } = await api.request<{ assistant?: boolean }>('/auth-options');
+        return status < 300 && Boolean(data?.assistant);
+      } catch {
+        return false;
+      }
+    },
+    async ask(familyId, messages, simulation) {
+      const { status, data } = await api.request<{ reply?: string; error?: { code: AppErrorCode; message: string } }>('/assistant', {
+        method: 'POST',
+        body: { familyId, messages, simulation },
+      });
+      if (status < 300 && typeof data?.reply === 'string') return data.reply;
+      if (status === 401) await api.setToken(null);
+      throw new AppError(data?.error?.code ?? 'internal', data?.error?.message ?? 'O assistente não conseguiu responder agora.');
+    },
+  };
+}
+
 /** Builds a repository whose every method is forwarded to the API as `repo.method`. */
 function remote<T extends object>(api: ApiClient, name: string): T {
   return new Proxy({} as T, {
@@ -177,5 +199,6 @@ export function createHttpRepositories(apiUrl: string, tokens: TokenStorage): Re
     attachments: remote(api, 'attachments'),
     push: createHttpPushRepository(api),
     dashboard: remote(api, 'dashboard'),
+    assistant: createHttpAssistantRepository(api),
   };
 }

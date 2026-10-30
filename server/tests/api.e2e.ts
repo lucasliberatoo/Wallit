@@ -16,6 +16,7 @@ import { createHttpRepositories } from '../../src/data/http/repositories';
 import type { Repositories } from '../../src/data/repositories';
 import { refKey } from '../../src/domain';
 import { app } from '../app';
+import { setGeminiTransport } from '../assistant';
 import { runDailyReminders } from '../cron';
 import { closeDb, getDb } from '../db/client';
 import * as t from '../db/schema';
@@ -487,5 +488,57 @@ describe('API', () => {
     await rejects(client().push.subscribe({ endpoint: 'https://push.example.com/abc', keys: { p256dh: 'x', auth: 'y' } }));
     await lucas.repos.push.unsubscribe('https://push.example.com/abc');
     assert.equal((await getDb().select().from(t.pushSubscriptions)).length, 0);
+  });
+
+  it('answers with Wally, reading data through tools, and explains the open simulation', async () => {
+    const lucas = await signedIn();
+    assert.equal(await lucas.repos.assistant.available(), false);
+    await rejects(lucas.repos.assistant.ask(lucas.familyId, [{ role: 'user', text: 'oi' }]));
+
+    process.env.GEMINI_API_KEY = 'test-key';
+    const requests: { systemInstruction: { parts: { text: string }[] }; contents: { role: string; parts: Record<string, any>[] }[] }[] = [];
+    setGeminiTransport(async (_url, init) => {
+      const body = JSON.parse(String(init.body));
+      requests.push(body);
+      const parts =
+        requests.length === 1
+          ? [{ functionCall: { name: 'simular_compra', args: { cartaoId: lucas.principal.card.id, valorTotalReais: 300, parcelas: 3 } } }]
+          : [{ text: 'Cada parcela fica em **R$ 100,00**.' }];
+      return new Response(JSON.stringify({ candidates: [{ content: { role: 'model', parts } }] }), { status: 200 });
+    });
+    try {
+      assert.equal(await lucas.repos.assistant.available(), true);
+      const reply = await lucas.repos.assistant.ask(lucas.familyId, [{ role: 'user', text: 'E se eu comprar uma TV de 300 em 3x?' }]);
+      assert.equal(reply, 'Cada parcela fica em **R$ 100,00**.');
+      const system = requests[0].systemInstruction.parts[0].text;
+      assert.match(system, /Wally/);
+      assert.match(system, /Cartão Principal/);
+      const toolAnswer = requests[1].contents.at(-1)!.parts[0].functionResponse.response.resultado as string;
+      assert.match(toolAnswer, /Primeira parcela na fatura de/);
+      assert.match(toolAnswer, /minha parte/);
+
+      // From the "Simular" screen: the scenario is recalculated on the server and explained.
+      requests.length = 0;
+      const operations = [{ kind: 'loan' as const, receivedCents: 50000, receivedRef: lucas.principal.currentInvoice!.ref, installmentCents: 10000, installmentCount: 6, startRef: lucas.principal.currentInvoice!.ref }];
+      setGeminiTransport(async (_url, init) => {
+        requests.push(JSON.parse(String(init.body)));
+        return new Response(JSON.stringify({ candidates: [{ content: { role: 'model', parts: [{ text: 'ok' }] } }] }), { status: 200 });
+      });
+      await lucas.repos.assistant.ask(lucas.familyId, [{ role: 'user', text: 'Me explica' }], { operations });
+      const simSystem = requests[0].systemInstruction.parts[0].text;
+      assert.match(simSystem, /tela "Simular"/);
+      assert.match(simSystem, /Empréstimo: recebo R\$ 500,00/);
+      assert.match(simSystem, /6x de R\$ 100,00/);
+      assert.match(simSystem, /inclui empréstimo: paga R\$ 100,00, recebe R\$ 500,00/);
+
+      // The free limit shows a friendly message.
+      setGeminiTransport(async () => new Response(JSON.stringify({ error: { message: 'quota' } }), { status: 429 }));
+      await assert.rejects(lucas.repos.assistant.ask(lucas.familyId, [{ role: 'user', text: 'oi' }]), /limite gratuito/);
+
+      // Another family's id is refused.
+      await rejects(lucas.repos.assistant.ask('someone-else', [{ role: 'user', text: 'oi' }]));
+    } finally {
+      delete process.env.GEMINI_API_KEY;
+    }
   });
 });

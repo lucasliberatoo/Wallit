@@ -13,6 +13,7 @@ import {
   HandCoins,
   Layers,
   SearchCheck,
+  Sparkles,
   UsersRound,
   Wallet,
 } from 'lucide-react-native';
@@ -23,6 +24,7 @@ import { GradientHeader, Screen } from '@/components/layout';
 import { AppText, Avatar, EmptyState, ErrorState, IconButton, LoadingState, PressableScale, Surface } from '@/components/ui';
 import { errorMessage } from '@/data';
 
+import { useAssistantAvailable } from '@/features/assistant/hooks';
 import { useCurrentUser } from '@/features/auth/hooks';
 import { useCurrentFamily } from '@/features/families/hooks';
 import { useHomeSummary } from '@/features/home/hooks';
@@ -37,6 +39,7 @@ import { updateWidget } from '@/widget/sync';
 export default function HomeScreen() {
   const formatBRL = useMoneyFormatter();
   const { colors } = useTheme();
+  const assistantAvailable = useAssistantAvailable();
   const styles = useStyles();
   const user = useCurrentUser();
   const { current, isLoading: loadingFamilies } = useCurrentFamily();
@@ -181,6 +184,17 @@ export default function HomeScreen() {
               </View>
               <ArrowRight size={18} color={colors.textMuted} />
             </Surface>
+          ) : null}
+
+          {assistantAvailable ? (
+            <ActionCard
+              icon={Sparkles}
+              tint={colors.primary}
+              background={colors.primarySoft}
+              title="Wally, seu assistente"
+              caption="Pergunte sobre faturas, gastos e simulações"
+              onPress={() => router.push('/assistant')}
+            />
           ) : null}
 
           <ActionCard

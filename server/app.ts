@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 
 import { AppError } from '../src/data/errors';
+import { askAssistant, assistantConfigured } from './assistant';
 import { getAuth, googleConfigured } from './auth';
 import { runDailyReminders } from './cron';
 import { getDb } from './db/client';
@@ -58,7 +59,9 @@ function describe(error: unknown): string {
 }
 
 /** Which sign-in options this deployment has configured. */
-app.get('/auth-options', (c) => c.json({ google: googleConfigured(), passwordResetEmail: emailConfigured() }));
+app.get('/auth-options', (c) =>
+  c.json({ google: googleConfigured(), passwordResetEmail: emailConfigured(), assistant: assistantConfigured() }),
+);
 
 app.on(['GET', 'POST'], '/auth/*', (c) => getAuth().handler(c.req.raw));
 
@@ -80,6 +83,16 @@ app.post('/rpc', async (c) => {
   // Sent before answering: a serverless function may stop right after the response.
   await sendPushes(getDb(), pushes);
   return c.json({ result });
+});
+
+/**
+ * The AI assistant (Gemini): `{ familyId, messages: [{ role, text }], simulation? }` -> `{ reply }`.
+ * `simulation` is the scenario open on the "Simular" screen, to explain it.
+ */
+app.post('/assistant', async (c) => {
+  const userId = await requireUserId(c.req.raw.headers);
+  const body = (await c.req.json().catch(() => null)) as { familyId?: unknown; messages?: unknown; simulation?: unknown } | null;
+  return c.json(await askAssistant(getDb(), userId, body));
 });
 
 /** Web Push for the installed web app. */

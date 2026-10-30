@@ -17,6 +17,7 @@ import type {
 import type {
   AddAttachmentInput,
   AddMemberInput,
+  AssistantMessage,
   AttachmentData,
   AuditLogView,
   CardSummary,
@@ -36,6 +37,7 @@ import type {
   PurchaseListItem,
   PurchaseSimulation,
   ScenarioInput,
+  ScenarioOperation,
   ScenarioResult,
   RegisterPaymentInput,
   Session,
@@ -192,6 +194,17 @@ export interface DashboardRepository {
   activity(familyId: ID): Promise<AuditLogView[]>;
 }
 
+/** AI assistant that answers questions about the family's data. It only reads. */
+export interface AssistantRepository {
+  /** false when this backend has no AI configured (offline demo, no API key). */
+  available(): Promise<boolean>;
+  /**
+   * Answers the conversation's last user message. With `simulation`, it
+   * explains that scenario (the one open on the "Simular" screen).
+   */
+  ask(familyId: ID, messages: AssistantMessage[], simulation?: { operations: ScenarioOperation[] }): Promise<string>;
+}
+
 export interface PushSubscriptionInput {
   endpoint: string;
   keys: { p256dh: string; auth: string };
@@ -222,4 +235,5 @@ export interface Repositories {
   attachments: AttachmentRepository;
   push: PushRepository;
   dashboard: DashboardRepository;
+  assistant: AssistantRepository;
 }
