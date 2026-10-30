@@ -479,6 +479,21 @@ describe('API', () => {
     assert.equal(reminders.length, 1);
   });
 
+  it('starts the review the day after closing, from the daily job', async () => {
+    const lucas = await signedIn();
+    const open = lucas.principal.currentInvoice!;
+    assert.equal(open.status, 'open');
+    const [year, month, day] = open.closingDate.split('-').map(Number);
+    const dayAfter = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+
+    await runDailyReminders(getDb(), open.closingDate);
+    assert.equal((await lucas.repos.invoices.getDetails(open.id)).invoice.status, 'open');
+    await runDailyReminders(getDb(), dayAfter);
+    assert.equal((await lucas.repos.invoices.getDetails(open.id)).invoice.status, 'reviewing');
+    const again = await runDailyReminders(getDb(), dayAfter);
+    assert.equal(again.sent, 0);
+  });
+
   it('accepts Web Push subscriptions from signed-in users', async () => {
     const lucas = await signedIn();
     const key = await lucas.repos.push.publicKey();

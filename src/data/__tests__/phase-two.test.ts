@@ -1,4 +1,4 @@
-import { createCoreRepositories, createDueReminders, seedDemoDatabase, Store } from '../core';
+import { createCoreRepositories, createDueReminders, seedDemoDatabase, startReviewsAfterClosing, Store } from '../core';
 import { AppError } from '../errors';
 import { createMockRepositories, DEMO_ACCOUNT } from '../mock';
 import { addMonths } from '@/domain';
@@ -112,7 +112,8 @@ describe('invoice review (conferência) and disputes', () => {
     const dispute = afterConfirm.lines.flatMap((line) => line.review.disputes)[0];
     expect(dispute.member.displayName).toBe('Maria');
     await repos.reviews.resolve(dispute.review.id, 'O frete foi estornado na fatura seguinte.');
-    await repos.invoices.changeStatus(invoiceId, 'closed');
+    // The last answer closes the invoice by itself.
+    expect((await repos.invoices.getDetails(invoiceId)).invoice.status).toBe('closed');
 
     await signInAs(MARIA);
     const types = (await repos.notifications.list()).map((n) => n.type);
@@ -263,6 +264,34 @@ describe('statistics', () => {
     const current = await repos.invoices.getDetails(principal.currentInvoice!.id);
     const onlyPrincipal = await repos.statistics.get(familyId, { from: to, to, cardId: principal.card.id });
     expect(onlyPrincipal.totalCents).toBe(current.totals.totalCents);
+  });
+});
+
+describe('review after the closing day', () => {
+  const dayAfter = (date: string) => {
+    const [year, month, day] = date.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+  };
+
+  it('starts the review the day after closing, once', async () => {
+    const store = new Store({ persistence: { load: async () => null, save: async () => undefined }, seed: seedDemoDatabase });
+    await store.init();
+    const open = store.db.invoices.find((i) => i.status === 'open' && store.db.installments.some((ins) => ins.invoiceId === i.id))!;
+
+    // Not on the closing day itself.
+    expect(startReviewsAfterClosing(store, open.closingDate).map((i) => i.id)).not.toContain(open.id);
+    expect(open.status).toBe('open');
+
+    const before = store.db.notifications.length;
+    const started = startReviewsAfterClosing(store, dayAfter(open.closingDate));
+    expect(started.map((i) => i.id)).toContain(open.id);
+    expect(open.status).toBe('reviewing');
+    const sent = store.db.notifications.slice(before).filter((n) => n.link === `/invoice/${open.id}`);
+    expect(sent.length).toBeGreaterThan(0);
+    expect(sent.every((n) => n.type === 'review_started')).toBe(true);
+    expect(store.db.auditLogs.at(-1)?.summary).toContain('automaticamente');
+    // Running again changes nothing.
+    expect(startReviewsAfterClosing(store, dayAfter(open.closingDate))).toHaveLength(0);
   });
 });
 

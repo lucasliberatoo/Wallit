@@ -10,9 +10,9 @@ describe('invoice status', () => {
     expect(canTransition('closed', 'open')).toBe(true);
   });
 
-  it('locks purchases once closed', () => {
+  it('locks purchases once the review starts (the bank already closed it)', () => {
     expect(isInvoiceLocked('open')).toBe(false);
-    expect(isInvoiceLocked('reviewing')).toBe(false);
+    expect(isInvoiceLocked('reviewing')).toBe(true);
     expect(isInvoiceLocked('closed')).toBe(true);
     expect(isInvoiceLocked('paid')).toBe(true);
   });

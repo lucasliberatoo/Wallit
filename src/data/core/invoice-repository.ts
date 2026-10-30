@@ -1,15 +1,31 @@
-import { can, canTransition, type Card, compareRefs, formatBRL, type Invoice, INVOICE_STATUS_LABEL, invoiceRefForDate } from '../../domain';
+import {
+  can,
+  canTransition,
+  type Card,
+  compareRefs,
+  formatBRL,
+  type Invoice,
+  INVOICE_STATUS_LABEL,
+  invoiceRefForDate,
+  type ID,
+  type ISODate,
+  parseISODate,
+  reviewProgress,
+} from '../../domain';
 import { AppError } from '../errors';
 import type { InvoiceRepository } from '../repositories';
 import { invoiceLabel, invoiceLink } from './labels';
 import { notify } from './notify';
 import type { Store } from './store';
-import { invoiceDetails, invoiceListItem, sortInvoicesDesc, todayISO, visibleInvoiceDetails } from './views';
+import { balancesFor, invoiceDetails, invoiceLines, invoiceListItem, sortInvoicesDesc, todayISO, visibleInvoiceDetails } from './views';
 
 /** Tells the family what changed: review started, or each person's final amount. */
 function announceStatus(store: Store, invoice: Invoice): void {
-  const details = invoiceDetails(store, invoice);
-  const involved = [...new Set(details.lines.flatMap((line) => [line.buyer.id, ...line.shares.map((s) => s.member.id)]))];
+  // Without the signed-in user's view: the daily job calls this too.
+  const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
+  const lines = invoiceLines(store, invoice);
+  const { balances } = balancesFor(store, invoice, card, lines);
+  const involved = [...new Set(lines.flatMap((line) => [line.buyer.id, ...line.shares.map((s) => s.member.id)]))];
   if (invoice.status === 'reviewing') {
     notify(store, {
       familyId: invoice.familyId,
@@ -21,7 +37,7 @@ function announceStatus(store: Store, invoice: Invoice): void {
     });
   }
   if (invoice.status === 'closed') {
-    for (const balance of details.balances) {
+    for (const balance of balances) {
       if (balance.status === 'holder' || balance.pendingCents <= 0) continue;
       notify(store, {
         familyId: invoice.familyId,
@@ -33,6 +49,70 @@ function announceStatus(store: Store, invoice: Invoice): void {
       });
     }
   }
+}
+
+/** Only invoices that closed this recently notify the family when review starts by itself. */
+const AUTO_REVIEW_NOTIFY_DAYS = 7;
+
+/**
+ * Daily job: the day after an invoice's closing date, its review starts by
+ * itself if the holder hasn't started it. Runs without a signed-in user.
+ * Invoices forgotten as "open" for a long time move too, but quietly.
+ */
+export function startReviewsAfterClosing(store: Store, today: ISODate): Invoice[] {
+  const notifyFrom = addDays(today, -AUTO_REVIEW_NOTIFY_DAYS);
+  const started: Invoice[] = [];
+  for (const invoice of store.db.invoices) {
+    if (invoice.status !== 'open' || invoice.closingDate >= today) continue;
+    const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
+    const members = store.db.members.filter((m) => m.familyId === invoice.familyId && m.status === 'active');
+    // The log needs a person: the holder, or the family's owner when the holder has no account.
+    const actor =
+      members.find((m) => m.id === card.holderMemberId)?.userId ?? members.find((m) => m.role === 'owner' && m.userId)?.userId;
+    if (!actor) continue;
+    invoice.status = 'reviewing';
+    store.audit({
+      familyId: invoice.familyId,
+      entity: 'invoice',
+      entityId: invoice.id,
+      action: 'status_changed',
+      summary: 'Conferência iniciada automaticamente após o fechamento',
+      changes: [{ field: 'Status', from: INVOICE_STATUS_LABEL.open, to: INVOICE_STATUS_LABEL.reviewing }],
+      actorUserId: actor,
+    });
+    if (invoice.closingDate >= notifyFrom) announceStatus(store, invoice);
+    started.push(invoice);
+    // Nothing to check (no purchases): straight to closed.
+    closeIfReviewed(store, invoice, actor);
+  }
+  return started;
+}
+
+/**
+ * Closes an invoice under review once every purchase was confirmed or had its
+ * dispute answered, and tells each person their final amount.
+ */
+export function closeIfReviewed(store: Store, invoice: Invoice, actorUserId?: ID): boolean {
+  if (invoice.status !== 'reviewing') return false;
+  const { pending, disputed } = reviewProgress(invoiceLines(store, invoice).map((line) => line.review));
+  if (pending > 0 || disputed > 0) return false;
+  invoice.status = 'closed';
+  store.audit({
+    familyId: invoice.familyId,
+    entity: 'invoice',
+    entityId: invoice.id,
+    action: 'status_changed',
+    summary: 'Fatura fechada automaticamente: conferência concluída',
+    changes: [{ field: 'Status', from: INVOICE_STATUS_LABEL.reviewing, to: INVOICE_STATUS_LABEL.closed }],
+    actorUserId,
+  });
+  announceStatus(store, invoice);
+  return true;
+}
+
+function addDays(date: ISODate, days: number): ISODate {
+  const { year, month, day } = parseISODate(date);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
 export function createInvoiceRepository(store: Store): InvoiceRepository {
