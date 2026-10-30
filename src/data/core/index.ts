@@ -1,3 +1,4 @@
+import { AppError } from '../errors';
 import type { Repositories } from '../repositories';
 import { createAuthRepository } from './auth-repository';
 import { createCardRepository, createWalletRepository } from './card-repository';
@@ -39,5 +40,12 @@ export function createCoreRepositories(store: Store): Repositories {
     // Push needs a server; the offline demo only has in-app notifications.
     push: { publicKey: async () => null, subscribe: async () => undefined, unsubscribe: async () => undefined },
     dashboard: createDashboardRepository(store),
+    // The AI runs on the server; the offline demo doesn't offer it.
+    assistant: {
+      available: async () => false,
+      ask: async () => {
+        throw new AppError('validation', 'O assistente só funciona com o app conectado ao servidor.');
+      },
+    },
   };
 }

@@ -211,6 +211,12 @@ export interface HistoryFilters {
   to?: ISODate;
 }
 
+/** One message of a conversation with the AI assistant. */
+export interface AssistantMessage {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
 // ---- inputs ----
 
 export interface SignUpInput {

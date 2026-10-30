@@ -1,18 +1,21 @@
-import { CreditCard, Plus } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { CreditCard, Plus, Sparkles } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { PageHeader, Screen } from '@/components/layout';
-import { AppText, EmptyState, LoadingState, PressableScale, SectionHeader, SegmentedControl } from '@/components/ui';
+import { AppText, Button, EmptyState, LoadingState, PressableScale, SectionHeader, SegmentedControl } from '@/components/ui';
 import { errorMessage, type ScenarioInput, type ScenarioOperation } from '@/data';
 import { addMonths, compareRefs, type InvoiceRef, invoiceRefForDate, refKey } from '@/domain';
 import { FormError } from '@/features/auth/FormError';
+import { useAssistantAvailable } from '@/features/assistant/hooks';
 import { useFamilyCards } from '@/features/cards/hooks';
 import { useCurrentFamily, useMembers } from '@/features/families/hooks';
 import { useScenarioSimulation } from '@/features/purchases/hooks';
 import { ICONS, ScenarioOperationCard } from '@/features/simulation/ScenarioOperationCard';
 import { ScenarioResultView, type ScenarioView } from '@/features/simulation/ScenarioResultView';
 import { type DraftKind, type ScenarioDraft, toOperation } from '@/features/simulation/scenario-draft';
+import { useAssistantContextStore } from '@/stores/assistant-context-store';
 import { radius, spacing, useTheme } from '@/theme';
 import { todayISO } from '@/utils/dates';
 
@@ -41,6 +44,8 @@ export default function SimulateScreen() {
   const [view, setView] = useState<ScenarioView>('mine');
   const [editingId, setEditingId] = useState<string | null>(null);
   const nextId = useRef(1);
+  const assistantAvailable = useAssistantAvailable();
+  const setAssistantSimulation = useAssistantContextStore((state) => state.setSimulation);
 
   const operations = useMemo(
     () => drafts.map(toOperation).filter((operation): operation is ScenarioOperation => operation !== null),
@@ -182,6 +187,18 @@ export default function SimulateScreen() {
           <LoadingState />
         ) : null}
         <FormError message={result.error ? errorMessage(result.error) : null} />
+        {assistantAvailable ? (
+          <Button
+            label="Entender com o Wally"
+            icon={Sparkles}
+            variant="secondary"
+            accessibilityHint="Abre o Wally para explicar esta simulação"
+            onPress={() => {
+              setAssistantSimulation(operations);
+              router.push('/assistant?about=simulation');
+            }}
+          />
+        ) : null}
       </Screen>
     </>
   );
