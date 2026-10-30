@@ -11,9 +11,12 @@ export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
   archived: 'Arquivada',
 };
 
-/** Statuses where purchases are protected against regular edits (rule 10). */
+/**
+ * Statuses where purchases are protected against regular edits (rule 10).
+ * The review already counts: it starts after the bank closed the invoice.
+ */
 export function isInvoiceLocked(status: InvoiceStatus): boolean {
-  return INVOICE_STATUS_FLOW.indexOf(status) >= INVOICE_STATUS_FLOW.indexOf('closed');
+  return INVOICE_STATUS_FLOW.indexOf(status) >= INVOICE_STATUS_FLOW.indexOf('reviewing');
 }
 
 export function acceptsPurchases(status: InvoiceStatus): boolean {

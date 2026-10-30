@@ -1,6 +1,6 @@
-import { and, inArray } from 'drizzle-orm';
+import { and, eq, inArray, lt, or } from 'drizzle-orm';
 
-import { createDueReminders, Store } from '../src/data/core';
+import { createDueReminders, startReviewsAfterClosing, Store } from '../src/data/core';
 import { DUE_REMINDER_DAYS } from '../src/domain';
 import type { Db } from './db/client';
 import * as t from './db/schema';
@@ -19,16 +19,21 @@ function addDays(date: string, days: number): string {
 }
 
 /**
- * Daily job: "A fatura vence em 2 dias" for everyone who still owes. Each
- * family is handled in its own transaction; reminders are deduplicated, so
- * running it twice sends nothing new.
+ * Daily job: starts the review of invoices whose closing day has passed, and
+ * sends "A fatura vence em 2 dias" to everyone who still owes. Each family is
+ * handled in its own transaction; running it twice changes and sends nothing new.
  */
 export async function runDailyReminders(db: Db, today = todayInBrazil()): Promise<{ families: number; sent: number }> {
   const dueDate = addDays(today, DUE_REMINDER_DAYS);
   const rows = await db
     .selectDistinct({ familyId: t.invoices.familyId })
     .from(t.invoices)
-    .where(and(inArray(t.invoices.dueDate, [dueDate]), inArray(t.invoices.status, ['closed', 'collecting'])));
+    .where(
+      or(
+        and(eq(t.invoices.dueDate, dueDate), inArray(t.invoices.status, ['closed', 'collecting'])),
+        and(eq(t.invoices.status, 'open'), lt(t.invoices.closingDate, today)),
+      ),
+    );
 
   const pushes: PushMessage[] = [];
   for (const { familyId } of rows) {
@@ -38,6 +43,7 @@ export async function runDailyReminders(db: Db, today = todayInBrazil()): Promis
       const before = structuredClone(snapshot);
       const store = new Store({ persistence: { load: async () => snapshot, save: async () => undefined } });
       await store.init();
+      startReviewsAfterClosing(store, today);
       createDueReminders(store, today);
       await persistChanges(tx, before, store.db);
       return newPushMessages(before, store.db);

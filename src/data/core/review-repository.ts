@@ -2,6 +2,7 @@ import { type Card, DISPUTE_REASON_LABEL, formatBRL, type Invoice, type Purchase
 import { AppError } from '../errors';
 import type { DisputeInput } from '../models';
 import type { ReviewRepository } from '../repositories';
+import { closeIfReviewed } from './invoice-repository';
 import { invoiceLabel, invoiceLink, purchaseLink } from './labels';
 import { notify } from './notify';
 import { newId, nowISO, type Store } from './store';
@@ -65,6 +66,7 @@ export function createReviewRepository(store: Store): ReviewRepository {
             summary: `${me.displayName} confirmou a compra`,
             changes: [],
           });
+          closeIfReviewed(store, invoice);
           return review;
         },
         { write: true },
@@ -133,6 +135,7 @@ export function createReviewRepository(store: Store): ReviewRepository {
             body: `${me.displayName} respondeu sobre ${purchase.merchant}: "${answer}"`,
             link: invoiceLink(invoice),
           });
+          closeIfReviewed(store, invoice);
           return review;
         },
         { write: true },

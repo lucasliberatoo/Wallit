@@ -11,7 +11,7 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 ## Faturas
 - A referência da fatura é o **mês de fechamento**. Compra feita no dia de fechamento ou depois entra na fatura seguinte; o dia de fechamento é limitado ao tamanho do mês.
 - Cada parcela é uma entidade própria, atribuída a faturas consecutivas (criadas automaticamente).
-- Fluxo: aberta → em conferência → fechada → recebendo → paga → arquivada. A partir de "fechada", só titular/owner alteram compras.
+- Fluxo: aberta → em conferência → fechada → recebendo → paga → arquivada. A partir de "em conferência", só titular/owner alteram compras (o banco já fechou a fatura).
 - A parte do próprio titular do cartão tem status "titular" (nunca fica pendente).
 - Pagamento parcial é permitido; pagamento acima do devido é rejeitado.
 - Pagamento marcado por um membro fica **aguardando a titular** e só conta como recebido depois de confirmado (a titular também pode recusar). O que a titular registra já entra confirmado. Quem tem pagamento aguardando não consegue marcar de novo além do que falta.
@@ -19,7 +19,8 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 - Quando a titular não usa o app (ex.: a Avó), quem responde pelos pagamentos e contestações do cartão é o dono da família.
 
 ## Conferência e contestação
-- "Iniciar conferência" (aberta → em conferência) avisa quem participa das compras da fatura.
+- "Iniciar conferência" (aberta → em conferência) avisa quem participa das compras da fatura. Se a titular não iniciar, a tarefa diária inicia sozinha no dia seguinte ao fechamento (avisa só para faturas fechadas há até 7 dias).
+- Quando a última compra é confirmada ou a última contestação é respondida, a fatura vira "fechada" sozinha e cada pessoa recebe o valor final.
 - Cada compra é conferida por quem comprou e por quem paga (só quem tem conta). Cada pessoa confirma ou contesta (motivo + observação + anexo opcional). Responder de novo substitui a resposta anterior.
 - A fatura não fecha com contestação em aberto: a titular responde cada uma. Ao fechar, cada pessoa recebe o valor da sua parte.
 - Se a compra muda de valor, divisão ou comprador, as confirmações dela voltam a ficar pendentes.
