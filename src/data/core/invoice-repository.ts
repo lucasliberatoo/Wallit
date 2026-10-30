@@ -65,11 +65,7 @@ export function startReviewsAfterClosing(store: Store, today: ISODate): Invoice[
   const started: Invoice[] = [];
   for (const invoice of store.db.invoices) {
     if (invoice.status !== 'open' || invoice.closingDate >= today) continue;
-    const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
-    const members = store.db.members.filter((m) => m.familyId === invoice.familyId && m.status === 'active');
-    // The log needs a person: the holder, or the family's owner when the holder has no account.
-    const actor =
-      members.find((m) => m.id === card.holderMemberId)?.userId ?? members.find((m) => m.role === 'owner' && m.userId)?.userId;
+    const actor = jobActor(store, invoice);
     if (!actor) continue;
     invoice.status = 'reviewing';
     store.audit({
@@ -89,21 +85,44 @@ export function startReviewsAfterClosing(store: Store, today: ISODate): Invoice[
   return started;
 }
 
+/** Who the daily job's changes are logged as: the holder, or the family's owner when the holder has no account. */
+function jobActor(store: Store, invoice: Invoice): ID | undefined {
+  const card = store.require('cards', invoice.cardId, 'Cartão') as Card;
+  const members = store.db.members.filter((m) => m.familyId === invoice.familyId && m.status === 'active');
+  return members.find((m) => m.id === card.holderMemberId)?.userId ?? members.find((m) => m.role === 'owner' && m.userId)?.userId ?? undefined;
+}
+
+/**
+ * Daily job: on the due date, an invoice still under review closes by itself.
+ * Purchases nobody checked count as accepted; an open dispute keeps it in
+ * review until the holder answers.
+ */
+export function closeReviewsOnDueDate(store: Store, today: ISODate): Invoice[] {
+  const closed: Invoice[] = [];
+  for (const invoice of store.db.invoices) {
+    if (invoice.status !== 'reviewing' || invoice.dueDate > today) continue;
+    const actor = jobActor(store, invoice);
+    if (actor && closeIfReviewed(store, invoice, actor, { acceptPending: true })) closed.push(invoice);
+  }
+  return closed;
+}
+
 /**
  * Closes an invoice under review once every purchase was confirmed or had its
- * dispute answered, and tells each person their final amount.
+ * dispute answered (or, with `acceptPending`, once no dispute is open), and
+ * tells each person their final amount.
  */
-export function closeIfReviewed(store: Store, invoice: Invoice, actorUserId?: ID): boolean {
+export function closeIfReviewed(store: Store, invoice: Invoice, actorUserId?: ID, options: { acceptPending?: boolean } = {}): boolean {
   if (invoice.status !== 'reviewing') return false;
   const { pending, disputed } = reviewProgress(invoiceLines(store, invoice).map((line) => line.review));
-  if (pending > 0 || disputed > 0) return false;
+  if (disputed > 0 || (pending > 0 && !options.acceptPending)) return false;
   invoice.status = 'closed';
   store.audit({
     familyId: invoice.familyId,
     entity: 'invoice',
     entityId: invoice.id,
     action: 'status_changed',
-    summary: 'Fatura fechada automaticamente: conferência concluída',
+    summary: pending > 0 ? 'Fatura fechada automaticamente no vencimento' : 'Fatura fechada automaticamente: conferência concluída',
     changes: [{ field: 'Status', from: INVOICE_STATUS_LABEL.reviewing, to: INVOICE_STATUS_LABEL.closed }],
     actorUserId,
   });

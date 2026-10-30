@@ -17,7 +17,7 @@ import type { Store } from './store';
 
 export { Store, type Persistence, newId, nowISO } from './store';
 export { createDueReminders } from './reminders';
-export { startReviewsAfterClosing } from './invoice-repository';
+export { closeReviewsOnDueDate, startReviewsAfterClosing } from './invoice-repository';
 export { emptyDatabase, migrateDatabase, DATABASE_VERSION, type Database, type Collection, type StoredUser, type Invite } from './database';
 export { seedDemoDatabase, DEMO_ACCOUNT } from './seed';
 

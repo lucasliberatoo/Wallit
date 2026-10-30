@@ -1,6 +1,6 @@
-import { and, eq, inArray, lt, or } from 'drizzle-orm';
+import { and, eq, inArray, lt, lte, or } from 'drizzle-orm';
 
-import { createDueReminders, startReviewsAfterClosing, Store } from '../src/data/core';
+import { closeReviewsOnDueDate, createDueReminders, startReviewsAfterClosing, Store } from '../src/data/core';
 import { DUE_REMINDER_DAYS } from '../src/domain';
 import type { Db } from './db/client';
 import * as t from './db/schema';
@@ -19,9 +19,10 @@ function addDays(date: string, days: number): string {
 }
 
 /**
- * Daily job: starts the review of invoices whose closing day has passed, and
- * sends "A fatura vence em 2 dias" to everyone who still owes. Each family is
- * handled in its own transaction; running it twice changes and sends nothing new.
+ * Daily job: starts the review of invoices whose closing day has passed,
+ * closes the ones still under review on their due date, and sends "A fatura
+ * vence em 2 dias" to everyone who still owes. Each family is handled in its
+ * own transaction; running it twice changes and sends nothing new.
  */
 export async function runDailyReminders(db: Db, today = todayInBrazil()): Promise<{ families: number; sent: number }> {
   const dueDate = addDays(today, DUE_REMINDER_DAYS);
@@ -30,8 +31,9 @@ export async function runDailyReminders(db: Db, today = todayInBrazil()): Promis
     .from(t.invoices)
     .where(
       or(
-        and(eq(t.invoices.dueDate, dueDate), inArray(t.invoices.status, ['closed', 'collecting'])),
+        and(eq(t.invoices.dueDate, dueDate), inArray(t.invoices.status, ['reviewing', 'closed', 'collecting'])),
         and(eq(t.invoices.status, 'open'), lt(t.invoices.closingDate, today)),
+        and(eq(t.invoices.status, 'reviewing'), lte(t.invoices.dueDate, today)),
       ),
     );
 
@@ -44,6 +46,7 @@ export async function runDailyReminders(db: Db, today = todayInBrazil()): Promis
       const store = new Store({ persistence: { load: async () => snapshot, save: async () => undefined } });
       await store.init();
       startReviewsAfterClosing(store, today);
+      closeReviewsOnDueDate(store, today);
       createDueReminders(store, today);
       await persistChanges(tx, before, store.db);
       return newPushMessages(before, store.db);

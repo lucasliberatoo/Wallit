@@ -24,6 +24,7 @@ Todo valor é **inteiro em centavos**. Divisões usam o método do maior resto, 
 ## Conferência e contestação
 - "Iniciar conferência" (aberta → em conferência) avisa quem participa das compras da fatura. Se a titular não iniciar, a tarefa diária inicia sozinha no dia seguinte ao fechamento (avisa só para faturas fechadas há até 7 dias).
 - Quando a última compra é confirmada ou a última contestação é respondida, a fatura vira "fechada" sozinha e cada pessoa recebe o valor final.
+- No dia do vencimento, a fatura ainda em conferência fecha sozinha: compras não conferidas contam como aceitas. Com contestação aberta, ela espera a titular responder. O aviso "vence em 2 dias" também vale para faturas em conferência.
 - Cada compra é conferida por quem comprou e por quem paga (só quem tem conta). Cada pessoa confirma ou contesta (motivo + observação + anexo opcional). Responder de novo substitui a resposta anterior.
 - A fatura não fecha com contestação em aberto: a titular responde cada uma. Ao fechar, cada pessoa recebe o valor da sua parte.
 - Se a compra muda de valor, divisão ou comprador, as confirmações dela voltam a ficar pendentes.
