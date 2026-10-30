@@ -81,9 +81,10 @@ export function createDashboardRepository(store: Store): DashboardRepository {
           if (invoice.status === 'archived') continue;
           const details = invoiceDetails(store, invoice);
           const mine = details.balances.find((b) => b.memberId === me.id);
-          // What I owe counts once the invoice amounts are final (closed onwards).
-          if (mine && isInvoiceLocked(invoice.status)) owedCents += mine.pendingCents;
-          if (details.card.holderMemberId === me.id && isInvoiceLocked(invoice.status)) {
+          // What I owe counts once the invoice amounts are final (closed onwards, after the review).
+          const final = isInvoiceLocked(invoice.status) && invoice.status !== 'reviewing';
+          if (mine && final) owedCents += mine.pendingCents;
+          if (details.card.holderMemberId === me.id && final) {
             toReceiveCents += details.totals.pendingCents;
           }
           if (invoice.status === 'open' || invoice.status === 'reviewing') openInvoicesCount += 1;
